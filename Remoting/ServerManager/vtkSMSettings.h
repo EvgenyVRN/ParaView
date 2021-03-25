@@ -78,7 +78,6 @@
 
 #include "vtkObject.h"
 #include "vtkRemotingServerManagerModule.h" //needed for exports
-#include "vtkStdString.h"                   // needed for vtkStdString.
 #include <vector>                           // needed for vector.
 #include <vtk_jsoncpp_fwd.h>                // for forward declarations
 
@@ -242,7 +241,7 @@ public:
    * skip serializing properties that have domains whose values change at
    * runtime.
    */
-  void SetProxySettings(vtkSMProxy* proxy, vtkSMPropertyIterator* propertyIt = NULL,
+  void SetProxySettings(vtkSMProxy* proxy, vtkSMPropertyIterator* propertyIt = nullptr,
     bool skipPropertiesWithDynamicDomains = true);
 
   /**
@@ -255,7 +254,7 @@ public:
    * runtime.
    */
   void SetProxySettings(const char* prefix, vtkSMProxy* proxy,
-    vtkSMPropertyIterator* propertyIt = NULL, bool skipPropertiesWithDynamicDomains = true);
+    vtkSMPropertyIterator* propertyIt = nullptr, bool skipPropertiesWithDynamicDomains = true);
 
   /**
    * Set the description of a setting.
@@ -266,7 +265,7 @@ public:
    * Saves the state of the proxy as JSON. The implementation simply
    * converts the state XML to JSON.
    */
-  static Json::Value SerializeAsJSON(vtkSMProxy* proxy, vtkSMPropertyIterator* iter = NULL);
+  static Json::Value SerializeAsJSON(vtkSMProxy* proxy, vtkSMPropertyIterator* iter = nullptr);
 
   /**
    * Restores a proxy state using the JSON equivalent. The implementation

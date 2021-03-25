@@ -55,7 +55,7 @@ protected:
   // \c server:- server on which the proxy is created.
   // \c parent:- QObject parent.
   pqRenderViewBase(const QString& type, const QString& group, const QString& name,
-    vtkSMViewProxy* renModule, pqServer* server, QObject* parent = NULL);
+    vtkSMViewProxy* renModule, pqServer* server, QObject* parent = nullptr);
 
 public:
   // Destructor.
@@ -66,14 +66,14 @@ public:
   * It is essential to call this resetCamera, to ensure that the reset camera
   * action gets pushed on the interaction undo stack.
   */
-  virtual void resetCamera() = 0;
+  virtual void resetCamera(bool closest = false) = 0;
 
   /**
   * Called to reset the view's display.  This method calls resetCamera().
   */
-  void resetDisplay() override;
+  void resetDisplay(bool closest = false) override;
 
-protected slots:
+protected Q_SLOTS:
   virtual void initializeAfterObjectsCreated();
 
   /**

@@ -18,6 +18,7 @@
 #include "vtkTransposeTable.h"
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 #include <sstream>
 #include <string>
@@ -516,7 +517,6 @@ int vtkPVExtractBagPlots::RequestData(
   vtkSmartPointer<vtkDataArray> medianArray;
   medianArray.TakeReference(vtkDataArray::CreateDataArray(maxHdrColumn->GetDataType()));
   medianArray->DeepCopy(maxHdrColumn);
-  outTable->RemoveColumnByName(medianArray->GetName());
   outTable->AddColumn(medianArray);
   std::stringstream medianColumnName;
   medianColumnName << medianArray->GetName() << "_median";

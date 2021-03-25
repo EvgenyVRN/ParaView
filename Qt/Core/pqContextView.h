@@ -86,9 +86,9 @@ public:
   /**
   * Resets the zoom level to 100%.
   */
-  void resetDisplay() override;
+  void resetDisplay(bool closest = false) override;
 
-protected slots:
+protected Q_SLOTS:
   //@{
   /**
    * Slots called when vtkCommand::StartInteractionEvent and
@@ -110,7 +110,7 @@ protected:
   * \c parent:- QObject parent.
   */
   pqContextView(const QString& type, const QString& group, const QString& name,
-    vtkSMViewProxy* view, pqServer* server, QObject* parent = NULL);
+    vtkSMViewProxy* view, pqServer* server, QObject* parent = nullptr);
 
   /**
   * Creates a new instance of the QWidget subclass to be used to show this

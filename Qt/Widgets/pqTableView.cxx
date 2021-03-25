@@ -56,9 +56,7 @@ pqTableView::pqTableView(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqTableView::~pqTableView()
-{
-}
+pqTableView::~pqTableView() = default;
 
 //-----------------------------------------------------------------------------
 bool pqTableView::eventFilter(QObject* object, QEvent* e)
@@ -179,9 +177,8 @@ QSize pqTableView::sizeHint() const
 
   int pixels = rows * pixelsPerRow;
 
-  int margin[4];
-  this->getContentsMargins(margin, margin + 1, margin + 2, margin + 3);
-  int viewHeight = pixels + margin[1] + margin[3];
+  QMargins margin = this->contentsMargins();
+  int viewHeight = pixels + margin.top() + margin.bottom();
   if (this->horizontalHeader()->isVisible())
   {
     viewHeight += this->horizontalHeader()->frameSize().height();

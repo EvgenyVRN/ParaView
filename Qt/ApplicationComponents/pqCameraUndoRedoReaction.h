@@ -48,9 +48,9 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqCameraUndoRedoReaction : public pqReactio
 
 public:
   /**
-  * Constructor parent cannot be NULL. When undo is true, acts as
+  * Constructor parent cannot be nullptr. When undo is true, acts as
   * undo-reaction, else acts as redo reaction.
-  * If \c view ==NULL then active view is used.
+  * If \c view ==nullptr then active view is used.
   */
   pqCameraUndoRedoReaction(QAction* parent, bool undo, pqView* view = 0);
 
@@ -64,7 +64,7 @@ public:
   */
   static void redo(pqView* view);
 
-protected slots:
+protected Q_SLOTS:
   void setEnabled(bool enable) { this->parentAction()->setEnabled(enable); }
   void setActiveView(pqView*);
 

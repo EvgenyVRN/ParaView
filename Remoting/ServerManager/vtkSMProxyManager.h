@@ -30,6 +30,8 @@
 #include "vtkSMObject.h"
 #include "vtkSmartPointer.h" // Needed for the singleton
 
+#include <string> // needed for std::string
+
 class vtkPVXMLElement;
 class vtkSMPluginManager;
 class vtkSMProxy;
@@ -99,7 +101,7 @@ public:
 
   //@{
   /**
-   * Set the active session. It's acceptable to set the active session as NULL
+   * Set the active session. It's acceptable to set the active session as nullptr
    * (or 0 in case of sessionId), however GetActiveSession() may automatically
    * pick an active session if none is provided.
    */
@@ -125,13 +127,18 @@ public:
    * GetActiveSessionProxyManager()).
    */
   vtkSMProxy* NewProxy(
-    const char* groupName, const char* proxyName, const char* subProxyName = NULL);
+    const char* groupName, const char* proxyName, const char* subProxyName = nullptr);
   void RegisterProxy(const char* groupname, const char* name, vtkSMProxy* proxy);
   vtkSMProxy* GetProxy(const char* groupname, const char* name);
   void UnRegisterProxy(const char* groupname, const char* name, vtkSMProxy*);
   const char* GetProxyName(const char* groupname, unsigned int idx);
   const char* GetProxyName(const char* groupname, vtkSMProxy* proxy);
   //@}
+
+  vtkSetMacro(BlockProxyDefinitionUpdates, bool);
+  vtkGetMacro(BlockProxyDefinitionUpdates, bool);
+  vtkBooleanMacro(BlockProxyDefinitionUpdates, bool);
+  void UpdateProxyDefinitions();
 
   //@{
   /**
@@ -206,6 +213,17 @@ public:
     vtkPVXMLElement* StateChangeElement;
   };
 
+  /**
+   * Given a group, returns a name not already used for proxies registered in
+   * the given group. The prefix is used to come up with a new name.
+   * if alwaysAppend is true, then a suffix will always be appended, if not,
+   * the prefix may be used directly if possible. If there are multiple
+   * vtkSMSessionProxyManager instances in the application, this method tries to
+   * find a unique name across all of them.
+   */
+  std::string GetUniqueProxyName(
+    const char* groupname, const char* prefix, bool alwaysAppend = true);
+
 protected:
   vtkSMProxyManager();
   ~vtkSMProxyManager() override;
@@ -224,6 +242,8 @@ protected:
   vtkSMPluginManager* PluginManager;
   vtkSMReaderFactory* ReaderFactory;
   vtkSMWriterFactory* WriterFactory;
+
+  bool BlockProxyDefinitionUpdates;
 
 private:
   class vtkPXMInternal;

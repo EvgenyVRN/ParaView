@@ -56,7 +56,7 @@ class PQPYTHON_EXPORT pqPythonManager : public QObject
   Q_OBJECT
 
 public:
-  pqPythonManager(QObject* parent = NULL);
+  pqPythonManager(QObject* parent = nullptr);
   ~pqPythonManager() override;
 
   /**
@@ -92,7 +92,7 @@ public:
    */
   void updateMacroList();
 
-public slots:
+public Q_SLOTS:
   /**
    * Executes the given script.  If the python interpreter hasn't been initialized
    * yet it will be initialized.
@@ -112,7 +112,7 @@ public slots:
   void editMacro(const QString& fileName);
 
 private:
-  class pqInternal;
+  struct pqInternal;
   pqInternal* Internal;
 };
 #endif

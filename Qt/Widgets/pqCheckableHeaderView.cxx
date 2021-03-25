@@ -44,10 +44,10 @@ class pqCheckableHeaderViewInternal
 public:
   pqCheckableHeaderViewInternal()
   {
-    this->Style = 0;
+    this->Style = nullptr;
     this->forceCheck = false;
   }
-  ~pqCheckableHeaderViewInternal() {}
+  ~pqCheckableHeaderViewInternal() = default;
 
   /// \brief
   ///   Returns the placeholder rect for a checkbox in the section header.
@@ -94,7 +94,7 @@ QRect pqCheckableHeaderViewInternal::checkBoxRect(
 {
   QStyleOptionButton checkBoxStyleOption;
   QRect cboxRect = this->Style->subElementRect(QStyle::SE_CheckBoxIndicator, &checkBoxStyleOption);
-  int buttonMargin = this->Style->pixelMetric(QStyle::PM_ButtonMargin, NULL, view);
+  int buttonMargin = this->Style->pixelMetric(QStyle::PM_ButtonMargin, nullptr, view);
 
   int ch = cboxRect.height();
   int cw = cboxRect.width();
@@ -287,7 +287,7 @@ void pqCheckableHeaderView::paintSection(
     if (checkstate != newCheckstate)
     {
       this->Internal->checkState[logicalIdx] = newCheckstate;
-      emit this->checkStateChanged(logicalIdx);
+      Q_EMIT this->checkStateChanged(logicalIdx);
     }
   }
   else
@@ -331,7 +331,7 @@ void pqCheckableHeaderView::mousePressEvent(QMouseEvent* evt)
             this->Internal->checkState[logicalIndexPressed] = QVariant(Qt::Checked);
           }
           this->Internal->forceCheck = true;
-          emit this->checkStateChanged(logicalIndexPressed);
+          Q_EMIT this->checkStateChanged(logicalIndexPressed);
           this->updateModelCheckState(logicalIndexPressed);
         }
         else

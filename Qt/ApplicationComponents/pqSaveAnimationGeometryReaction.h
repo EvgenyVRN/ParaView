@@ -45,7 +45,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqSaveAnimationGeometryReaction : public pq
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqSaveAnimationGeometryReaction(QAction* parent);
 
@@ -57,7 +57,7 @@ public:
   static void saveAnimationGeometry();
   static void saveAnimationGeometry(const QString& filename);
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

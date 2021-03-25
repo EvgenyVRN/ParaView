@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqOutputPort.h"
 #include "pqPipelineSource.h"
 #include "pqProgressManager.h"
-#include "pqQVTKWidgetBase.h"
+#include "pqQVTKWidget.h"
 #include "pqServer.h"
 #include "pqServerManagerModel.h"
 #include "pqTimeKeeper.h"
@@ -96,7 +96,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqView::pqView(const QString& type, const QString& group, const QString& name, vtkSMViewProxy* view,
-  pqServer* server, QObject* _parent /*=null*/)
+  pqServer* server, QObject* _parent /*=nullptr*/)
   : pqProxy(group, name, view, server, _parent)
 {
   this->ViewType = type;
@@ -140,7 +140,7 @@ pqView::~pqView()
   {
     if (disp)
     {
-      disp->setView(0);
+      disp->setView(nullptr);
     }
   }
 
@@ -171,7 +171,7 @@ void pqView::initialize()
   this->onRepresentationsChanged();
 
   // Create the widget.
-  if (this->widget() == NULL)
+  if (this->widget() == nullptr)
   {
     qWarning("This view doesn't have a QWidget. May not work as expected.");
   }
@@ -201,7 +201,7 @@ void pqView::cancelPendingRenders()
 //-----------------------------------------------------------------------------
 void pqView::emitSelectionSignals(bool frustum)
 {
-  emit selectionModeChanged(frustum);
+  Q_EMIT selectionModeChanged(frustum);
 }
 
 //-----------------------------------------------------------------------------
@@ -229,8 +229,8 @@ void pqView::forceRender()
 {
   // avoid calling render if the widget isn't valid, i.e. if the context isn't
   // ready yet. This is due to asynchronous initialization of the context by
-  // the pqQVTKWidgetBase class.
-  pqQVTKWidgetBase* qwdg = qobject_cast<pqQVTKWidgetBase*>(this->widget());
+  // the pqQVTKWidget class.
+  pqQVTKWidget* qwdg = qobject_cast<pqQVTKWidget*>(this->widget());
   if (qwdg != nullptr && !qwdg->isValid())
   {
     return;
@@ -299,7 +299,7 @@ pqRepresentation* pqView::getRepresentation(int index) const
     return this->Internal->Representations[index];
   }
 
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -348,8 +348,8 @@ void pqView::onRepresentationsChanged()
       this->Internal->Representations.append(QPointer<pqRepresentation>(repr));
       QObject::connect(
         repr, SIGNAL(visibilityChanged(bool)), this, SLOT(onRepresentationVisibilityChanged(bool)));
-      emit this->representationAdded(repr);
-      emit this->representationVisibilityChanged(repr, repr->isVisible());
+      Q_EMIT this->representationAdded(repr);
+      Q_EMIT this->representationVisibilityChanged(repr, repr->isVisible());
     }
   }
 
@@ -360,11 +360,11 @@ void pqView::onRepresentationsChanged()
     {
       pqRepresentation* repr = (*iter);
       // Remove the render module pointer from the repr.
-      repr->setView(0);
+      repr->setView(nullptr);
       iter = this->Internal->Representations.erase(iter);
-      QObject::disconnect(repr, 0, this, 0);
-      emit this->representationVisibilityChanged(repr, false);
-      emit this->representationRemoved(repr);
+      QObject::disconnect(repr, nullptr, this, nullptr);
+      Q_EMIT this->representationVisibilityChanged(repr, false);
+      Q_EMIT this->representationRemoved(repr);
     }
     else
     {
@@ -384,7 +384,7 @@ void pqView::representationCreated(pqRepresentation* repr)
     this->Internal->Representations.append(repr);
     QObject::connect(
       repr, SIGNAL(visibilityChanged(bool)), this, SLOT(onRepresentationVisibilityChanged(bool)));
-    emit this->representationAdded(repr);
+    Q_EMIT this->representationAdded(repr);
   }
 }
 
@@ -394,7 +394,7 @@ void pqView::onRepresentationVisibilityChanged(bool visible)
   pqRepresentation* disp = qobject_cast<pqRepresentation*>(this->sender());
   if (disp)
   {
-    emit this->representationVisibilityChanged(disp, visible);
+    Q_EMIT this->representationVisibilityChanged(disp, visible);
   }
 }
 
@@ -408,8 +408,9 @@ QSize pqView::getSize()
 //-----------------------------------------------------------------------------
 bool pqView::canDisplay(pqOutputPort* opPort) const
 {
-  pqPipelineSource* source = opPort ? opPort->getSource() : 0;
-  vtkSMSourceProxy* sourceProxy = source ? vtkSMSourceProxy::SafeDownCast(source->getProxy()) : 0;
+  pqPipelineSource* source = opPort ? opPort->getSource() : nullptr;
+  vtkSMSourceProxy* sourceProxy =
+    source ? vtkSMSourceProxy::SafeDownCast(source->getProxy()) : nullptr;
   if (!opPort || !sourceProxy || opPort->getServer()->getResource().scheme() == "catalyst")
   {
     return false;
@@ -422,12 +423,12 @@ bool pqView::canDisplay(pqOutputPort* opPort) const
 void pqView::onBeginRender()
 {
   BEGIN_UNDO_EXCLUDE();
-  emit this->beginRender();
+  Q_EMIT this->beginRender();
 }
 
 //-----------------------------------------------------------------------------
 void pqView::onEndRender()
 {
-  emit this->endRender();
+  Q_EMIT this->endRender();
   END_UNDO_EXCLUDE();
 }

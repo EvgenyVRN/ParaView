@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
+#include "pqExtractor.h"
 #include "pqLiveInsituManager.h"
 #include "pqLiveInsituVisualizationManager.h"
 #include "pqOutputPort.h"
@@ -87,9 +88,7 @@ pqPipelineBrowserWidget::pqPipelineBrowserWidget(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqPipelineBrowserWidget::~pqPipelineBrowserWidget()
-{
-}
+pqPipelineBrowserWidget::~pqPipelineBrowserWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqPipelineBrowserWidget::configureModel()
@@ -118,6 +117,16 @@ void pqPipelineBrowserWidget::configureModel()
   QObject::connect(smModel, SIGNAL(connectionRemoved(pqPipelineSource*, pqPipelineSource*, int)),
     this->PipelineModel, SLOT(removeConnection(pqPipelineSource*, pqPipelineSource*, int)));
 
+  // monitor extractor related signals.
+  QObject::connect(smModel, SIGNAL(extractorAdded(pqExtractor*)), this->PipelineModel,
+    SLOT(addExtractor(pqExtractor*)));
+  QObject::connect(smModel, SIGNAL(extractorRemoved(pqExtractor*)), this->PipelineModel,
+    SLOT(removeExtractor(pqExtractor*)));
+  QObject::connect(smModel, SIGNAL(connectionAdded(pqServerManagerModelItem*, pqExtractor*)),
+    this->PipelineModel, SLOT(addConnection(pqServerManagerModelItem*, pqExtractor*)));
+  QObject::connect(smModel, SIGNAL(connectionRemoved(pqServerManagerModelItem*, pqExtractor*)),
+    this->PipelineModel, SLOT(removeConnection(pqServerManagerModelItem*, pqExtractor*)));
+
   // Use the tree view's font as the base for the model's modified
   // font.
   QFont modifiedFont = this->font();
@@ -144,7 +153,7 @@ bool pqPipelineBrowserWidget::eventFilter(QObject* object, QEvent* eventArg)
     QKeyEvent* keyEvent = static_cast<QKeyEvent*>(eventArg);
     if (keyEvent->key() == Qt::Key_Delete || keyEvent->key() == Qt::Key_Backspace)
     {
-      emit this->deleteKey();
+      Q_EMIT this->deleteKey();
     }
   }
 
@@ -185,8 +194,8 @@ void pqPipelineBrowserWidget::handleIndexClicked(const QModelIndex& index_)
     if (port)
     {
       pqView* activeView = pqActiveObjects::instance().activeView();
-      vtkSMViewProxy* viewProxy = activeView ? activeView->getViewProxy() : NULL;
-      bool cur_state = (viewProxy == NULL
+      vtkSMViewProxy* viewProxy = activeView ? activeView->getViewProxy() : nullptr;
+      bool cur_state = (viewProxy == nullptr
           ? false
           : (controller->GetVisibility(port->getSourceProxy(), port->getPortNumber(), viewProxy)));
 
@@ -224,6 +233,12 @@ void pqPipelineBrowserWidget::handleIndexClicked(const QModelIndex& index_)
             itemIndex, QItemSelectionModel::ClearAndSelect);
         }
       }
+    }
+    else if (auto extractor = qobject_cast<pqExtractor*>(smModelItem))
+    {
+      // toggle enabled state for the extractor.
+      auto activeView = pqActiveObjects::instance().activeView();
+      extractor->toggleEnabledState(activeView);
     }
   }
 }
@@ -300,7 +315,7 @@ void pqPipelineBrowserWidget::setVisibility(bool visible, pqOutputPort* port)
     auto& activeObjects = pqActiveObjects::instance();
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
     pqView* activeView = activeObjects.activeView();
-    vtkSMViewProxy* viewProxy = activeView ? activeView->getViewProxy() : NULL;
+    vtkSMViewProxy* viewProxy = activeView ? activeView->getViewProxy() : nullptr;
     int scalarBarMode = vtkPVGeneralSettings::GetInstance()->GetScalarBarMode();
 
     if (pqLiveInsituManager::isInsituServer(port->getServer()))
@@ -411,7 +426,7 @@ void pqPipelineBrowserWidget::disableSessionFilter()
 }
 
 //----------------------------------------------------------------------------
-const QModelIndex pqPipelineBrowserWidget::pipelineModelIndex(const QModelIndex& index) const
+QModelIndex pqPipelineBrowserWidget::pipelineModelIndex(const QModelIndex& index) const
 {
   if (qobject_cast<const pqPipelineModel*>(index.model()))
   {

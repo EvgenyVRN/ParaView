@@ -106,7 +106,7 @@ public:
     : Initialized(false)
   {
   }
-  ~vtkInternals() {}
+  ~vtkInternals() = default;
 
   bool Prepare(const std::string& script)
   {
@@ -125,17 +125,17 @@ public:
       return false;
     }
 
+    vtkPythonScopeGilEnsurer gilEnsurer;
     if (PyObject_HasAttrString(this->ScriptModule, "setup_data") != 1)
     {
       // not having `setup_data` defined in the script is acceptable.
       return true;
     }
 
-    vtkPythonScopeGilEnsurer gilEnsurer;
     vtkSmartPyObject methodName(PyString_FromString("setup_data"));
     vtkSmartPyObject view(vtkPythonUtil::GetObjectFromPointer(self));
     vtkSmartPyObject retVal(PyObject_CallMethodObjArgs(
-      this->ScriptModule, methodName.GetPointer(), view.GetPointer(), NULL));
+      this->ScriptModule, methodName.GetPointer(), view.GetPointer(), nullptr));
     return retVal;
   }
 
@@ -146,6 +146,7 @@ public:
       return false;
     }
 
+    vtkPythonScopeGilEnsurer gilEnsurer;
     if (PyObject_HasAttrString(this->ScriptModule, "render") != 1)
     {
       // not having `render` defined in the script is acceptable.
@@ -155,14 +156,13 @@ public:
     vtkSmartPyObject renderFunction(PyObject_GetAttrString(this->ScriptModule, "render"));
     assert(renderFunction);
 
-    vtkPythonScopeGilEnsurer gilEnsurer;
     vtkSmartPyObject methodName(PyString_FromString("call_render"));
     vtkSmartPyObject view(vtkPythonUtil::GetObjectFromPointer(self));
     vtkSmartPyObject widthObj(PyInt_FromLong(width));
     vtkSmartPyObject heightObj(PyInt_FromLong(height));
     vtkSmartPyObject retVal(PyObject_CallMethodObjArgs(this->PythonViewModule,
       methodName.GetPointer(), renderFunction.GetPointer(), view.GetPointer(),
-      widthObj.GetPointer(), heightObj.GetPointer(), NULL));
+      widthObj.GetPointer(), heightObj.GetPointer(), nullptr));
     if (PyErr_Occurred())
     {
       PyErr_Print();
@@ -185,9 +185,9 @@ vtkPythonView::vtkPythonView()
   this->Renderer->SetBackgroundTexture(this->RenderTexture);
   this->GetRenderWindow()->AddRenderer(this->Renderer);
   this->Magnification[0] = this->Magnification[1] = 1;
-  this->ImageData = NULL;
+  this->ImageData = nullptr;
 
-  this->Script = NULL;
+  this->Script = nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -195,8 +195,8 @@ vtkPythonView::~vtkPythonView()
 {
   // Clean up memory
   delete this->Internals;
-  this->SetScript(NULL);
-  this->SetImageData(NULL);
+  this->SetScript(nullptr);
+  this->SetImageData(nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -238,7 +238,7 @@ void vtkPythonView::SetRenderer(vtkRenderer* renderer)
   rens->InitTraversal(cookie);
   while (vtkRenderer* ren = rens->GetNextRenderer(cookie))
   {
-    ren->SetRenderWindow(NULL);
+    ren->SetRenderWindow(nullptr);
     window->RemoveRenderer(ren);
   }
 
@@ -269,7 +269,7 @@ vtkPythonRepresentation* vtkPythonView::GetVisibleRepresentation(int visibleObje
 {
   if (visibleObjectIndex < 0 || visibleObjectIndex >= this->GetNumberOfVisibleDataObjects())
   {
-    return NULL;
+    return nullptr;
   }
 
   int numberOfVisibleRepresentations = 0;
@@ -288,7 +288,7 @@ vtkPythonRepresentation* vtkPythonView::GetVisibleRepresentation(int visibleObje
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -298,7 +298,7 @@ vtkDataObject* vtkPythonView::GetVisibleDataObjectForSetup(int visibleObjectInde
   if (!representation)
   {
     vtkErrorMacro(<< "No visible representation at index " << visibleObjectIndex);
-    return NULL;
+    return nullptr;
   }
 
   return representation->GetLocalInput();
@@ -311,7 +311,7 @@ vtkDataObject* vtkPythonView::GetVisibleDataObjectForRendering(int visibleObject
   if (!representation)
   {
     vtkErrorMacro(<< "No visible representation at index " << visibleObjectIndex);
-    return NULL;
+    return nullptr;
   }
 
   return representation->GetClientDataObject();
@@ -340,7 +340,7 @@ const char* vtkPythonView::GetAttributeArrayName(
   if (!representation)
   {
     vtkErrorMacro(<< "No visible representation at index " << visibleObjectIndex);
-    return NULL;
+    return nullptr;
   }
 
   return representation->GetAttributeArrayName(attributeType, arrayIndex);
@@ -410,7 +410,7 @@ void vtkPythonView::DisableAllAttributeArrays()
 void vtkPythonView::StillRender()
 {
   // Render only on the client
-  this->SetImageData(NULL);
+  this->SetImageData(nullptr);
 
   // Now draw the image
   int width = this->Size[0] * this->Magnification[0];

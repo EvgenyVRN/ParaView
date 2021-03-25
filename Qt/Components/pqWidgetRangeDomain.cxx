@@ -113,13 +113,6 @@ pqWidgetRangeDomain::pqWidgetRangeDomain(
 
   if (this->Internal->Domain)
   {
-    if (this->Internal->Domain->GetClassName() == QString("vtkSMDoubleRangeDomain") ||
-      this->Internal->Domain->GetClassName() == QString("vtkSMIntRangeDomain"))
-    {
-      // some widgets use domain as hint, this tells the widget to be strict
-      this->getWidget()->setProperty("strictRange", true);
-    }
-
     this->Internal->Connection->Connect(
       this->Internal->Domain, vtkCommand::DomainModifiedEvent, this, SLOT(domainChanged()));
     this->internalDomainChanged();
@@ -163,7 +156,7 @@ void pqWidgetRangeDomain::setRange(QVariant min, QVariant max)
 QWidget* pqWidgetRangeDomain::getWidget() const
 {
   QWidget* range = qobject_cast<QWidget*>(this->parent());
-  assert(range != NULL);
+  assert(range != nullptr);
   return range;
 }
 

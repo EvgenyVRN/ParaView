@@ -56,12 +56,14 @@ public:
     RESET_NEGATIVE_Z,
     ZOOM_TO_DATA,
     ROTATE_CAMERA_CW,
-    ROTATE_CAMERA_CCW
+    ROTATE_CAMERA_CCW,
+    ZOOM_CLOSEST_TO_DATA,
+    RESET_CAMERA_CLOSEST
   };
 
   pqCameraReaction(QAction* parent, Mode mode);
 
-  static void resetCamera();
+  static void resetCamera(bool closest = false);
   static void resetPositiveX();
   static void resetPositiveY();
   static void resetPositiveZ();
@@ -70,10 +72,10 @@ public:
   static void resetNegativeZ();
   static void resetDirection(
     double look_x, double look_y, double look_z, double up_x, double up_y, double up_z);
-  static void zoomToData();
+  static void zoomToData(bool closest = false);
   static void rotateCamera(double angle);
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

@@ -47,8 +47,14 @@ message("CTEST_FULL_OUTPUT") # Don't truncate test output.
 if (WIN32 AND IS_ABSOLUTE "${PARAVIEW_INSTALL_DIR}")
   string(REGEX REPLACE "^.:" "" PARAVIEW_INSTALL_DIR "${PARAVIEW_INSTALL_DIR}")
 endif ()
+set (paraview_prefix
+  $ENV{DESTDIR}${PARAVIEW_INSTALL_DIR})
 set (ParaView_DIR
-  $ENV{DESTDIR}${PARAVIEW_INSTALL_DIR}/${PARAVIEW_CMAKE_DESTINATION})
+  ${paraview_prefix}/${PARAVIEW_CMAKE_DESTINATION})
+if (WIN32)
+  set(ENV{PATH}
+    "$ENV{PATH};${paraview_prefix}/${PARAVIEW_BINDIR}")
+endif ()
 message(STATUS "ParaView_DIR: ${ParaView_DIR}")
 
 # Build target "INSTALL" for paraview
@@ -93,6 +99,7 @@ execute_process (
   ${generator_args}
   -DParaView_DIR:PATH=${ParaView_DIR}
   -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+  -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
   ${PARAVIEW_SOURCE_DIR}/Examples
   WORKING_DIRECTORY ${INSTALL_TEST_BUILD_DIR}
   RESULT_VARIABLE crv)

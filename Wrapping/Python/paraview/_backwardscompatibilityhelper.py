@@ -331,6 +331,34 @@ def setattr(proxy, pname, value):
             raise NotSupportedException(
                 'The `OSPRayMaterial` control has been renamed in ParaView 5.7 to `Material`.')
 
+    if pname == "CompositeDataSetIndex" and proxy.SMProxy.GetXMLName() == "SpreadSheetRepresentation":
+        if paraview.compatibility.GetVersion() <= 5.9:
+            selectors = ["//*[@cid='%s']" % cid for cid in value]
+            return proxy.GetProperty("BlockVisibilities").SetData(selectors)
+        else:
+            raise NotSupportedException(
+                "SpreadSheetRepresentation no longer uses 'CompositeDataSetIndex' but instead "
+                "supports 'Selectors' to select blocks.")
+
+
+    if pname == "BlockIndices" and proxy.SMProxy.GetXMLName() == "ExtractBlock":
+        if paraview.compatibility.GetVersion() <= 5.9:
+            selectors = ["//*[@cid='%s']" % cid for cid in value]
+            return proxy.GetProperty("Selectors").SetData(selectors)
+        else:
+            raise NotSupportedException(
+                "ExtractBlock no longer uses 'BlockIndices' but instead "
+                "supports 'Selectors' to select blocks.")
+
+    if pname in ["MaintainStructure", "PruneOutput"] and proxy.SMProxy.GetXMLName() == "ExtractBlock":
+        if paraview.compatibility.GetVersion() <= 5.9:
+            return
+        else:
+            raise NotSupportedException(
+                "ExtractBlock no longer supported '%s'. Simply remove it." % pname)
+
+
+
     if not hasattr(proxy, pname):
         raise AttributeError()
     proxy.__dict__[pname] = value
@@ -360,6 +388,26 @@ def setattr_fix_value(proxy, pname, value, setter_func):
         else:
             raise NotSupportedException("'FieldAssociation' is using an obsolete "\
                     "value '%s', use `Point Data` or `Cell Data` instead." % value)
+
+    # In 5.9, we changed "High Resolution Line Source" to "Line" and "Point Source" to
+    # "Point Cloud"
+    seed_sources_from = ["High Resolution Line Source", "Point Source"]
+    seed_sources_to = ["Line", "Point Cloud"]
+    seed_sources_proxyname = ["HighResLineSource", "PointSource"]
+    if value in seed_sources_from and proxy.GetProperty(pname).SMProperty.IsA("vtkSMInputProperty"):
+        domain = proxy.GetProperty(pname).SMProperty.FindDomain("vtkSMProxyListDomain")
+        for i in range(len(seed_sources_to)):
+            if value == seed_sources_from[i]:
+                domain_proxy = domain.FindProxy("extended_sources", seed_sources_proxyname[i])
+                if domain_proxy:
+                    if paraview.compatibility.GetVersion() < 5.9:
+                        value = seed_sources_to[i]
+                        setter_func(proxy, value)
+                        raise Continue()
+                    else:
+                        raise NotSupportedException("%s is an obsolete value. Use %s instead." % (seed_sources_from[i], seed_sources_to[i]))
+
+    # Always keep this line last
     raise ValueError("'%s' is not a valid value for %s!" % (value, pname))
 
 _fgetattr = getattr
@@ -640,23 +688,68 @@ def getattr(proxy, pname):
         else:
             raise NotSupportedException(
                     'The `Scale` property has been renamed in ParaView 5.7 to `Length`.')
+
+    # In 5.9, CGNSSeriesReader no longer supports the "Blocks" property.
+    if pname == "Blocks" and proxy.SMProxy.GetXMLName() == "CGNSSeriesReader":
+        if paraview.compatibility.GetVersion() < 5.9:
+            return []
+        else:
+            raise NotSupportedException(
+                    "The 'Blocks' property has been removed in ParaView 5.9. Use "
+                    "'Bases' to choose bases and 'Families' to choose families "
+                    "to load instead. 'LoadMesh' and 'LoadPatches' may also be "
+                    "used to enable loading of meshes and BC-patches.")
+
+    # 5.10 onwards SpreadSheetRepresentation cannot provide a value for
+    # CompositeDataSetIndex
+    if pname == "CompositeDataSetIndex" and proxy.SMProxy.GetXMLName() == "SpreadSheetRepresentation":
+        if paraview.compatibility.GetVersion() <= 5.9:
+            return []
+        else:
+            raise NotSupportedException(
+                    "Since ParaView 5.10, SpreadSheetRepresentation no longer "
+                    "supports 'CompositeDataSetIndex' and it has been replaced by "
+                    "'BlockVisibilities'.")
+
+    if proxy.SMProxy.GetXMLName() == "ExtractBlock":
+        if pname == "BlockIndices":
+            if paraview.compatibility.GetVersion() <= 5.9:
+                return []
+            else:
+                raise NotSupportedException(
+                        "Since ParaView 5.10, 'BlockIndices' on 'ExtractBlock' "
+                        "has been replaced by 'Selectors'.")
+        elif pname == "PruneOutput":
+            if paraview.compatibility.GetVersion() <= 5.9:
+                return 1
+            else:
+                raise NotSupportedException(
+                        "Since ParaView 5.10, 'PruneOutput' on 'ExtractBlock' "
+                        "is no longer supported. Simply remove it.")
+        elif pname == "MaintainStructure":
+            if paraview.compatibility.GetVersion() <= 5.9:
+                return 1
+            else:
+                raise NotSupportedException(
+                        "Since ParaView 5.10, 'MaintainStructure' on 'ExtractBlock' "
+                        "is no longer supported. Simply remove it.")
     raise Continue()
 
-def GetProxy(module, key):
+def GetProxy(module, key, **kwargs):
     version = paraview.compatibility.GetVersion()
     if version < 5.2:
         if key == "ResampleWithDataset":
-            return module.__dict__["LegacyResampleWithDataset"]()
+            return module.__dict__["LegacyResampleWithDataset"](**kwargs)
     if version < 5.3:
         if key == "PLYReader":
             # note the case. The old reader didn't support `FileNames` property,
             # only `FileName`.
-            return module.__dict__["plyreader"]()
+            return module.__dict__["plyreader"](**kwargs)
     if version < 5.5:
         if key == "Clip":
             # in PV 5.5 we changed the default for Clip's InsideOut property to 1 instead of 0
             # also InsideOut was changed to Invert in 5.5
-            clip = module.__dict__[key]()
+            clip = module.__dict__[key](**kwargs)
             clip.Invert = 0
             return clip
     if version < 5.6:
@@ -665,7 +758,7 @@ def GetProxy(module, key):
             # different set of properties. The previous implementation was renamed to
             # GlyphLegacy.
             print("Creating GlyphLegacy")
-            glyph = module.__dict__["GlyphLegacy"]()
+            glyph = module.__dict__["GlyphLegacy"](**kwargs)
             print(glyph)
             return glyph
     if version < 5.6:
@@ -674,14 +767,44 @@ def GetProxy(module, key):
             # different set of properties. The previous implementation was renamed to
             # GlyphLegacy.
             print("Creating GlyphLegacy")
-            glyph = module.__dict__["GlyphLegacy"]()
+            glyph = module.__dict__["GlyphLegacy"](**kwargs)
             print(glyph)
             return glyph
     if version < 5.7:
         if key == "ExodusRestartReader" or key == "ExodusIIReader":
             # in 5.7, we changed the names for blocks, this preserves old
             # behavior
-            reader = module.__dict__[key]()
+            reader = module.__dict__[key](**kwargs)
             reader.UseLegacyBlockNamesWithElementTypes = 1
             return reader
-    return module.__dict__[key]()
+    return module.__dict__[key](**kwargs)
+
+def lookupTableUpdate(lutName):
+    """
+    Provide backwards compatibility for color lookup table name changes.
+    """
+    # For backwards compatibility
+    reverseLut = False
+    version = paraview.compatibility.GetVersion()
+    if (version <= 5.8):
+        # In 5.9, some redundant color maps were removed and some had name changes.
+        # Replace these with a color map that remains. Also handle some color map
+        # name changes.
+        reverse = ["Red to Blue Rainbow"]
+        if lutName in reverse:
+            reverseLut = True
+        nameChanges = {
+            "jet": "Jet",
+            "coolwarm": "Cool to Warm",
+            "Asymmtrical Earth Tones (6_21b)": "Asymmetrical Earth Tones (6_21b)",
+            "CIELab_blue2red": "CIELab Blue to Red",
+            "gray_Matlab": "Grayscale",
+            "rainbow": "Blue to Red Rainbow",
+            "Red to Blue Rainbow": "Blue to Red Rainbow"
+        }
+        try:
+            lutName = nameChanges[lutName]
+        except:
+            pass
+
+    return (lutName, reverseLut)

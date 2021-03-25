@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //-----------------------------------------------------------------------------
 pqAnimationCue::pqAnimationCue(const QString& group, const QString& name, vtkSMProxy* proxy,
-  pqServer* server, QObject* _parent /*=NULL*/)
+  pqServer* server, QObject* _parent /*=nullptr*/)
   : pqProxy(group, name, proxy, server, _parent)
 {
   this->KeyFrameType = "CompositeKeyFrame";
@@ -72,12 +72,14 @@ pqAnimationCue::pqAnimationCue(const QString& group, const QString& name, vtkSMP
     proxy->GetProperty("Enabled"), vtkCommand::ModifiedEvent, this, SLOT(onEnabledModified()));
 
   connector->Connect(proxy, vtkCommand::ModifiedEvent, this, SIGNAL(keyframesModified()));
+
+  // keep the GUI updated when the client side vtkPVAnimationCue is modified
+  connector->Connect(vtkObject::SafeDownCast(proxy->GetClientSideObject()),
+    vtkCommand::ModifiedEvent, this, SIGNAL(keyframesModified()));
 }
 
 //-----------------------------------------------------------------------------
-pqAnimationCue::~pqAnimationCue()
-{
-}
+pqAnimationCue::~pqAnimationCue() = default;
 
 //-----------------------------------------------------------------------------
 void pqAnimationCue::addKeyFrameInternal(vtkSMProxy* keyframe)
@@ -115,7 +117,7 @@ vtkSMProperty* pqAnimationCue::getAnimatedProperty() const
     }
   }
 
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -140,7 +142,7 @@ bool pqAnimationCue::isEnabled() const
 //-----------------------------------------------------------------------------
 void pqAnimationCue::onEnabledModified()
 {
-  emit this->enabled(this->isEnabled());
+  Q_EMIT this->enabled(this->isEnabled());
 }
 
 //-----------------------------------------------------------------------------
@@ -160,7 +162,7 @@ vtkSMProxy* pqAnimationCue::getKeyFrame(int index) const
   {
     return pp->GetProxy(index);
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -198,7 +200,7 @@ void pqAnimationCue::deleteKeyFrame(int index)
   vtkSMProxyProperty* pp =
     vtkSMProxyProperty::SafeDownCast(this->getProxy()->GetProperty("KeyFrames"));
   pp->SetProxies(static_cast<unsigned int>(proxy_vector.size()),
-    (proxy_vector.size() > 0 ? &proxy_vector[0] : NULL));
+    (proxy_vector.size() > 0 ? &proxy_vector[0] : nullptr));
   this->getProxy()->UpdateVTKObjects();
   this->removeKeyFrameInternal(keyframe);
 }
@@ -215,7 +217,7 @@ vtkSMProxy* pqAnimationCue::insertKeyFrame(int index)
   if (!kf)
   {
     qDebug() << "Could not create new proxy " << this->KeyFrameType;
-    return 0;
+    return nullptr;
   }
 
   keyframes.insert(index, kf);
@@ -299,7 +301,7 @@ vtkSMProxy* pqAnimationCue::insertKeyFrame(int index)
   vtkSMProxyProperty* pp =
     vtkSMProxyProperty::SafeDownCast(this->getProxy()->GetProperty("KeyFrames"));
   pp->SetProxies(static_cast<unsigned int>(proxy_vector.size()),
-    (proxy_vector.size() > 0 ? &proxy_vector[0] : NULL));
+    (proxy_vector.size() > 0 ? &proxy_vector[0] : nullptr));
   this->getProxy()->UpdateVTKObjects();
 
   kf->Delete();

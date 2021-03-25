@@ -23,6 +23,7 @@ class vtkCPDataDescription;
 class vtkCPPipeline;
 class vtkMPICommunicatorOpaqueComm;
 class vtkMultiProcessController;
+class vtkSMSourceProxy;
 
 /// @defgroup CoProcessing ParaView CoProcessing
 /// The CoProcessing library is designed to be called from parallel
@@ -52,8 +53,8 @@ class vtkMultiProcessController;
 /// Processing step:\n
 /// In the second step the Co-Processor implementation is called with the
 /// actual data that it has been asked to provide, if any. If no data was
-/// selected during the Configuration Step than the priovided vtkDataObject
-/// may be NULL.
+/// selected during the Configuration Step than the provided vtkDataObject
+/// may be nullptr.
 class VTKPVCATALYST_EXPORT vtkCPProcessor : public vtkObject
 {
 public:
@@ -74,6 +75,15 @@ public:
   /// Remove pipelines.
   virtual void RemovePipeline(vtkCPPipeline* pipeline);
   virtual void RemoveAllPipelines();
+
+  // Controls cache size, in terms of timesteps, available for temporal
+  // data caching. Default is zero, which disables any caching.
+  virtual void SetTemporalCacheSize(int);
+  vtkGetMacro(TemporalCacheSize, int);
+
+  // Accessor to specific temporal cache. Names match CPInputData names
+  virtual void MakeTemporalCache(const char* name);
+  virtual vtkSMSourceProxy* GetTemporalCache(const char* name);
 
   /// Initialize the co-processor. Returns 1 if successful and 0
   /// otherwise. If Catalyst is built with MPI then Initialize()
@@ -122,7 +132,7 @@ public:
 
 protected:
   vtkCPProcessor();
-  virtual ~vtkCPProcessor();
+  ~vtkCPProcessor() override;
 
   /// Create a new instance of the InitializationHelper.
   virtual vtkObject* NewInitializationHelper();
@@ -132,6 +142,11 @@ protected:
   /// set this through the *Initialize()* methods.
   vtkSetStringMacro(WorkingDirectory);
 
+  /**
+   * Finalizes and remove all pipelines.
+   */
+  void FinalizeAndRemovePipelines();
+
 private:
   vtkCPProcessor(const vtkCPProcessor&) = delete;
   void operator=(const vtkCPProcessor&) = delete;
@@ -140,6 +155,7 @@ private:
   vtkObject* InitializationHelper;
   static vtkMultiProcessController* Controller;
   char* WorkingDirectory;
+  int TemporalCacheSize = 0;
 };
 
 #endif

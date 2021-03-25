@@ -46,7 +46,7 @@ class PQCOMPONENTS_EXPORT pqDataInformationWidget : public QWidget
 {
   Q_OBJECT
 public:
-  pqDataInformationWidget(QWidget* parent = NULL);
+  pqDataInformationWidget(QWidget* parent = nullptr);
   ~pqDataInformationWidget() override;
 
 protected:
@@ -55,7 +55,7 @@ protected:
   */
   bool eventFilter(QObject* object, QEvent* event) override;
 
-private slots:
+private Q_SLOTS:
   void showHeaderContextMenu(const QPoint&);
   void showBodyContextMenu(const QPoint&);
 

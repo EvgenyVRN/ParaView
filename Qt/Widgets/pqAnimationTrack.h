@@ -51,7 +51,7 @@ class PQWIDGETS_EXPORT pqAnimationTrack : public QObject, public QGraphicsItem
   */
   Q_PROPERTY(QVariant property READ property WRITE setProperty)
 public:
-  pqAnimationTrack(QObject* p = 0);
+  pqAnimationTrack(QObject* p = nullptr);
   ~pqAnimationTrack() override;
 
   /**
@@ -79,7 +79,7 @@ public:
 
   QRectF boundingRect() const override;
 
-public slots:
+public Q_SLOTS:
   void setProperty(const QVariant& p);
 
   void setBoundingRect(const QRectF& r);
@@ -87,20 +87,18 @@ public slots:
   void setEnabled(bool enable)
   {
     this->QGraphicsItem::setEnabled(enable);
-    emit this->enabledChanged();
+    Q_EMIT this->enabledChanged();
   }
 
-signals:
+Q_SIGNALS:
   void propertyChanged();
   void enabledChanged();
 
 protected:
-  void adjustKeyFrameRects();
-
   void paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 private:
-  bool Deletable;
+  bool Deletable = true;
   QList<pqAnimationKeyFrame*> Frames;
   QVariant Property;
 

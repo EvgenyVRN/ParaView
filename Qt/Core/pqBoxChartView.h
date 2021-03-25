@@ -49,25 +49,25 @@ public:
   static QString chartViewType() { return "BoxChartView"; }
 
   pqBoxChartView(const QString& group, const QString& name, vtkSMContextViewProxy* viewModule,
-    pqServer* server, QObject* parent = NULL);
+    pqServer* server, QObject* parent = nullptr);
 
   ~pqBoxChartView() override;
 
-signals:
+Q_SIGNALS:
   /**
   * Fired when the currently shown representation changes. \c repr may be
-  * NULL.
+  * nullptr.
   */
   void showing(pqDataRepresentation* repr);
 
-public slots:
+public Q_SLOTS:
   /**
   * Called when a new repr is added.
   */
   void onAddRepresentation(pqRepresentation*);
   void onRemoveRepresentation(pqRepresentation*);
 
-protected slots:
+protected Q_SLOTS:
   /**
   * Called to ensure that at most 1 repr is visible at a time.
   */

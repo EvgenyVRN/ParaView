@@ -58,6 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqLineEdit.h"
 #include "pqPopOutWidget.h"
 #include "pqProxySILModel.h"
+#include "pqQtDeprecated.h"
 #include "pqSILModel.h"
 #include "pqSILWidget.h"
 #include "pqSMAdaptor.h"
@@ -126,12 +127,12 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
   }
 
   // find the domain(s)
-  vtkSMEnumerationDomain* enumerationDomain = 0;
-  vtkSMFileListDomain* fileListDomain = 0;
-  vtkSMArrayListDomain* arrayListDomain = 0;
-  vtkSMStringListDomain* stringListDomain = 0;
-  vtkSMSILDomain* silDomain = 0;
-  vtkSMArraySelectionDomain* arraySelectionDomain = 0;
+  vtkSMEnumerationDomain* enumerationDomain = nullptr;
+  vtkSMFileListDomain* fileListDomain = nullptr;
+  vtkSMArrayListDomain* arrayListDomain = nullptr;
+  vtkSMStringListDomain* stringListDomain = nullptr;
+  vtkSMSILDomain* silDomain = nullptr;
+  vtkSMArraySelectionDomain* arraySelectionDomain = nullptr;
   vtkSMSubsetInclusionLatticeDomain* silDomain2 = nullptr;
 
   vtkSMDomainIterator* domainIter = svp->NewDomainIterator();
@@ -161,6 +162,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
     vtkVLogF(PARAVIEW_LOG_APPLICATION_VERBOSITY(), "use `pqFileChooserWidget`.");
     pqFileChooserWidget* chooser = new pqFileChooserWidget(this);
     chooser->setObjectName("FileChooser");
+    chooser->setTitle(QString("Select %1").arg(smProperty->GetXMLLabel()));
 
     // decide whether to allow multiple files
     if (smProperty->GetRepeatable())
@@ -213,7 +215,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
         else
         {
           QStringList lextensions =
-            QString(extensions).split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QString(extensions).split(QRegExp("\\s+"), PV_QT_SKIP_EMPTY_PARTS);
           supportedExtensions.push_back(
             QString("%1 (*.%2)").arg(file_description).arg(lextensions.join(" *.")));
         }
@@ -226,8 +228,15 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
       chooser->setExtension(supportedExtensions.join(";;"));
     }
 
-    pqServerManagerModel* smm = pqApplicationCore::instance()->getServerManagerModel();
-    chooser->setServer(smm->findServer(smProxy->GetSession()));
+    if (hints == nullptr || hints->FindNestedElementByName("BrowseLocalFileSystem") == nullptr)
+    {
+      pqServerManagerModel* smm = pqApplicationCore::instance()->getServerManagerModel();
+      chooser->setServer(smm->findServer(smProxy->GetSession()));
+    }
+    else
+    {
+      chooser->setServer(nullptr);
+    }
 
     vbox->addWidget(chooser);
   }
@@ -360,14 +369,8 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
     textEdit->setFont(textFont);
     textEdit->setObjectName(smProxy->GetPropertyName(smProperty));
     textEdit->setAcceptRichText(false);
-// tab is 2 spaces
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    // tab is 2 spaces
     textEdit->setTabStopDistance(this->fontMetrics().horizontalAdvance("  "));
-#elif (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
-    textEdit->setTabStopDistance(this->fontMetrics().width("  "));
-#else
-    textEdit->setTabStopWidth(this->fontMetrics().width("  "));
-#endif
     textEdit->setLineWrapMode(QTextEdit::NoWrap);
 
     this->setChangeAvailableAsChangeFinished(false);
@@ -381,7 +384,8 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
     {
 #if VTK_MODULE_ENABLE_ParaView_pqPython
       vtkVLogF(PARAVIEW_LOG_APPLICATION_VERBOSITY(), "supports Python syntax highlighter.");
-      new pqPythonSyntaxHighlighter(textEdit, textEdit);
+      auto highlighter = new pqPythonSyntaxHighlighter(textEdit, *textEdit);
+      highlighter->ConnectHighligter();
 #else
       vtkVLogF(
         PARAVIEW_LOG_APPLICATION_VERBOSITY(), "Python not enabled, no syntax highlighter support.");
@@ -454,9 +458,7 @@ pqStringVectorPropertyWidget::pqStringVectorPropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqStringVectorPropertyWidget::~pqStringVectorPropertyWidget()
-{
-}
+pqStringVectorPropertyWidget::~pqStringVectorPropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 pqPropertyWidget* pqStringVectorPropertyWidget::createWidget(

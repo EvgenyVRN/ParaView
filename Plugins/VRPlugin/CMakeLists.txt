@@ -8,8 +8,7 @@ mark_as_advanced(PARAVIEW_PLUGIN_VRPlugin_USE_VRPN)
 option(PARAVIEW_PLUGIN_VRPlugin_USE_VRUI "Build VRPlugin with VRUI support" OFF)
 mark_as_advanced(PARAVIEW_PLUGIN_VRPlugin_USE_VRUI)
 
-# TODO: There's a QTSOCK preprocessor definition floating around. What should
-# be done with that?
+find_package(Qt5 REQUIRED COMPONENTS Network)
 
 # TODO: Should something be done with the files in samples/?
 
@@ -35,6 +34,10 @@ set(sources
   vtkVRControlSliceOrientationStyle.h
   vtkVRControlSlicePositionStyle.cxx
   vtkVRControlSlicePositionStyle.h
+  vtkVRGrabPointStyle.cxx
+  vtkVRGrabPointStyle.h
+  vtkVRGrabTransformStyle.cxx
+  vtkVRGrabTransformStyle.h
   vtkVRGrabWorldStyle.cxx
   vtkVRGrabWorldStyle.h
   vtkVRInteractorStyle.cxx
@@ -45,6 +48,8 @@ set(sources
   vtkVRMovePointStyle.h
   vtkVRQueue.cxx
   vtkVRQueue.h
+  vtkVRSkeletonStyle.cxx
+  vtkVRSkeletonStyle.h
   vtkVRSpaceNavigatorGrabWorldStyle.cxx
   vtkVRSpaceNavigatorGrabWorldStyle.h
   vtkVRStylusStyle.cxx
@@ -68,9 +73,10 @@ if (PARAVIEW_PLUGIN_VRPlugin_USE_VRPN)
 endif ()
 
 if (PARAVIEW_PLUGIN_VRPlugin_USE_VRUI)
-  set(sources
+  list(APPEND sources
     pqVRUIConnection.cxx
     pqVRUIConnection.h
+    vtkVRUIPipe.cxx
     vtkVRUIPipe.h
     vtkVRUIServerState.cxx
     vtkVRUIServerState.h
@@ -124,7 +130,8 @@ target_link_libraries(VRPlugin
     VTK::CommonCore
     VTK::CommonMath
     VTK::CommonTransforms
-    VTK::RenderingCore)
+    VTK::RenderingCore
+    Qt5::Network)
 
 if (PARAVIEW_PLUGIN_VRPlugin_USE_VRPN)
   target_link_libraries(VRPlugin

@@ -71,8 +71,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <string>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+#define QT_ENDL endl
+#else
+#define QT_ENDL Qt::endl
+#endif
+
 #define pqErrorMacro(estr)                                                                         \
-  qDebug() << "Error in:" << endl << __FILE__ << ", line " << __LINE__ << endl << "" estr << endl;
+  qDebug() << "Error in:" << QT_ENDL << __FILE__ << ", line " << __LINE__ << QT_ENDL << "" estr    \
+           << QT_ENDL;
 
 namespace
 {
@@ -210,7 +217,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-pqCameraDialog::pqCameraDialog(QWidget* _p /*=null*/, Qt::WindowFlags f /*=0*/)
+pqCameraDialog::pqCameraDialog(QWidget* _p /*=nullptr*/, Qt::WindowFlags f /*=0*/)
   : pqDialog(_p, f)
 {
   this->Internal = new pqCameraDialogInternal;
@@ -358,7 +365,7 @@ void pqCameraDialog::setupGUI()
     {
       // check if it is a camera link
       vtkSMCameraLink* cameraLink = vtkSMCameraLink::SafeDownCast(cameraLinks->GetItemAsObject(i));
-      if (cameraLink != NULL)
+      if (cameraLink != nullptr)
       {
         const char* linkName = pxm->GetRegisteredLinkName(cameraLink);
         if (model->hasInteractiveViewLink(linkName))
@@ -619,7 +626,8 @@ bool pqCameraDialog::configureCustomViewpoints(
   QString currentConfig(os.str().c_str());
 
   // user modifies the configuration
-  pqCustomViewpointButtonDialog dialog(parentWidget, 0, toolTips, configs, currentConfig);
+  pqCustomViewpointButtonDialog dialog(
+    parentWidget, Qt::WindowFlags{}, toolTips, configs, currentConfig);
   if (dialog.exec() == QDialog::Accepted)
   {
     // save the new configuration into the app wide settings.
@@ -838,7 +846,7 @@ void pqCameraDialog::saveCameraConfiguration()
                       .arg(writer->GetFileDescription())
                       .arg(writer->GetFileExtension());
 
-  pqFileDialog dialog(0, this, "Save Camera Configuration", "", filters);
+  pqFileDialog dialog(nullptr, this, "Save Camera Configuration", "", filters);
   dialog.setFileMode(pqFileDialog::AnyFile);
 
   if (dialog.exec() == QDialog::Accepted)
@@ -865,7 +873,7 @@ void pqCameraDialog::loadCameraConfiguration()
                       .arg(reader->GetFileDescription())
                       .arg(reader->GetFileExtension());
 
-  pqFileDialog dialog(0, this, "Load Camera Configuration", "", filters);
+  pqFileDialog dialog(nullptr, this, "Load Camera Configuration", "", filters);
   dialog.setFileMode(pqFileDialog::ExistingFile);
 
   if (dialog.exec() == QDialog::Accepted)

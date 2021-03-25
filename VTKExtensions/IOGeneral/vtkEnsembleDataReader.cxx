@@ -7,7 +7,6 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkSmartPointer.h"
-#include "vtkStdString.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
@@ -26,7 +25,7 @@ public:
   typedef std::vector<vtkSmartPointer<vtkAlgorithm> > VectorOfReaders;
   VectorOfReaders Readers;
 
-  std::vector<vtkStdString> FilePaths;
+  std::vector<std::string> FilePaths;
   vtkSmartPointer<vtkTable> MetaData;
 
   vtkTimeStamp ReadMetaDataMTime;
@@ -36,7 +35,7 @@ public:
 vtkStandardNewMacro(vtkEnsembleDataReader);
 //-----------------------------------------------------------------------------
 vtkEnsembleDataReader::vtkEnsembleDataReader()
-  : FileName(0)
+  : FileName(nullptr)
   , CurrentMember(0)
   , Internal(new vtkEnsembleDataReader::vtkInternal())
 {
@@ -49,25 +48,25 @@ vtkEnsembleDataReader::vtkEnsembleDataReader()
 vtkEnsembleDataReader::~vtkEnsembleDataReader()
 {
   delete this->Internal;
-  this->Internal = NULL;
+  this->Internal = nullptr;
 }
 
 //-----------------------------------------------------------------------------
 unsigned int vtkEnsembleDataReader::GetNumberOfMembers() const
 {
-  return this->Internal->MetaData != NULL
+  return this->Internal->MetaData != nullptr
     ? static_cast<unsigned int>(this->Internal->FilePaths.size())
     : 0;
 }
 
 //-----------------------------------------------------------------------------
-vtkStdString vtkEnsembleDataReader::GetFilePath(unsigned int member) const
+std::string vtkEnsembleDataReader::GetFilePath(unsigned int member) const
 {
   if (member < static_cast<unsigned int>(this->Internal->FilePaths.size()))
   {
     return this->Internal->FilePaths[member];
   }
-  return vtkStdString();
+  return std::string();
 }
 
 //-----------------------------------------------------------------------------
@@ -157,12 +156,14 @@ int vtkEnsembleDataReader::ProcessRequest(
 // string trimmin'
 static void ltrim(std::string& s)
 {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(isspace))));
+  s.erase(s.begin(),
+    std::find_if(s.begin(), s.end(), [](std::string::value_type c) { return !isspace(c); }));
 }
 static void rtrim(std::string& s)
 {
-  s.erase(
-    std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(isspace))).base(), s.end());
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](std::string::value_type c) { return !isspace(c); })
+            .base(),
+    s.end());
 }
 static void trim(std::string& s)
 {
@@ -175,7 +176,7 @@ vtkAlgorithm* vtkEnsembleDataReader::GetCurrentReader()
 {
   if (this->CurrentMember >= static_cast<unsigned int>(this->Internal->Readers.size()))
   {
-    return NULL;
+    return nullptr;
   }
   return this->Internal->Readers[this->CurrentMember];
 }
@@ -188,7 +189,7 @@ bool vtkEnsembleDataReader::UpdateMetaData()
     return false;
   }
 
-  if (this->Internal->MetaData != NULL && this->Internal->PreviousFileName == this->FileName)
+  if (this->Internal->MetaData != nullptr && this->Internal->PreviousFileName == this->FileName)
   {
     return true;
   }
@@ -201,7 +202,7 @@ bool vtkEnsembleDataReader::UpdateMetaData()
   }
 
   this->Internal->FilePaths.clear();
-  this->Internal->MetaData = NULL;
+  this->Internal->MetaData = nullptr;
   this->Internal->PreviousFileName = this->FileName;
   this->Internal->ReadMetaDataMTime.Modified();
   this->CurrentMemberRange[0] = this->CurrentMemberRange[1] = 0;
@@ -241,7 +242,7 @@ bool vtkEnsembleDataReader::UpdateMetaData()
   std::string fdir = vtksys::SystemTools::GetFilenamePath(this->FileName);
   for (vtkIdType row = 0; row < rowCount; ++row)
   {
-    vtkStdString filePath = fileColumn->GetValue(row);
+    std::string filePath = fileColumn->GetValue(row);
     trim(filePath); // fileName may have leading & trailing whitespace
 
     std::vector<std::string> components;

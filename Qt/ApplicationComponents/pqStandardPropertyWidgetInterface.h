@@ -53,7 +53,7 @@ public:
   /**
    * Given a proxy and its property, create a widget for the same, if possible.
    * For unsupported/unknown proxies/properties, implementations should simply
-   * return NULL without raising any errors (or messages).
+   * return nullptr without raising any errors (or messages).
    * Supported types are:
    * \li \c calculator : pqCalculatorWidget
    * \li \c camera_manipulator : pqCameraManipulatorWidget
@@ -76,6 +76,8 @@ public:
    * \li \c viewtype_selector: pqViewTypePropertyWidget
    * \li \c view_resolution: pqViewResolutionPropertyWidget
    * \li \c pause_livesource: pqPauseLiveSourcePropertyWidget
+   * \li \c data_assembly_editor: pqDataAssemblyPropertyWidget
+   * \li \c selection_query : pqSelectionQueryPropertyWidget
    */
   pqPropertyWidget* createWidgetForProperty(
     vtkSMProxy* proxy, vtkSMProperty* property, QWidget* parentWidget) override;
@@ -83,7 +85,7 @@ public:
   /**
    * Given a proxy and its property group, create a widget for the same, of possible.
    * For unsupported/unknown proxies/property-groups, implementations should simply
-   * return NULL without raising any errors (or messages).
+   * return nullptr without raising any errors (or messages).
    * Supported types are:
    * \li \c AnnotationsEditor : pqColorAnnotationsPropertyWidget
    * \li \c ArrayStatus : pqArrayStatusPropertyWidget
@@ -103,6 +105,8 @@ public:
    * \li \c YoungsMaterial: pqYoungsMaterialPropertyWidget
    * \li \c OMETransferFunctions : pqOMETransferFunctionsPropertyWidget
    * \li \c PropertyCollection : pqPropertyCollectionWidget
+   * \li \c DataAssemblyEditor: pqDataAssemblyPropertyWidget
+   * \li \c CheckableProperty : pqCheckableProperty
    */
   pqPropertyWidget* createWidgetForPropertyGroup(
     vtkSMProxy* proxy, vtkSMPropertyGroup* group, QWidget* parentWidget) override;
@@ -110,7 +114,7 @@ public:
   /**
    * Given the type of the decorator and the pqPropertyWidget that needs to be
    * decorated, create the pqPropertyWidgetDecorator instance, if possible.
-   * For unsupported/unknown, implementations should simply return NULL without
+   * For unsupported/unknown, implementations should simply return nullptr without
    * raising any errors (or messages).
    * Supported types are:
    * \li \c CTHArraySelectionDecorator : pqCTHArraySelectionDecorator
@@ -121,6 +125,7 @@ public:
    * \li \c OSPRayHidingDecorator: pqOSPRayHidingDecorator
    * \li \c MultiComponentsDecorator: pqMultiComponentsDecorator
    * \li \c CompositeDecorator: pqCompositePropertyWidgetDecorator
+   * \li \c SessionTypeDecorator: pqSessionTypeDecorator
    */
   pqPropertyWidgetDecorator* createWidgetDecorator(
     const QString& type, vtkPVXMLElement* config, pqPropertyWidget* widget) override;

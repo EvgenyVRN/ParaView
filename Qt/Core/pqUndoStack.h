@@ -61,7 +61,7 @@ public:
   * If no \c builder is provided a default vtkSMUndoStackBuilder object
   * will be created.
   */
-  pqUndoStack(vtkSMUndoStackBuilder* builder = 0, QObject* parent = NULL);
+  pqUndoStack(vtkSMUndoStackBuilder* builder = 0, QObject* parent = nullptr);
   ~pqUndoStack() override;
 
   /**
@@ -77,12 +77,12 @@ public:
   /**
   * returns the undo label.
   */
-  const QString undoLabel();
+  QString undoLabel();
 
   /**
   * returns the redo label.
   */
-  const QString redoLabel();
+  QString redoLabel();
 
   /**
   * Get the status of the IgnoreAllChanges flag on the
@@ -119,7 +119,7 @@ public:
   */
   void updateAllModifiedProxies();
 
-public slots:
+public Q_SLOTS:
   void beginUndoSet(QString label);
   void endUndoSet();
 
@@ -154,7 +154,7 @@ public slots:
   */
   void addToActiveUndoSet(vtkUndoElement* element);
 
-signals:
+Q_SIGNALS:
   /**
   * Fired to notify interested parites that the stack has changed.
   * Has information to know the status of the top of the stack.
@@ -171,7 +171,7 @@ signals:
   // Fired after redo.
   void redone();
 
-private slots:
+private Q_SLOTS:
   void onStackChanged();
 
 private:

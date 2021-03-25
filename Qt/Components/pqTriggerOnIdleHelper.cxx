@@ -43,9 +43,7 @@ pqTriggerOnIdleHelper::pqTriggerOnIdleHelper(QObject* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqTriggerOnIdleHelper::~pqTriggerOnIdleHelper()
-{
-}
+pqTriggerOnIdleHelper::~pqTriggerOnIdleHelper() = default;
 
 //-----------------------------------------------------------------------------
 pqServer* pqTriggerOnIdleHelper::server() const
@@ -74,6 +72,6 @@ void pqTriggerOnIdleHelper::triggerInternal()
   }
   else
   {
-    emit this->triggered();
+    Q_EMIT this->triggered();
   }
 }

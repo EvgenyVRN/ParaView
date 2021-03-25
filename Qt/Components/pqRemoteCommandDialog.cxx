@@ -18,8 +18,15 @@
 
 #include <string>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+#define QT_ENDL endl
+#else
+#define QT_ENDL Qt::endl
+#endif
+
 #define pqErrorMacro(estr)                                                                         \
-  qDebug() << "Error in:" << endl << __FILE__ << ", line " << __LINE__ << endl << "" estr << endl;
+  qDebug() << "Error in:" << QT_ENDL << __FILE__ << ", line " << __LINE__ << QT_ENDL << "" estr    \
+           << QT_ENDL;
 
 // User interface
 //=============================================================================
@@ -203,7 +210,7 @@ void addWinWinCommands(QStringList& cmds)
 pqRemoteCommandDialog::pqRemoteCommandDialog(
   QWidget* Parent, Qt::WindowFlags flags, int clientSystemType, int serverSystemType)
   : QDialog(Parent, flags)
-  , Ui(0)
+  , Ui(nullptr)
 {
   this->Ui = new pqRemoteCommandDialogUI;
   this->Ui->setupUi(this);
@@ -400,7 +407,7 @@ void pqRemoteCommandDialog::AddCommandTemplate()
     toks += tokens[i];
   }
 
-  pqRemoteCommandTemplateDialog dialog(this, 0);
+  pqRemoteCommandTemplateDialog dialog(this, Qt::WindowFlags{});
   dialog.SetCommandName(QString("new command"));
   dialog.SetCommandTemplate(toks);
 
@@ -432,7 +439,7 @@ void pqRemoteCommandDialog::EditCommandTemplate()
   QString commandName = this->Ui->commandTemplates->itemText(itemId);
   QString commandTemplate = this->Ui->commandTemplates->itemData(itemId).toString();
 
-  pqRemoteCommandTemplateDialog dialog(this, 0);
+  pqRemoteCommandTemplateDialog dialog(this, Qt::WindowFlags{});
   dialog.SetCommandName(commandName);
   dialog.SetCommandTemplate(commandTemplate);
 
@@ -532,7 +539,7 @@ string pqRemoteCommandDialog::LocateFile()
 {
   QString filters = QString("All Files (*)");
 
-  pqFileDialog dialog(0, this, "Find file", "", filters);
+  pqFileDialog dialog(nullptr, this, "Find file", "", filters);
   dialog.setFileMode(pqFileDialog::ExistingFile);
 
   if (dialog.exec() == QDialog::Accepted)

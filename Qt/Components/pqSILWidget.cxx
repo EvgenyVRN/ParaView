@@ -48,8 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSelectionManager.h"
 #include "pqTreeView.h"
 #include "pqTreeViewSelectionHelper.h"
-#include "vtkPVCompositeDataInformation.h"
-#include "vtkPVCompositeDataInformationIterator.h"
 #include "vtkPVDataInformation.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
@@ -87,9 +85,7 @@ pqSILWidget::pqSILWidget(const QString& activeCategory, QWidget* parentObject)
   // setup model
   this->ActiveModel = new pqProxySILModel(activeCategory, this);
   this->SortModel = new QSortFilterProxyModel(this);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
   this->SortModel->setRecursiveFilteringEnabled(true);
-#endif
   this->SortModel->setSourceModel(this->ActiveModel);
 }
 
@@ -104,7 +100,7 @@ void pqSILWidget::setModel(pqSILModel* curmodel)
 {
   if (this->Model)
   {
-    QObject::disconnect(this->Model, 0, this, 0);
+    QObject::disconnect(this->Model, nullptr, this, nullptr);
   }
   this->Model = curmodel;
   this->ActiveModel->setSourceModel(this->Model);
@@ -162,21 +158,12 @@ void pqSILWidget::onModelReset()
     proxyModel->setSourceModel(this->Model);
 
     QSortFilterProxyModel* sortModel = new QSortFilterProxyModel(tree);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     sortModel->setRecursiveFilteringEnabled(true);
-#endif
     sortModel->setSourceModel(proxyModel);
     tree->setModel(sortModel);
     tree->expandAll();
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
     new pqTreeViewSelectionHelper(tree);
-#else
-    // disable filtering for older Qt version where recursive filtering
-    // on a tree is not supported.
-    auto helper = new pqTreeViewSelectionHelper(tree);
-    helper->setFilterable(false);
-#endif
 
     this->TabWidget->addTab(tree, category);
   }
@@ -242,25 +229,10 @@ void pqSILWidget::toggleSelectedBlocks(bool checked)
 
   // block selection only has the block ids, now we need to convert the block
   // ids to names for the blocks (and sets) using the data information.
-  vtkPVCompositeDataInformationIterator* iter = vtkPVCompositeDataInformationIterator::New();
-  iter->SetDataInformation(dataInfo);
-  unsigned int cur_index = 0;
-  for (iter->InitTraversal();
-       !iter->IsDoneWithTraversal() && cur_index < static_cast<unsigned int>(block_ids.size());
-       iter->GoToNextItem())
+  for (const auto& bid : block_ids)
   {
-    if (static_cast<vtkIdType>(iter->GetCurrentFlatIndex()) < block_ids[cur_index])
-    {
-      continue;
-    }
-    if (static_cast<vtkIdType>(iter->GetCurrentFlatIndex()) > block_ids[cur_index])
-    {
-      qDebug() << "Failed to locate block's name for block id: " << block_ids[cur_index];
-      cur_index++;
-      continue;
-    }
-
-    vtkIdType vertexid = this->Model->findVertex(iter->GetCurrentName());
+    const auto name = dataInfo->GetBlockName(static_cast<vtkTypeUInt64>(bid));
+    auto vertexid = this->Model->findVertex(name.c_str());
     if (vertexid != -1)
     {
       this->Model->setData(this->Model->makeIndex(vertexid), checked ? Qt::Checked : Qt::Unchecked,
@@ -272,8 +244,5 @@ void pqSILWidget::toggleSelectedBlocks(bool checked)
       // one of the sets, since currently, sets are not part of the SIL. Until
       // the users ask for it, we will leave enabling/disabling the sets out.
     }
-    cur_index++;
   }
-
-  iter->Delete();
 }

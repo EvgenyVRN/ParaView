@@ -91,7 +91,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqSpreadSheetView::pqSpreadSheetView(const QString& group, const QString& name,
-  vtkSMViewProxy* viewModule, pqServer* server, QObject* _parent /*=NULL*/)
+  vtkSMViewProxy* viewModule, pqServer* server, QObject* _parent /*=nullptr*/)
   : pqView(spreadsheetViewType(), group, name, viewModule, server, _parent)
 {
   this->Internal = new pqInternal(new pqSpreadSheetViewModel(viewModule, this));
@@ -99,7 +99,6 @@ pqSpreadSheetView::pqSpreadSheetView(const QString& group, const QString& name,
     SLOT(onAddRepresentation(pqRepresentation*)));
   QObject::connect(this, SIGNAL(representationVisibilityChanged(pqRepresentation*, bool)), this,
     SLOT(updateRepresentationVisibility(pqRepresentation*, bool)));
-  QObject::connect(this, SIGNAL(beginRender()), this, SLOT(onBeginRender()));
   QObject::connect(this, SIGNAL(endRender()), this, SLOT(onEndRender()));
 
   QObject::connect(&this->Internal->SelectionModel, SIGNAL(selection(vtkSMSourceProxy*)), this,
@@ -159,8 +158,8 @@ void pqSpreadSheetView::updateRepresentationVisibility(pqRepresentation* repr, b
 
   if (!visible && repr && this->Internal->Model->activeRepresentation() == repr)
   {
-    this->Internal->Model->setActiveRepresentation(NULL);
-    emit this->showing(0);
+    this->Internal->Model->setActiveRepresentation(nullptr);
+    Q_EMIT this->showing(nullptr);
   }
 
   if (!visible || !repr)
@@ -170,18 +169,7 @@ void pqSpreadSheetView::updateRepresentationVisibility(pqRepresentation* repr, b
 
   pqDataRepresentation* dataRepr = qobject_cast<pqDataRepresentation*>(repr);
   this->Internal->Model->setActiveRepresentation(dataRepr);
-  emit this->showing(dataRepr);
-}
-
-//-----------------------------------------------------------------------------
-void pqSpreadSheetView::onBeginRender()
-{
-  // If in "selection-only" mode, and showing composite dataset, we want to make
-  // sure that we are shown a block with non-empty cells/points (if possible).
-  if (vtkSMPropertyHelper(this->getProxy(), "SelectionOnly").GetAsInt() != 0)
-  {
-    this->Internal->Model->resetCompositeDataSetIndex();
-  }
+  Q_EMIT this->showing(dataRepr);
 }
 
 //-----------------------------------------------------------------------------
@@ -191,7 +179,7 @@ void pqSpreadSheetView::onEndRender()
   // this->Internal->Model.forceUpdate();
   // this->Internal->Model->update();
   this->Internal->Table->viewport()->update();
-  emit this->viewportUpdated();
+  Q_EMIT this->viewportUpdated();
 }
 
 //-----------------------------------------------------------------------------
@@ -210,11 +198,11 @@ void pqSpreadSheetView::onCreateSelection(vtkSMSourceProxy* selSource)
     {
       input->SetSelectionInput(opport->getPortNumber(), selSource, 0);
     }
-    emit this->selected(opport);
+    Q_EMIT this->selected(opport);
   }
   else
   {
-    emit this->selected(0);
+    Q_EMIT this->selected(nullptr);
   }
 }
 

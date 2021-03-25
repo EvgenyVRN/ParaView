@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqInterfaceTracker.h"
 #include "pqObjectBuilder.h"
 #include "pqPropertyLinks.h"
+#include "pqQVTKWidget.h"
 #include "pqServerManagerModel.h"
 #include "pqUndoStack.h"
 #include "pqView.h"
@@ -48,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkCommand.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
+#include "vtkLogger.h"
 #include "vtkNew.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMProperty.h"
@@ -103,6 +105,8 @@ public:
 
   pqPropertyLinks Links;
 
+  double CustomDevicePixelRatio = 0.0;
+
   pqInternals(pqMultiViewWidget* self)
     : Popout(false)
     , SavedButtons(pqViewFrame::NoButton)
@@ -132,6 +136,8 @@ public:
     ui.setupUi(this->PopoutPlaceholder.data());
     QObject::connect(
       ui.restoreButton, &QPushButton::clicked, [self](bool) { self->togglePopout(); });
+
+    this->CustomDevicePixelRatio = 0.0;
   }
 
   ~pqInternals()
@@ -195,9 +201,11 @@ public:
 
   void preview(const QSize& size)
   {
+    vtkLogScopeF(TRACE, "preview (%d, %d)", size.width(), size.height());
     this->PreviewSize = size;
     if (size.isEmpty())
     {
+      this->setCustomDevicePixelRatio(0.0); // set to 0 to not use custom value.
       this->Container->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
       this->Container->layout()->setSpacing(PARAVIEW_DEFAULT_LAYOUT_SPACING);
 
@@ -216,10 +224,29 @@ public:
       vtkVector2i tsize(size.width(), size.height());
       const QRect crect = this->Container->parentWidget()->contentsRect();
       vtkVector2i csize(crect.width(), crect.height());
-      vtkSMSaveScreenshotProxy::ComputeMagnification(tsize, csize);
+      const int magnification = vtkSMSaveScreenshotProxy::ComputeMagnification(tsize, csize);
+      this->setCustomDevicePixelRatio(magnification);
       this->Container->setMaximumSize(csize[0], csize[1]);
+      vtkLogF(
+        TRACE, "cur=(%d, %d), new=(%d, %d)", crect.width(), crect.height(), csize[0], csize[1]);
     }
     this->updateDecorations();
+  }
+
+  const QSize& previewSize() const { return this->PreviewSize; }
+
+  void setCustomDevicePixelRatio(double sf)
+  {
+    if (this->CustomDevicePixelRatio != sf)
+    {
+      this->CustomDevicePixelRatio = sf;
+      for (auto renderWidget : this->Container->findChildren<pqQVTKWidget*>())
+      {
+        renderWidget->setCustomDevicePixelRatio(sf);
+        // need to disable font-scaling if custom ratio is being used.
+        renderWidget->setEnableHiDPI(sf == 0.0 ? true : false);
+      }
+    }
   }
 
   void setDecorationsVisibility(bool val)
@@ -278,18 +305,18 @@ pqView* getPQView(vtkSMProxy* view)
     pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
     return smmodel->findItem<pqView*>(view);
   }
-  return NULL;
+  return nullptr;
 }
 
 void ConnectFrameToView(pqViewFrame* frame, pqView* pqview)
 {
   assert(frame);
-  // if pqview == NULL, then the frame is either being assigned to a empty
+  // if pqview == nullptr, then the frame is either being assigned to a empty
   // view, or pqview for a view-proxy just isn't present yet.
-  // it's possible that pqview is NULL, if the view proxy hasn't been registered
+  // it's possible that pqview is nullptr, if the view proxy hasn't been registered
   // yet. This happens often when initialization state is being loaded in
   // collaborative sessions.
-  if (pqview != NULL)
+  if (pqview != nullptr)
   {
     QWidget* viewWidget = pqview->widget();
     frame->setCentralWidget(viewWidget, pqview);
@@ -317,7 +344,7 @@ pqMultiViewWidget::pqMultiViewWidget(QWidget* parentObject, Qt::WindowFlags f)
 pqMultiViewWidget::~pqMultiViewWidget()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -368,12 +395,19 @@ void pqMultiViewWidget::setLayoutManager(vtkSMViewLayoutProxy* vlayout)
         vlayout->AddObserver(vtkCommand::ConfigureEvent, this, &pqMultiViewWidget::reload));
       internals.ObserverIds.push_back(vlayout->AddObserver(
         vtkCommand::PropertyModifiedEvent, this, &pqMultiViewWidget::layoutPropertyModified));
+
+      // explicitly call `layoutPropertyModified` for all properties we care
+      // about to ensure our state is initialized to the current values from the
+      // layout proxy.
       this->layoutPropertyModified(
         vlayout, vtkCommand::PropertyModifiedEvent, const_cast<char*>("SeparatorWidth"));
       this->layoutPropertyModified(
         vlayout, vtkCommand::PropertyModifiedEvent, const_cast<char*>("SeparatorColor"));
+      this->layoutPropertyModified(
+        vlayout, vtkCommand::PropertyModifiedEvent, const_cast<char*>("PreviewMode"));
     }
   }
+
   // we delay the setting of the LayoutManager to avoid the duplicate `reload`
   // call when `addPropertyLink` is called if the window decorations
   // visibility changed.
@@ -449,6 +483,18 @@ bool pqMultiViewWidget::eventFilter(QObject* caller, QEvent* evt)
 }
 
 //-----------------------------------------------------------------------------
+void pqMultiViewWidget::resizeEvent(QResizeEvent* evt)
+{
+  this->Superclass::resizeEvent(evt);
+  auto& internals = (*this->Internals);
+  const auto& psize = internals.previewSize();
+  if (!psize.isEmpty())
+  {
+    internals.preview(psize);
+  }
+}
+
+//-----------------------------------------------------------------------------
 void pqMultiViewWidget::proxyRemoved(pqProxy* proxy)
 {
   vtkSMViewProxy* view = vtkSMViewProxy::SafeDownCast(proxy->getProxy());
@@ -491,7 +537,7 @@ void pqMultiViewWidget::markActive(pqView* view)
   }
   else
   {
-    this->markActive(static_cast<pqViewFrame*>(NULL));
+    this->markActive(static_cast<pqViewFrame*>(nullptr));
   }
 }
 
@@ -508,7 +554,7 @@ void pqMultiViewWidget::markActive(pqViewFrame* frame)
     frame->setBorderVisibility(true);
     // indicate to the world that a frame on this widget has been activated.
     // pqTabbedMultiViewWidget listens to this signal to raise that tab.
-    emit this->frameActivated();
+    Q_EMIT this->frameActivated();
     // NOTE: this signal will result in call to makeFrameActive().
   }
 }
@@ -518,14 +564,14 @@ void pqMultiViewWidget::makeActive(pqViewFrame* frame)
 {
   if (this->Internals->ActiveFrame != frame)
   {
-    pqView* view = NULL;
+    pqView* view = nullptr;
     if (frame)
     {
       int index = frame->property("FRAME_INDEX").toInt();
       view = getPQView(this->layoutManager()->GetView(index));
     }
     pqActiveObjects::instance().setActiveView(view);
-    // this needs to called only when view == null since in that case when
+    // this needs to called only when view == nullptr since in that case when
     // markActive(pqView*) slot is called, we have no idea what frame is really
     // to be made active.
     this->markActive(frame);
@@ -549,7 +595,7 @@ pqViewFrame* pqMultiViewWidget::newFrame(vtkSMProxy* view)
 
   pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
   pqView* pqview = smmodel->findItem<pqView*>(view);
-  // it's possible that pqview is NULL, if the view proxy hasn't been registered
+  // it's possible that pqview is nullptr, if the view proxy hasn't been registered
   // yet. This happens often when initialization state is being loaded in
   // collaborative sessions.
   ConnectFrameToView(frame, pqview);
@@ -579,7 +625,7 @@ void pqMultiViewWidget::reload()
 
   internals.Frames.clear();
 
-  // for all non-null views known to vlayout, let's make sure we have created pqViewFrame
+  // for all non-nullptr views known to vlayout, let's make sure we have created pqViewFrame
   // for each of them. No need to delete any obsolete view frames just yet, they'll get cleaned
   // up following `pqHierarchicalGridLayout::rearrange()`
   internals.createViewFrames(vlayout->GetViews(), this);
@@ -699,7 +745,7 @@ void pqMultiViewWidget::standardButtonPressed(int button)
 {
   pqViewFrame* frame = qobject_cast<pqViewFrame*>(this->sender());
   QVariant index = frame ? frame->property("FRAME_INDEX") : QVariant();
-  if (!index.isValid() || this->layoutManager() == NULL)
+  if (!index.isValid() || this->layoutManager() == nullptr)
   {
     return;
   }
@@ -791,7 +837,7 @@ void pqMultiViewWidget::setDecorationsVisibility(bool val)
 {
   auto& internals = (*this->Internals);
   internals.setDecorationsVisibility(val);
-  emit this->decorationsVisibilityChanged(val);
+  Q_EMIT this->decorationsVisibilityChanged(val);
 }
 
 //-----------------------------------------------------------------------------
@@ -823,7 +869,7 @@ void pqMultiViewWidget::swapPositions(const QString& uid_str)
     return;
   }
 
-  pqViewFrame* swapWith = NULL;
+  pqViewFrame* swapWith = nullptr;
   for (pqViewFrame* frame : this->Internals->Frames)
   {
     if (frame && frame->uniqueID() == other)
@@ -843,7 +889,7 @@ void pqMultiViewWidget::swapPositions(const QString& uid_str)
   vtkSMViewProxy* view1 = vlayout->GetView(id1);
   vtkSMViewProxy* view2 = vlayout->GetView(id2);
 
-  if (view1 == NULL && view2 == NULL)
+  if (view1 == nullptr && view2 == nullptr)
   {
     return;
   }

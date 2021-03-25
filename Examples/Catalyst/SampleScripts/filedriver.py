@@ -16,7 +16,7 @@ eg, in serial :
 <path>/pvbatch filedriver.py "temporalFile.ex2" gridwriter.py
 
 eg, in parallel
-mpirun -np 5 <path>/pvbatch filedriver.py -sym "input_*.pvtu" makeanimage.py makeaslice.py
+mpirun -np 5 <path>/pvbatch -sym filedriver.py "input_*.pvtu" makeanimage.py makeaslice.py
 
 This script currently only handles a single channel. It will try to find
 an appropriate reader for the list of filenames and loop through the timesteps.
@@ -69,11 +69,14 @@ catalyst = vtkPVCatalyst.vtkCPProcessor()
 #catalyst.Initialize()
 
 for script in sys.argv[2:]:
-    pipeline = vtkPVPythonCatalyst.vtkCPPythonScriptPipeline()
+    import os.path
     if rank == 0:
         print("Adding script ", script)
-    pipeline.Initialize(script)
-    catalyst.AddPipeline(pipeline)
+    pipeline = vtkPVPythonCatalyst.vtkCPPythonPipeline.NewAndInitializePipeline(script)
+    if pipeline:
+        catalyst.AddPipeline(pipeline)
+    elif rank == 0:
+        print("failed to add pipeline for script:", script)
 
 # we get the channel name here from the reader's dataset. if there
 # isn't a channel name there we just assume that the channel name
@@ -125,3 +128,4 @@ for time in timesteps:
             inputdescription.SetWholeExtent(wholeextent)
 
         catalyst.CoProcess(datadescription)
+catalyst.Finalize()

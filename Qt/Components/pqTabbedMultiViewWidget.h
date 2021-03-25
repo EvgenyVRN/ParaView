@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    $RCSfile$
+   Module:  pqTabbedMultiViewWidget.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -96,17 +96,45 @@ public:
    */
   pqMultiViewWidget* findTab(vtkSMViewLayoutProxy*) const;
 
-signals:
+  //@{
+  /**
+   * APIs for filtering of tab widgets. This matches the API exposed by
+   * pqPipelineBrowserWidget.
+   */
+  void enableAnnotationFilter(const QString& annotationKey);
+  void disableAnnotationFilter();
+  void setAnnotationFilterMatching(bool matching);
+  //@}
+
+  /**
+   * While generally not necessary to call this, if the annotations for the
+   * layout proxies are changed after they are created, applications can use
+   * this method to refresh the tabs that are visible.
+   */
+  void updateVisibleTabs();
+
+  /**
+   * This is primarily for testing purposes. Returns list of names for visible
+   * tabs.
+   */
+  QList<QString> visibleTabLabels() const;
+
+Q_SIGNALS:
   /**
   * fired when lockViewSize() is called.
   */
   void viewSizeLocked(bool);
 
-public slots:
+public Q_SLOTS:
   virtual int createTab();
   virtual int createTab(pqServer*);
   virtual int createTab(vtkSMViewLayoutProxy*);
   virtual void closeTab(int);
+
+  /**
+   * Makes the tab at the given index current.
+   */
+  void setCurrentTab(int index);
 
   //@{
   /**
@@ -159,7 +187,7 @@ public slots:
    */
   QSize preview(const QSize& previewSize = QSize());
 
-protected slots:
+protected Q_SLOTS:
   /**
   * slots connects to corresponding signals on pqServerManagerObserver.
   */
@@ -197,7 +225,7 @@ protected:
     typedef QTabWidget Superclass;
 
   public:
-    pqTabWidget(QWidget* parentWdg = NULL);
+    pqTabWidget(QWidget* parentWdg = nullptr);
     ~pqTabWidget() override;
 
     /**

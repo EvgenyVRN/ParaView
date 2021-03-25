@@ -74,7 +74,7 @@ public:
 
   const QString& settingsKey() const { return this->FullKey; }
 
-  const QKeySequence keySequence() const { return this->KeySequence; }
+  QKeySequence keySequence() const { return this->KeySequence; }
 
   void setKeySequence(const QKeySequence& shortcut)
   {
@@ -181,7 +181,7 @@ public:
     this->RootItem = treeItem;
   }
 
-  ~pqCustomizeShortcutsModel() { delete this->RootItem; }
+  ~pqCustomizeShortcutsModel() override { delete this->RootItem; }
 
   QModelIndex index(int row, int column, const QModelIndex& parentIndex) const override
   {
@@ -318,7 +318,7 @@ public:
       item->setKeySequence(shortcut);
       QVector<int> roles;
       roles << Qt::DisplayRole;
-      emit dataChanged(idx, idx, roles);
+      Q_EMIT dataChanged(idx, idx, roles);
     }
   }
 
@@ -369,7 +369,7 @@ public:
   {
   }
 
-  ~FilterLeavesProxyModel() = default;
+  ~FilterLeavesProxyModel() override = default;
 
   bool filterAcceptsRow(int source_row, const QModelIndex& source_parent) const override
   {
@@ -441,9 +441,7 @@ pqCustomizeShortcutsDialog::pqCustomizeShortcutsDialog(QWidget* parentObject)
   this->onSelectionChanged();
 }
 
-pqCustomizeShortcutsDialog::~pqCustomizeShortcutsDialog()
-{
-}
+pqCustomizeShortcutsDialog::~pqCustomizeShortcutsDialog() = default;
 
 void pqCustomizeShortcutsDialog::onEditingFinished()
 {

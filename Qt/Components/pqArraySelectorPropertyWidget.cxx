@@ -196,7 +196,7 @@ class pqArraySelectorPropertyWidget::PropertyLinksConnection : public pqProperty
 public:
   PropertyLinksConnection(QObject* qobject, const char* qproperty, const char* qsignal,
     vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex, bool use_unchecked_modified_event,
-    QObject* parentObject = 0)
+    QObject* parentObject = nullptr)
     : Superclass(qobject, qproperty, qsignal, smproxy, smproperty, smindex,
         use_unchecked_modified_event, parentObject)
   {
@@ -271,14 +271,12 @@ pqArraySelectorPropertyWidget::pqArraySelectorPropertyWidget(
   QObject::connect(combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int) {
     this->Internals->pruneUnusedUnknownItems();
     this->Internals->updateArrayToCurrent();
-    emit this->arrayChanged();
+    Q_EMIT this->arrayChanged();
   });
 }
 
 //-----------------------------------------------------------------------------
-pqArraySelectorPropertyWidget::~pqArraySelectorPropertyWidget()
-{
-}
+pqArraySelectorPropertyWidget::~pqArraySelectorPropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqArraySelectorPropertyWidget::domainModified()

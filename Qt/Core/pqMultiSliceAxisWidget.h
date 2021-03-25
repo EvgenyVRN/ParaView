@@ -47,7 +47,7 @@ class PQCORE_EXPORT pqMultiSliceAxisWidget : public QWidget
   Q_PROPERTY(QString title READ title WRITE setTitle);
 
 public:
-  pqMultiSliceAxisWidget(QWidget* parent = NULL);
+  pqMultiSliceAxisWidget(QWidget* parent = nullptr);
   ~pqMultiSliceAxisWidget() override;
 
   /**
@@ -98,10 +98,10 @@ public:
   */
   void SetEdgeMargin(int margin);
 
-public slots:
+public Q_SLOTS:
   void renderView();
 
-signals:
+Q_SIGNALS:
   /**
   * Signal emitted when the model has changed internally
   */

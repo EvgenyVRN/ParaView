@@ -143,9 +143,7 @@ pqObjectBuilder::pqObjectBuilder(QObject* _parent /*=0*/)
 }
 
 //-----------------------------------------------------------------------------
-pqObjectBuilder::~pqObjectBuilder()
-{
-}
+pqObjectBuilder::~pqObjectBuilder() = default;
 
 //-----------------------------------------------------------------------------
 pqPipelineSource* pqObjectBuilder::createSource(
@@ -157,12 +155,12 @@ pqPipelineSource* pqObjectBuilder::createSource(
   proxy.TakeReference(pxm->NewProxy(sm_group.toLocal8Bit().data(), sm_name.toLocal8Bit().data()));
   if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
-    return NULL;
+    return nullptr;
   }
 
   pqPipelineSource* source = pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server);
-  emit this->sourceCreated(source);
-  emit this->proxyCreated(source);
+  Q_EMIT this->sourceCreated(source);
+  Q_EMIT this->proxyCreated(source);
   return source;
 }
 
@@ -176,7 +174,7 @@ pqPipelineSource* pqObjectBuilder::createFilter(const QString& sm_group, const Q
   proxy.TakeReference(pxm->NewProxy(sm_group.toLocal8Bit().data(), sm_name.toLocal8Bit().data()));
   if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
-    return NULL;
+    return nullptr;
   }
 
   // Now for every input port, connect the inputs.
@@ -201,8 +199,8 @@ pqPipelineSource* pqObjectBuilder::createFilter(const QString& sm_group, const Q
   }
 
   pqPipelineSource* filter = pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server);
-  emit this->filterCreated(filter);
-  emit this->proxyCreated(filter);
+  Q_EMIT this->filterCreated(filter);
+  Q_EMIT this->proxyCreated(filter);
   return filter;
 }
 
@@ -234,7 +232,7 @@ pqPipelineSource* pqObjectBuilder::createReader(
 {
   if (files.empty())
   {
-    return 0;
+    return nullptr;
   }
 
   unsigned int numFiles = files.size();
@@ -268,7 +266,7 @@ pqPipelineSource* pqObjectBuilder::createReader(
   proxy.TakeReference(pxm->NewProxy(sm_group.toUtf8().data(), sm_name.toUtf8().data()));
   if (!pqObjectBuilderNS::preCreatePipelineProxy(controller, proxy))
   {
-    return NULL;
+    return nullptr;
   }
 
   QString pname = this->getFileNamePropertyName(proxy);
@@ -278,7 +276,7 @@ pqPipelineSource* pqObjectBuilder::createReader(
       vtkSMStringVectorProperty::SafeDownCast(proxy->GetProperty(pname.toUtf8().data()));
     if (!prop)
     {
-      return 0;
+      return nullptr;
     }
 
     // If there's a hint on the property indicating that this property expects a
@@ -307,10 +305,10 @@ pqPipelineSource* pqObjectBuilder::createReader(
 
   pqPipelineSource* reader =
     pqObjectBuilderNS::postCreatePipelineProxy(controller, proxy, server, reg_name);
-  emit this->readerCreated(reader, files[0]);
-  emit this->readerCreated(reader, files);
-  emit this->sourceCreated(reader);
-  emit this->proxyCreated(reader);
+  Q_EMIT this->readerCreated(reader, files[0]);
+  Q_EMIT this->readerCreated(reader, files);
+  Q_EMIT this->sourceCreated(reader);
+  Q_EMIT this->proxyCreated(reader);
   return reader;
 }
 //-----------------------------------------------------------------------------
@@ -328,7 +326,7 @@ void pqObjectBuilder::destroy(pqPipelineSource* source)
     return;
   }
 
-  emit this->destroying(source);
+  Q_EMIT this->destroying(source);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->UnRegisterProxy(source->getProxy());
@@ -340,7 +338,7 @@ pqView* pqObjectBuilder::createView(const QString& type, pqServer* server)
   if (!server)
   {
     qDebug() << "Cannot create view without server.";
-    return NULL;
+    return nullptr;
   }
 
   vtkSMSessionProxyManager* pxm = server->proxyManager();
@@ -349,12 +347,12 @@ pqView* pqObjectBuilder::createView(const QString& type, pqServer* server)
   if (!proxy)
   {
     qDebug() << "Failed to create a proxy for the requested view type:" << type;
-    return NULL;
+    return nullptr;
   }
 
   // notify the world that we may create a new view. applications may handle
   // this by setting up layouts, etc.
-  emit this->aboutToCreateView(server);
+  Q_EMIT this->aboutToCreateView(server);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->PreInitializeProxy(proxy);
@@ -365,8 +363,8 @@ pqView* pqObjectBuilder::createView(const QString& type, pqServer* server)
   pqView* view = model->findItem<pqView*>(proxy);
   if (view)
   {
-    emit this->viewCreated(view);
-    emit this->proxyCreated(view);
+    Q_EMIT this->viewCreated(view);
+    Q_EMIT this->proxyCreated(view);
   }
   else
   {
@@ -391,7 +389,7 @@ void pqObjectBuilder::destroy(pqView* view)
     return;
   }
 
-  emit this->destroying(view);
+  Q_EMIT this->destroying(view);
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->UnRegisterProxy(view->getProxy());
 }
@@ -414,13 +412,13 @@ pqDataRepresentation* pqObjectBuilder::createDataRepresentation(
   if (!opPort || !view)
   {
     qCritical() << "Missing required attribute.";
-    return NULL;
+    return nullptr;
   }
 
   if (!view->canDisplay(opPort))
   {
     // View cannot display this source, nothing to do here.
-    return NULL;
+    return nullptr;
   }
 
   vtkSmartPointer<vtkSMProxy> reprProxy;
@@ -444,7 +442,7 @@ pqDataRepresentation* pqObjectBuilder::createDataRepresentation(
   // Could not determine representation proxy to create.
   if (!reprProxy)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkNew<vtkSMParaViewPipelineController> controller;
@@ -466,8 +464,8 @@ pqDataRepresentation* pqObjectBuilder::createDataRepresentation(
     core->getServerManagerModel()->findItem<pqDataRepresentation*>(reprProxy);
   if (repr)
   {
-    emit this->dataRepresentationCreated(repr);
-    emit this->proxyCreated(repr);
+    Q_EMIT this->dataRepresentationCreated(repr);
+    Q_EMIT this->proxyCreated(repr);
   }
   return repr;
 }
@@ -479,12 +477,12 @@ vtkSMProxy* pqObjectBuilder::createProxy(
   if (!server)
   {
     qDebug() << "server cannot be null";
-    return 0;
+    return nullptr;
   }
   if (sm_group.isEmpty() || sm_name.isEmpty())
   {
     qCritical() << "Group name and proxy name must be non empty.";
-    return 0;
+    return nullptr;
   }
 
   vtkSMSessionProxyManager* pxm = server->proxyManager();
@@ -493,7 +491,7 @@ vtkSMProxy* pqObjectBuilder::createProxy(
   if (!proxy.GetPointer())
   {
     qCritical() << "Failed to create proxy: " << sm_group << ", " << sm_name;
-    return NULL;
+    return nullptr;
   }
   else if (reg_group.contains("prototypes"))
   {
@@ -514,7 +512,7 @@ void pqObjectBuilder::destroy(pqRepresentation* repr)
     return;
   }
 
-  emit this->destroying(repr);
+  Q_EMIT this->destroying(repr);
 
   // Remove repr from the view module.
   pqView* view = repr->getView();
@@ -528,7 +526,7 @@ void pqObjectBuilder::destroy(pqRepresentation* repr)
 
   // If this repr has a lookuptable, we hide all scalar bars for that
   // lookup table unless there is some other repr that's using it.
-  pqScalarsToColors* stc = 0;
+  pqScalarsToColors* stc = nullptr;
   if (pqDataRepresentation* dataRepr = qobject_cast<pqDataRepresentation*>(repr))
   {
     stc = dataRepr->getLookupTable();
@@ -548,7 +546,7 @@ void pqObjectBuilder::destroy(pqRepresentation* repr)
 //-----------------------------------------------------------------------------
 void pqObjectBuilder::destroy(pqProxy* proxy)
 {
-  emit this->destroying(proxy);
+  Q_EMIT this->destroying(proxy);
 
   this->destroyProxyInternal(proxy);
 }
@@ -567,10 +565,10 @@ void pqObjectBuilder::destroySources(pqServer* server)
       if (sources[i]->getAllConsumers().size() == 0)
       {
         builder->destroy(sources[i]);
-        sources[i] = NULL;
+        sources[i] = nullptr;
       }
     }
-    sources.removeAll(NULL);
+    sources.removeAll(nullptr);
   }
 }
 
@@ -651,7 +649,7 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource, int co
   {
     qCritical() << "createServer called while waiting for previous connection "
                    "to be established.";
-    return NULL;
+    return nullptr;
   }
 
   // Create a modified version of the resource that only contains server information
@@ -722,11 +720,11 @@ pqServer* pqObjectBuilder::createServer(const pqServerResource& resource, int co
     qCritical() << "Unknown server type: " << server_resource.scheme() << "\n";
   }
 
-  pqServer* server = NULL;
+  pqServer* server = nullptr;
   if (id != 0)
   {
     server = smModel->findServer(id);
-    emit this->finishedAddingServer(server);
+    Q_EMIT this->finishedAddingServer(server);
   }
   this->WaitingForConnection = false;
   return server;
@@ -774,7 +772,7 @@ pqServer* pqObjectBuilder::resetServer(pqServer* server)
   pm->UnRegisterSession(session);
   smModel->endRemoveServer();
 
-  server = NULL;
+  server = nullptr;
 
   // Let the pqServerManagerModel know the resource to use for the connection
   // to be created.
@@ -783,7 +781,7 @@ pqServer* pqObjectBuilder::resetServer(pqServer* server)
   // re-register session.
   vtkIdType id = pm->RegisterSession(session);
 
-  pqServer* newServer = NULL;
+  pqServer* newServer = nullptr;
   if (id != 0)
   {
     newServer = smModel->findServer(id);
@@ -792,7 +790,7 @@ pqServer* pqObjectBuilder::resetServer(pqServer* server)
     auto deltaMinutes = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime);
     newServer->setRemainingLifeTime(
       remainingLifetime > 0 ? (remainingLifetime - deltaMinutes.count()) : remainingLifetime);
-    emit this->finishedAddingServer(newServer);
+    Q_EMIT this->finishedAddingServer(newServer);
   }
   return newServer;
 }

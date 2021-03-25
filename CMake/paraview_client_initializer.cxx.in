@@ -43,8 +43,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "@_paraview_client_MAIN_WINDOW_INCLUDE@"
 
 #include "pqOptions.h"
-#include "pqPluginManager.h"
 #include "pqPVApplicationCore.h"
+#include "pqPluginManager.h"
+#include "pqQtDeprecated.h"
 #include "pqSettings.h"
 #include "vtkPVConfig.h"
 #include "vtkPVLogger.h"
@@ -106,7 +107,7 @@ pq@_paraview_client_NAME@Initializer::Status pq@_paraview_client_NAME@Initialize
 
 #if _paraview_client_SPLASH_IMAGE
   pqSettings *settings = this->PVApp->settings();
-  if (this->PVApp->getOptions()->GetDisableRegistry() == false &&
+  if (!this->PVApp->getOptions()->GetDisableRegistry() &&
     settings->value("GeneralSettings.ShowSplashScreen", true).toBool())
   {
     // Create and show the splash screen as the main window is being created.
@@ -133,7 +134,7 @@ pq@_paraview_client_NAME@Initializer::Status pq@_paraview_client_NAME@Initialize
   // Load required application plugins.
   vtkVLogStartScopeF(PARAVIEW_LOG_PLUGIN_VERBOSITY(), "req-plugins", "load required plugins: `@_paraview_client_REQUIRED_PLUGINS@`");
   QString plugin_string = "@_paraview_client_REQUIRED_PLUGINS@";
-  QStringList plugin_list = plugin_string.split(';',QString::SkipEmptyParts);
+  QStringList plugin_list = plugin_string.split(';',PV_QT_SKIP_EMPTY_PARTS);
   foreach (const QString plugin_name, plugin_list)
   {
     if (!loader->LoadPluginByName(plugin_name.toLatin1().data()))
@@ -147,7 +148,7 @@ pq@_paraview_client_NAME@Initializer::Status pq@_paraview_client_NAME@Initialize
   // Load optional plugins.
   vtkVLogStartScopeF(PARAVIEW_LOG_PLUGIN_VERBOSITY(), "opt-plugins", "load optional plugins: `@_paraview_client_OPTIONAL_PLUGINS@`");
   plugin_string = "@_paraview_client_OPTIONAL_PLUGINS@";
-  plugin_list = plugin_string.split(';',QString::SkipEmptyParts);
+  plugin_list = plugin_string.split(';', PV_QT_SKIP_EMPTY_PARTS);
   foreach (const QString plugin_name, plugin_list)
   {
     if (!loader->LoadPluginByName(plugin_name.toLatin1().data()))

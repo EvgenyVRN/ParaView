@@ -34,10 +34,9 @@ set(classes
   vtkAttributeDataToTableFilter
   vtkCleanArrays
   vtkCompleteArrays
-  vtkCompositeDataToUnstructuredGridFilter
-  vtkDataObjectTreeToPointSetFilter
   vtkEnvironmentAnnotationFilter
   vtkExtractHistogram
+  vtkMergeBlocks
   vtkMinMax
   vtkPExtractHistogram
   vtkPVBox
@@ -46,9 +45,15 @@ set(classes
   vtkPVMergeTablesMultiBlock
   vtkPVPlane
   vtkPVTransform
+  vtkPVRotateAroundOriginTransform
   vtkReductionFilter
-  vtkSelectionSerializer
-  )
+  vtkSelectionSerializer)
+
+if (NOT VTK_LEGACY_REMOVE)
+  list(APPEND classes
+    vtkCompositeDataToUnstructuredGridFilter
+    vtkDataObjectTreeToPointSetFilter)
+endif()
 
 set(headers
   vtkPVChangeOfBasisHelper.h)

@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =========================================================================*/
-#ifndef vtkVRConnectionManager_h
-#define vtkVRConnectionManager_h
+#ifndef pqVRConnectionManager_h
+#define pqVRConnectionManager_h
 #include "vtkPVVRConfig.h"
 
 #include <QObject>
@@ -71,7 +71,7 @@ public:
 
   static pqVRConnectionManager* instance();
 
-public slots:
+public Q_SLOTS:
   /// start/stop connections
   void start();
   void stop();
@@ -83,7 +83,7 @@ public slots:
   // save the connection configuration
   void saveConnectionsConfiguration(vtkPVXMLElement* root);
 
-signals:
+Q_SIGNALS:
   void connectionsChanged();
 
 private:
@@ -96,4 +96,4 @@ private:
   static QPointer<pqVRConnectionManager> Instance;
 };
 
-#endif // vtkVRConnectionManager_h
+#endif // pqVRConnectionManager_h

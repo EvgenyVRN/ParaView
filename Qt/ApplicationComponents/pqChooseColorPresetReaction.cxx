@@ -74,9 +74,7 @@ pqChooseColorPresetReaction::pqChooseColorPresetReaction(
 }
 
 //-----------------------------------------------------------------------------
-pqChooseColorPresetReaction::~pqChooseColorPresetReaction()
-{
-}
+pqChooseColorPresetReaction::~pqChooseColorPresetReaction() = default;
 
 //-----------------------------------------------------------------------------
 void pqChooseColorPresetReaction::setRepresentation(pqDataRepresentation* repr)
@@ -213,14 +211,16 @@ void pqChooseColorPresetReaction::applyCurrentPreset()
       }
     }
   }
-  if (dialog->loadAnnotations())
+
+  // When using Regexp or Annotation, Apply the preset annotation
+  // on the Lookup table
+  if (dialog->loadAnnotations() || dialog->regularExpression().isValid())
   {
-    vtkSMTransferFunctionProxy::ApplyPreset(
-      lut, dialog->currentPreset(), !dialog->loadAnnotations());
+    vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(), false);
   }
   END_UNDO_SET();
 
-  emit this->presetApplied(
+  Q_EMIT this->presetApplied(
     QString(dialog->currentPreset().get("Name", "Preset").asString().c_str()));
 }
 
@@ -228,4 +228,10 @@ void pqChooseColorPresetReaction::applyCurrentPreset()
 QRegularExpression pqChooseColorPresetReaction::regularExpression()
 {
   return this->PresetDialog ? this->PresetDialog->regularExpression() : QRegularExpression();
+}
+
+//-----------------------------------------------------------------------------
+bool pqChooseColorPresetReaction::loadAnnotations()
+{
+  return this->PresetDialog ? this->PresetDialog->loadAnnotations() : false;
 }

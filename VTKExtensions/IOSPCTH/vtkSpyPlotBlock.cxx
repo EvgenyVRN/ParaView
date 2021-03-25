@@ -40,7 +40,7 @@ vtkSpyPlotBlock::vtkSpyPlotBlock()
   : Level(0)
 {
   this->Level = 0;
-  this->XYZArrays[0] = this->XYZArrays[1] = this->XYZArrays[2] = NULL;
+  this->XYZArrays[0] = this->XYZArrays[1] = this->XYZArrays[2] = nullptr;
   this->Dimensions[0] = this->Dimensions[1] = this->Dimensions[2] = 0;
   this->SavedExtents[0] = this->SavedExtents[2] = this->SavedExtents[4] = 1;
   this->SavedExtents[1] = this->SavedExtents[3] = this->SavedExtents[5] = 0;
@@ -264,7 +264,7 @@ int vtkSpyPlotBlock::FixInformation(const vtkBoundingBox& globalBounds, int exte
     {
       if (this->Dimensions[i] == 1)
       {
-        ca[i] = 0;
+        ca[i] = nullptr;
         continue;
       }
       ca[i] = this->XYZArrays[i];
@@ -275,12 +275,12 @@ int vtkSpyPlotBlock::FixInformation(const vtkBoundingBox& globalBounds, int exte
   int i, j, hasBadGhostCells = 0;
   int vectorsWereFixed = 0;
 
-  // vtkDebugWithObjectMacro(NULL, "Vectors for block: ");
-  // vtkDebugWithObjectMacro(NULL, "  X: " << this->XYZArrays[0]->GetNumberOfTuples());
-  // vtkDebugWithObjectMacro(NULL, "  Y: " << this->XYZArrays[1]->GetNumberOfTuples());
-  // vtkDebugWithObjectMacro(NULL, "  Z: " << this->XYZArrays[2]->GetNumberOfTuples());
-  // vtkDebugWithObjectMacro(NULL, " Dims: " << coutVector3(this->Dimensions));
-  // vtkDebugWithObjectMacro(NULL, " Bool: " << this->IsFixed());
+  // vtkDebugWithObjectMacro(nullptr, "Vectors for block: ");
+  // vtkDebugWithObjectMacro(nullptr, "  X: " << this->XYZArrays[0]->GetNumberOfTuples());
+  // vtkDebugWithObjectMacro(nullptr, "  Y: " << this->XYZArrays[1]->GetNumberOfTuples());
+  // vtkDebugWithObjectMacro(nullptr, "  Z: " << this->XYZArrays[2]->GetNumberOfTuples());
+  // vtkDebugWithObjectMacro(nullptr, " Dims: " << coutVector3(this->Dimensions));
+  // vtkDebugWithObjectMacro(nullptr, " Bool: " << this->IsFixed());
 
   double minV, maxV;
   for (i = 0, j = 0; i < 3; i++, j++)
@@ -290,14 +290,14 @@ int vtkSpyPlotBlock::FixInformation(const vtkBoundingBox& globalBounds, int exte
       realExtents[j++] = 0;
       realExtents[j] = 1;
       realDims[i] = 1;
-      ca[i] = 0;
+      ca[i] = nullptr;
       continue;
     }
 
     minV = MinBlockBound(i);
     maxV = MaxBlockBound(i);
     // vtkDebugWithObjectMacro(
-    //  NULL, "Bounds[" << (j) << "] = " << minV << " Bounds[" << (j + 1) << "] = " << maxV);
+    //  nullptr, "Bounds[" << (j) << "] = " << minV << " Bounds[" << (j + 1) << "] = " << maxV);
     ca[i] = this->XYZArrays[i];
     if (minV < minP[i])
     {
@@ -358,7 +358,6 @@ int vtkSpyPlotBlock::FixInformation(const vtkBoundingBox& globalBounds, int exte
 //-----------------------------------------------------------------------------
 int vtkSpyPlotBlock::Read(int isAMR, int fileVersion, vtkSpyPlotIStream* stream)
 {
-
   if (isAMR)
   {
     this->Status.AMR = 1;
@@ -368,60 +367,74 @@ int vtkSpyPlotBlock::Read(int isAMR, int fileVersion, vtkSpyPlotIStream* stream)
     this->Status.AMR = 0;
   }
 
-  int temp;
-  // Read in the dimensions of the block
-  if (!stream->ReadInt32s(this->Dimensions, 3))
-  {
-    vtkErrorWithObjectMacro(NULL, "Could not read in block's dimensions");
-    return 0;
-  }
-
-  // Read in the allocation state of the block
-  if (!stream->ReadInt32s(&temp, 1))
-  {
-    vtkErrorWithObjectMacro(NULL, "Could not read in block's allocated state");
-    return 0;
-  }
-  if (temp)
-  {
-    this->Status.Allocated = 1;
-  }
-  else
-  {
-    this->Status.Allocated = 0;
-  }
-
-  // Read in the active state of the block
-  if (!stream->ReadInt32s(&temp, 1))
-  {
-    vtkErrorWithObjectMacro(NULL, "Could not read in block's active state");
-    return 0;
-  }
-  if (temp)
-  {
-    this->Status.Active = 1;
-  }
-  else
-  {
-    this->Status.Active = 0;
-  }
-
-  // Read in the level of the block
-  if (!stream->ReadInt32s(&(this->Level), 1))
-  {
-    vtkErrorWithObjectMacro(NULL, "Could not read in block's level");
-    return 0;
-  }
-
-  // read in bounds, but don't do anything with them
   if (fileVersion >= 103)
   {
-    int buffer[6];
-    if (!stream->ReadInt32s(buffer, 6))
+    // Lets make the read in one call
+    // Here are the original reads
+    //
+    // Read in the dimensions of the block (Read 3 ints)
+    // Read in the allocation state of the block (Read 1 int)
+    // Read in the active state of the block (Read 1 int)
+    // Read in the level of the block (Read 1 int)
+    // read in bounds, but don't do anything with them (Read 6 ints)
+
+    int temp[12];
+
+    if (!stream->ReadInt32s(temp, 12))
     {
-      vtkErrorWithObjectMacro(NULL, "Could not read in block's bounding box");
+      vtkGenericWarningMacro("Could not read in block");
       return 0;
     }
+
+    this->Dimensions[0] = temp[0];
+    this->Dimensions[1] = temp[1];
+    this->Dimensions[2] = temp[2];
+
+    if (temp[3])
+      this->Status.Allocated = 1;
+    else
+      this->Status.Allocated = 0;
+
+    if (temp[4])
+      this->Status.Active = 1;
+    else
+      this->Status.Active = 0;
+
+    this->Level = temp[5];
+  }
+  else
+  {
+    // Lets make the read in one call
+    // Here are the original reads
+    //
+    // Read in the dimensions of the block (Read 3 ints)
+    // Read in the allocation state of the block (Read 1 int)
+    // Read in the active state of the block (Read 1 int)
+    // Read in the level of the block (Read 1 int)
+
+    int temp[6];
+
+    if (!stream->ReadInt32s(temp, 6))
+    {
+      vtkGenericWarningMacro("Could not read in block");
+      return 0;
+    }
+
+    this->Dimensions[0] = temp[0];
+    this->Dimensions[1] = temp[1];
+    this->Dimensions[2] = temp[2];
+
+    if (temp[3])
+      this->Status.Allocated = 1;
+    else
+      this->Status.Allocated = 0;
+
+    if (temp[4])
+      this->Status.Active = 1;
+    else
+      this->Status.Active = 0;
+
+    this->Level = temp[5];
   }
 
   int i;
@@ -443,7 +456,7 @@ int vtkSpyPlotBlock::Read(int isAMR, int fileVersion, vtkSpyPlotIStream* stream)
       if (this->XYZArrays[i])
       {
         this->XYZArrays[i]->Delete();
-        this->XYZArrays[i] = 0;
+        this->XYZArrays[i] = nullptr;
       }
     }
   }
@@ -454,51 +467,111 @@ int vtkSpyPlotBlock::Read(int isAMR, int fileVersion, vtkSpyPlotIStream* stream)
 //-----------------------------------------------------------------------------
 int vtkSpyPlotBlock::Scan(vtkSpyPlotIStream* stream, unsigned char* isAllocated, int fileVersion)
 {
+  int temp[12];
 
-  int temp[3];
-  // Read in the dimensions of the block
-  if (!stream->ReadInt32s(temp, 3))
+  //
+  // This function's whole purpose in life is to move the read location
+  // past a block header, and return whether the allocated block
+  // flag is set.
+  //
+  // Lets make the read in one call.
+  // Here are the original reads:
+  //
+  // Read in the dimensions of the block (Read 3 words)
+  // Read in the allocation state of the block (Read 1 word)
+  // Read in the active state of the block (Read 1 word)
+  // Read in the level of the block (Read 1 word)
+  if (fileVersion >= 103)
   {
-    vtkGenericWarningMacro("Could not read in block's dimensions");
-    return 0;
-  }
-  // Read in the allocation state of the block
-  if (!stream->ReadInt32s(temp, 1))
-  {
-    vtkGenericWarningMacro("Could not read in block's allocated state");
-    return 0;
-  }
-  if (temp[0])
-  {
-    *isAllocated = 1;
+    if (!stream->ReadInt32sNoSwap(temp, 12))
+    {
+      vtkGenericWarningMacro("Could not read in block");
+      return 0;
+    }
   }
   else
   {
+    if (!stream->ReadInt32sNoSwap(temp, 6))
+    {
+      vtkGenericWarningMacro("Could not read in block");
+      return 0;
+    }
+  }
+
+  //
+  // Dirty trick here.
+  //
+  // Data coming from ReadInt32sNoSwap is in reverse byte order.
+  //   However, all we care about is whether it is a 0 or non 0.
+  //   Doesn't matter where the bytes or bits are.  Thus, test
+  //   the int unswapped.
+  //
+  //   Faster yet would be moving bits, but probably not necessary.
+  //
+  if (temp[3])
+    *isAllocated = 1;
+  else
     *isAllocated = 0;
-  }
 
-  // Read in the active state of the block
-  if (!stream->ReadInt32s(temp, 1))
-  {
-    vtkGenericWarningMacro("Could not read in block's active state");
-    return 0;
-  }
+  return 1;
+}
 
-  // Read in the level of the block
-  if (!stream->ReadInt32s(temp, 1))
-  {
-    vtkGenericWarningMacro("Could not read in block's level");
-    return 0;
-  }
+//-----------------------------------------------------------------------------
+// Scan, but for 16 blocks at a time.  Performance code.
+//
+int vtkSpyPlotBlock::Scan16(vtkSpyPlotIStream* stream, unsigned char* isAllocated, int fileVersion)
+{
+  int temp[16 * 12];
+  int i;
 
-  // read in bounds, but don't do anything with them
+  //
+  // This function's whole purpose in life is to move the read location
+  //   past a block header, and return whether the allocated block
+  //   flag is set.
+  //
+  //   Note that we are processing 16 block headers at a time.
+  //
+  //   Lets make the read in one call.
+  //   Here was the originals:
+  // Read in the dimensions of the block (Read 3 words)
+  // Read in the allocation state of the block (Read 1 word)
+  // Read in the active state of the block (Read 1 word)
+  // Read in the level of the block (Read 1 word)
+  // if (fileVersion >= 103)
+  //   read in bounds, but don't do anything with them (Read 6 word)
+
   if (fileVersion >= 103)
   {
-    int buffer[6];
-    if (!stream->ReadInt32s(buffer, 6))
+    if (!stream->ReadInt32sNoSwap(temp, 16 * 12))
     {
-      vtkGenericWarningMacro("Could not read in block's bounding box");
+      vtkGenericWarningMacro("Could not read in block");
       return 0;
+    }
+
+    // Dirty trick here. See vtkSpyPlotBlock::Scan() for details
+    for (i = 0; i < 16; i++)
+    {
+      if (*(temp + 12 * i + 3))
+        *(isAllocated + i) = 1;
+      else
+        *(isAllocated + i) = 0;
+    }
+  }
+  else
+  {
+    if (!stream->ReadInt32sNoSwap(temp, 16 * 6))
+    {
+      vtkGenericWarningMacro("Could not read in block");
+      return 0;
+    }
+
+    // Dirty trick here. See vtkSpyPlotBlock::Scan() for details
+    for (i = 0; i < 16; i++)
+    {
+      if (*(temp + 6 * i + 3))
+        *(isAllocated + i) = 1;
+      else
+        *(isAllocated + i) = 0;
     }
   }
 
@@ -552,7 +625,7 @@ void vtkSpyPlotBlock::ComputeDerivedVariables(vtkCellData* data, const int& numb
   for (int i = 0; i < numberOfMaterials; i++)
   {
     // only create density arrays for materials that we have all the needed information for
-    bool validDensity = materialMasses[i] != NULL && materialVolumeFractions[i] != NULL;
+    bool validDensity = materialMasses[i] != nullptr && materialVolumeFractions[i] != nullptr;
     if (validDensity)
     {
       vtkDoubleArray* materialDensity = vtkDoubleArray::New();
@@ -762,7 +835,7 @@ int vtkSpyPlotBlock::SetGeometry(int dir, const unsigned char* encodedInfo, int 
 
   if (!this->XYZArrays[dir])
   {
-    vtkErrorWithObjectMacro(NULL, "Coordinate Array has not been allocated");
+    vtkErrorWithObjectMacro(nullptr, "Coordinate Array has not been allocated");
     return 0;
   }
 
@@ -785,7 +858,7 @@ int vtkSpyPlotBlock::SetGeometry(int dir, const unsigned char* encodedInfo, int 
       {
         if (compIndex >= compSize)
         {
-          vtkErrorWithObjectMacro(NULL, "Problem doing RLD decode. "
+          vtkErrorWithObjectMacro(nullptr, "Problem doing RLD decode. "
               << "Too much data generated. Expected: " << compSize);
           return 0;
         }
@@ -801,7 +874,7 @@ int vtkSpyPlotBlock::SetGeometry(int dir, const unsigned char* encodedInfo, int 
       {
         if (compIndex >= compSize)
         {
-          vtkErrorWithObjectMacro(NULL, "Problem doing RLD decode. "
+          vtkErrorWithObjectMacro(nullptr, "Problem doing RLD decode. "
               << "Too much data generated. Expected: " << compSize);
           return 0;
         }

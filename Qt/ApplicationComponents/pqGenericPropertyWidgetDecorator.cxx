@@ -248,9 +248,7 @@ pqGenericPropertyWidgetDecorator::pqGenericPropertyWidgetDecorator(
 }
 
 //-----------------------------------------------------------------------------
-pqGenericPropertyWidgetDecorator::~pqGenericPropertyWidgetDecorator()
-{
-}
+pqGenericPropertyWidgetDecorator::~pqGenericPropertyWidgetDecorator() = default;
 
 //-----------------------------------------------------------------------------
 void pqGenericPropertyWidgetDecorator::updateState()
@@ -266,12 +264,12 @@ void pqGenericPropertyWidgetDecorator::updateState()
   {
     case pqInternals::ENABLED_STATE:
       this->Internals->Enabled = valueMatch;
-      emit this->enableStateChanged();
+      Q_EMIT this->enableStateChanged();
       break;
 
     case pqInternals::VISIBILITY:
       this->Internals->Visible = valueMatch;
-      emit this->visibilityChanged();
+      Q_EMIT this->visibilityChanged();
       break;
   }
 }

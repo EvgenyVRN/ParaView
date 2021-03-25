@@ -70,7 +70,7 @@ pqSaveStateReaction::pqSaveStateReaction(QAction* parentObject)
 void pqSaveStateReaction::updateEnableState()
 {
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
-  this->parentAction()->setEnabled(activeObjects->activeServer() != NULL);
+  this->parentAction()->setEnabled(activeObjects->activeServer() != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ bool pqSaveStateReaction::saveState()
   QString fileExt = tr("ParaView state file (*.pvsm);;All files (*)");
 #endif
   pqFileDialog fileDialog(
-    NULL, pqCoreUtilities::mainWidget(), tr("Save State File"), QString(), fileExt);
+    nullptr, pqCoreUtilities::mainWidget(), tr("Save State File"), QString(), fileExt);
 
   fileDialog.setObjectName("FileSaveServerStateDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
@@ -127,7 +127,7 @@ bool pqSaveStateReaction::savePythonState(const QString& filename)
 
   vtkSmartPointer<vtkSMProxy> options;
   options.TakeReference(pxm->NewProxy("pythontracing", "PythonStateOptions"));
-  if (options.GetPointer() == NULL)
+  if (options.GetPointer() == nullptr)
   {
     return false;
   }
@@ -144,9 +144,7 @@ bool pqSaveStateReaction::savePythonState(const QString& filename)
     return false;
   }
 
-  vtkStdString state =
-    vtkSMTrace::GetState(vtkSMPropertyHelper(options, "PropertiesToTraceOnCreate").GetAsInt(),
-      vtkSMPropertyHelper(options, "SkipHiddenDisplayProperties").GetAsInt() == 1);
+  std::string state = vtkSMTrace::GetState(options);
   if (state.empty())
   {
     qWarning("Empty state generated.");
@@ -159,7 +157,7 @@ bool pqSaveStateReaction::savePythonState(const QString& filename)
     return false;
   }
   QTextStream out(&file);
-  out << state;
+  out << state.c_str();
   pqServer* server = pqActiveObjects::instance().activeServer();
   // Add this to the list of recent server resources ...
   pqStandardRecentlyUsedResourceLoaderImplementation::addStateFileToRecentResources(

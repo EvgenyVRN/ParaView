@@ -25,6 +25,25 @@
  * * <DataType value=""> where value is the classname for the data type
  * for example: vtkDataSet, vtkImageData,...
  * @endverbatim
+ * Optional XML attributes for composite datasets only:
+ * \li \c child_match : Value can be "any" or "all". This is used if specific
+ * types of child datasets are required. "any" indicates that composite datasets
+ * with any child matching the nested data types are in the domain. "all"
+ * indicates that all the child datasets must match the nested data types(can be
+ * mix-match). Example:
+ * \code
+ * <DataType value="vtkCompositeDataSet" child_match="any">
+ *     <DataType value="vtkImageData" />
+ * </DataType>
+ * <DataType value="vtkMultiBlockDataSet" child_match="all">
+ *     <DataType value="vtkImageData" />
+ *     <DataType value="vtkUnstructuredGrid" />
+ * </DataType>
+ * \endcode
+ * The first element accepts vtkCompositeDataSet with at least one child dataset
+ * of vtkImageData. The second element accepts vtkMultiBlockDataSet with all the
+ * child datasets being either vtkImageData or vtkUnstructuredGrid.
+ *
  * @sa
  * vtkSMDomain  vtkSMSourceProxy
 */
@@ -34,6 +53,9 @@
 
 #include "vtkRemotingServerManagerModule.h" //needed for exports
 #include "vtkSMDomain.h"
+
+#include <string>
+#include <vector>
 
 class vtkSMSourceProxy;
 
@@ -60,14 +82,9 @@ public:
   int IsInDomain(vtkSMSourceProxy* proxy, int outputport = 0);
 
   /**
-   * Returns the number of acceptable data types.
+   * An experimental API to provide a user-friendly text describing this domain.
    */
-  unsigned int GetNumberOfDataTypes();
-
-  /**
-   * Returns a data type.
-   */
-  const char* GetDataType(unsigned int idx);
+  std::string GetDomainDescription() const;
 
 protected:
   vtkSMDataTypeDomain();
@@ -79,19 +96,12 @@ protected:
    */
   int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) override;
 
-  vtkSMDataTypeDomainInternals* DTInternals;
-
-  int CompositeDataSupported;
-  vtkSetMacro(CompositeDataSupported, int);
-  vtkGetMacro(CompositeDataSupported, int);
-
-  int CompositeDataRequired;
-  vtkSetMacro(CompositeDataRequired, int);
-  vtkGetMacro(CompositeDataRequired, int);
-
 private:
   vtkSMDataTypeDomain(const vtkSMDataTypeDomain&) = delete;
   void operator=(const vtkSMDataTypeDomain&) = delete;
+  bool CompositeDataSupported;
+  bool CompositeDataRequired;
+  vtkSMDataTypeDomainInternals* DTInternals;
 };
 
 #endif

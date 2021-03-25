@@ -36,6 +36,7 @@ set(classes
   pqAnimatablePropertiesComboBox
   pqAnimatableProxyComboBox
   pqAnimationManager
+  pqAnimationProgressDialog
   pqAnimationTimeWidget
   pqAnimationViewWidget
   pqArrayListDomain
@@ -54,14 +55,14 @@ set(classes
   pqComparativeVisPanel
   pqComponentsInit
   pqComponentsTestUtility
-  pqCompositeDataInformationTreeModel
   pqCompositePropertyWidgetDecorator
-  pqCompositeTreePropertyWidget
+  pqContextMenuInterface
   pqCustomFilterDefinitionModel
   pqCustomFilterDefinitionWizard
   pqCustomFilterManager
   pqCustomFilterManagerModel
   pqCustomViewpointButtonDialog
+  pqDataAssemblyTreeModel
   pqDataInformationModel
   pqDataInformationWidget
   pqDialog
@@ -75,9 +76,7 @@ set(classes
   pqFavoritesDialog
   pqFavoritesTreeWidget
   pqFileChooserWidget
-  pqFindDataCreateSelectionFrame
   pqFindDataCurrentSelectionFrame
-  pqFindDataDialog
   pqFindDataSelectionDisplayFrame
   pqHighlightItemDelegate
   pqImageTip
@@ -99,15 +98,14 @@ set(classes
   pqLiveInsituManager
   pqLiveInsituVisualizationManager
   pqLockViewSizeCustomDialog
+  pqLogViewerDialog
   pqMemoryInspectorPanel
   pqMultiBlockInspectorWidget
-  pqMultiQueryClauseWidget
   pqMultiViewWidget
   pqOrbitCreatorDialog
   pqOutputPortComboBox
   pqPipelineAnnotationFilterModel
   pqPipelineBrowserWidget
-  pqPipelineInputComboBox
   pqPipelineModel
   pqPipelineModelSelectionAdaptor
   pqPipelineTimeKeyFrameEditor
@@ -131,13 +129,13 @@ set(classes
   pqProxySelectionWidget
   pqProxyWidget
   pqProxyWidgetDialog
-  pqQueryClauseWidget
   pqRecentFilesMenu
   pqRemoteCommandDialog
   pqRemoteCommandTemplateDialog
   pqRescaleRange
   pqSILModel
   pqSILWidget
+  pqSingleLogViewerWidget
   pqSMSignalAdaptors
   pqScalarSetModel
   pqScalarValueListPropertyWidget
@@ -183,6 +181,12 @@ set_property(SOURCE pqComponentsInit.cxx APPEND
   PROPERTY
     COMPILE_DEFINITIONS "BUILD_SHARED_LIBS=${built_shared}")
 
+if (PARAVIEW_BUILD_ID)
+  set_property(SOURCE pqAboutDialog.cxx APPEND
+    PROPERTY
+      COMPILE_DEFINITIONS "PARAVIEW_BUILD_ID=\"${PARAVIEW_BUILD_ID}\"")
+endif ()
+
 set(headers
   pqPluginTreeWidget.h)
 
@@ -204,9 +208,7 @@ set(ui_files
   Resources/UI/pqCustomFilterManager.ui
   Resources/UI/pqCustomViewpointButtonDialog.ui
   Resources/UI/pqDisplayRepresentationWidget.ui
-  Resources/UI/pqFindDataCreateSelectionFrame.ui
   Resources/UI/pqFindDataCurrentSelectionFrame.ui
-  Resources/UI/pqFindDataDialog.ui
   Resources/UI/pqFindDataSelectionDisplayFrame.ui
   Resources/UI/pqItemViewSearchWidget.ui
   Resources/UI/pqKeyFrameEditor.ui
@@ -216,6 +218,7 @@ set(ui_files
   Resources/UI/pqLinksEditor.ui
   Resources/UI/pqLinksManager.ui
   Resources/UI/pqLockViewSizeCustomDialog.ui
+  Resources/UI/pqLogViewerDialog.ui
   Resources/UI/pqMemoryInspectorPanelForm.ui
   Resources/UI/pqMultiBlockInspectorWidget.ui
   Resources/UI/pqOrbitCreatorDialog.ui
@@ -228,8 +231,6 @@ set(ui_files
   Resources/UI/pqProxySelectionWidget.ui
   Resources/UI/pqProxyWidgetDialog.ui
   Resources/UI/pqPythonAnimationCue.ui
-  Resources/UI/pqQueryClauseWidget.ui
-  Resources/UI/pqQueryCompositeTreeDialog.ui
   Resources/UI/pqRemoteCommandDialogForm.ui
   Resources/UI/pqRemoteCommandTemplateDialogForm.ui
   Resources/UI/pqRescaleRangeDialog.ui

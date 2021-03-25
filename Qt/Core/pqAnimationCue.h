@@ -44,7 +44,7 @@ class PQCORE_EXPORT pqAnimationCue : public pqProxy
 
 public:
   pqAnimationCue(const QString& group, const QString& name, vtkSMProxy* proxy, pqServer* server,
-    QObject* parent = NULL);
+    QObject* parent = nullptr);
   ~pqAnimationCue() override;
 
   // Returns the number of keyframes in this cue.
@@ -57,7 +57,7 @@ public:
   // The time for the key frame is computed using the times
   // for the neighbouring keyframes if any.
   // Returns the newly created keyframe proxy on success,
-  // NULL otherwise.
+  // nullptr otherwise.
   vtkSMProxy* insertKeyFrame(int index);
 
   // Deletes the keyframe at the given index.
@@ -65,7 +65,7 @@ public:
   void deleteKeyFrame(int index);
 
   // Returns keyframe at a given index, if one exists,
-  // NULL otherwise.
+  // nullptr otherwise.
   vtkSMProxy* getKeyFrame(int index) const;
 
   // Returns the animated proxy, if any.
@@ -87,7 +87,7 @@ public:
   * Used by editors to trigger keyframesModified() signal after bulk of
   * modifications have been made to the cue/key frames.
   */
-  void triggerKeyFramesModified() { emit this->keyframesModified(); }
+  void triggerKeyFramesModified() { Q_EMIT this->keyframesModified(); }
 
   /**
   * Get/Set the enabled state for the cue.
@@ -95,7 +95,7 @@ public:
   void setEnabled(bool enable);
   bool isEnabled() const;
 
-signals:
+Q_SIGNALS:
   // emitted when something about the keyframes changes.
   void keyframesModified();
 
@@ -108,7 +108,7 @@ signals:
   */
   void enabled(bool);
 
-private slots:
+private Q_SLOTS:
   /**
   * Called when the "Enabled" property is changed.
   */

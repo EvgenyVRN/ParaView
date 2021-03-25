@@ -71,22 +71,23 @@ public:
   /// Get the window used for viewing plots.
   pqView* getPlotView();
 
-  /// Get the reader objects.  Returns NULL if that reader was never created.
+  /// Get the reader objects.  Returns nullptr if that reader was never
+  /// created.
   pqPipelineSource* getMeshReader();
   pqPipelineSource* getParticlesReader();
 
-  /// Get plotting object.  Returns NULL if that object was never created.
+  /// Get plotting object.  Returns nullptr if that object was never created.
   pqPipelineSource* getPlotFilter();
 
-  /// Get object that computes ranges over time.  Returns NULL if that object
-  /// was never created.
+  /// Get object that computes ranges over time.  Returns nullptr if that
+  /// object was never created.
   pqPipelineSource* getTemporalRanges();
 
   /// Convenience function for destroying a pipeline object and all of its
   /// consumers.
   static void destroyPipelineSourceAndConsumers(pqPipelineSource* source);
 
-public slots:
+public Q_SLOTS:
   void showDataLoadManager();
   void checkActionEnabled();
   void showField(QString name);

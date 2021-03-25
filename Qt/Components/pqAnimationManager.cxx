@@ -130,7 +130,7 @@ void pqAnimationManager::onProxyAdded(pqProxy* proxy)
     this->Internals->Scenes[scene->getServer()] = scene;
     if (this->Internals->ActiveServer == scene->getServer())
     {
-      emit this->activeSceneChanged(this->getActiveScene());
+      Q_EMIT this->activeSceneChanged(this->getActiveScene());
     }
   }
 }
@@ -144,7 +144,7 @@ void pqAnimationManager::onProxyRemoved(pqProxy* proxy)
     this->Internals->Scenes.remove(scene->getServer());
     if (this->Internals->ActiveServer == scene->getServer())
     {
-      emit this->activeSceneChanged(this->getActiveScene());
+      Q_EMIT this->activeSceneChanged(this->getActiveScene());
     }
   }
 }
@@ -169,8 +169,8 @@ void pqAnimationManager::onActiveServerChanged(pqServer* server)
 
   this->Internals->ActiveServer = server;
   activeScene = this->getActiveScene();
-  emit this->activeServerChanged(server);
-  emit this->activeSceneChanged(activeScene);
+  Q_EMIT this->activeServerChanged(server);
+  Q_EMIT this->activeSceneChanged(activeScene);
 
   if (activeScene)
   {
@@ -192,14 +192,14 @@ pqAnimationScene* pqAnimationManager::getScene(pqServer* server) const
   {
     return this->Internals->Scenes.value(server);
   }
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
 pqAnimationCue* pqAnimationManager::getCue(
   pqAnimationScene* scene, vtkSMProxy* proxy, const char* propertyname, int index) const
 {
-  return (scene ? scene->getCue(proxy, propertyname, index) : 0);
+  return (scene ? scene->getCue(proxy, propertyname, index) : nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -235,7 +235,7 @@ bool pqAnimationManager::saveGeometry(const QString& filename, pqView* view)
 //-----------------------------------------------------------------------------
 void pqAnimationManager::onTick(int progress)
 {
-  emit this->saveProgress("Saving Animation", progress);
+  Q_EMIT this->saveProgress("Saving Animation", progress);
 }
 
 //-----------------------------------------------------------------------------

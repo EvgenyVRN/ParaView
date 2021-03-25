@@ -65,16 +65,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 //-----------------------------------------------------------------------------
-class pqPythonManager::pqInternal
+struct pqPythonManager::pqInternal
 {
-public:
-  pqInternal()
-    : Editor(NULL)
-  {
-  }
-  ~pqInternal() { delete this->Editor; }
-
-  QPointer<pqPythonScriptEditor> Editor;
   QPointer<pqPythonMacroSupervisor> MacroSupervisor;
 };
 
@@ -95,8 +87,9 @@ public:
   std::string text() const { return this->TextStream.str(); }
   std::string errorText() const { return this->ErrorStream.str(); }
 private:
-  pqPythonManagerOutputWindow() {}
-  ~pqPythonManagerOutputWindow() override {}
+  pqPythonManagerOutputWindow() = default;
+  ~pqPythonManagerOutputWindow() override = default;
+
 private:
   pqPythonManagerOutputWindow(const pqPythonManagerOutputWindow&) = delete;
   void operator=(const pqPythonManagerOutputWindow&) = delete;
@@ -109,7 +102,7 @@ class pqPythonManagerRawInputHelper
 public:
   void rawInput(vtkObject*, unsigned long, void* calldata)
   {
-    vtkStdString* strData = reinterpret_cast<vtkStdString*>(calldata);
+    std::string* strData = reinterpret_cast<std::string*>(calldata);
     bool ok;
     QString inputText = QInputDialog::getText(pqCoreUtilities::mainWidget(),
       QCoreApplication::translate("pqPythonManager", "Enter Input requested by Python"),
@@ -194,7 +187,9 @@ void pqPythonManager::executeScript(const QString& filename)
     vtkNew<vtkPythonInteractiveInterpreter> interp;
     interp->AddObserver(vtkCommand::UpdateEvent, &helper, &pqPythonManagerRawInputHelper::rawInput);
     interp->Push("import sys");
+    interp->Push(QString("__file__ = r'%1'").arg(filename).toLocal8Bit().data());
     interp->RunStringWithConsoleLocals(code.data());
+    interp->Push("del __file__");
     vtkPythonInterpreter::SetCaptureStdin(prevCapture);
     vtkOutputWindow::SetInstance(old);
     interp->RemoveObservers(vtkCommand::UpdateEvent);
@@ -254,15 +249,11 @@ void pqPythonManager::addMacro(const QString& fileName)
 //----------------------------------------------------------------------------
 void pqPythonManager::editMacro(const QString& fileName)
 {
-  // Create the editor if needed and only the first time
-  if (!this->Internal->Editor)
-  {
-    this->Internal->Editor = new pqPythonScriptEditor(pqCoreUtilities::mainWidget());
-    this->Internal->Editor->setPythonManager(this);
-  }
+  pqPythonScriptEditor* pyEditor = pqPythonScriptEditor::getUniqueInstance();
 
-  this->Internal->Editor->show();
-  this->Internal->Editor->raise();
-  this->Internal->Editor->activateWindow();
-  this->Internal->Editor->open(fileName);
+  pyEditor->setPythonManager(this);
+  pyEditor->show();
+  pyEditor->raise();
+  pyEditor->activateWindow();
+  pyEditor->open(fileName);
 }

@@ -76,17 +76,17 @@ if (PARAVIEW_USE_PYTHON)
   endforeach ()
 endif ()
 
-if (PARAVIEW_USE_QT)
+if (paraview_will_be_built)
   list(APPEND paraview_tools
     paraview)
 endif ()
 
 configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/paraview-config"
+  "${CMAKE_CURRENT_SOURCE_DIR}/paraview-config.in"
   "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/paraview-config"
-  COPYONLY)
+  @ONLY)
 install(
-  PROGRAMS    "${CMAKE_CURRENT_SOURCE_DIR}/paraview-config"
+  PROGRAMS    "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/paraview-config"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT   development)
 

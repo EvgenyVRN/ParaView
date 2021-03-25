@@ -67,14 +67,14 @@ public:
     , IsAdvanced(false)
   {
   }
-  ~pqColorAnnotationsPropertyWidgetDecorator() override {}
+  ~pqColorAnnotationsPropertyWidgetDecorator() override = default;
 
   void setIsAdvanced(bool val)
   {
     if (val != this->IsAdvanced)
     {
       this->IsAdvanced = val;
-      emit this->visibilityChanged();
+      Q_EMIT this->visibilityChanged();
     }
   }
   bool canShowWidget(bool show_advanced) const override

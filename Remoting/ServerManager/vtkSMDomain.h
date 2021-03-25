@@ -49,21 +49,38 @@ struct vtkSMDomainInternals;
 class VTKREMOTINGSERVERMANAGER_EXPORT vtkSMDomain : public vtkSMSessionObject
 {
 public:
+  static vtkSMDomain* New();
   vtkTypeMacro(vtkSMDomain, vtkSMSessionObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
+   * Return values for `IsInDomain` calls.
+   */
+  enum IsInDomainReturnCodes
+  {
+    NOT_APPLICABLE = -1,
+    NOT_IN_DOMAIN = 0,
+    IN_DOMAIN = 1,
+  };
+
+  /**
    * Is the (unchecked) value of the property in the domain? Overwritten by
    * sub-classes.
+   *
+   * Returned values as defined in `IsInDomainReturnCodes`. `NOT_APPLICABLE` is
+   * returned if the domain is not applicable for the property values.
+   * `NOT_IN_DOMAIN` implies that the value is not in domain while `IN_DOMAIN`
+   * implies that the value is acceptable.
+   *
    */
-  virtual int IsInDomain(vtkSMProperty* property) = 0;
+  virtual int IsInDomain(vtkSMProperty* vtkNotUsed(property)) { return IN_DOMAIN; }
 
   /**
    * Update self based on the "unchecked" values of all required
    * properties. Subclasses must override this method to update the domain based
    * on the requestingProperty (and/or other required properties).
    */
-  virtual void Update(vtkSMProperty* requestingProperty) { (void)requestingProperty; }
+  virtual void Update(vtkSMProperty* requestingProperty);
 
   /**
    * Set the value of an element of a property from the animation editor.
@@ -109,12 +126,16 @@ public:
    */
   vtkSMProperty* GetProperty();
 
+  //@{
   /**
-   * Helper method to get vtkPVDataInformation from input proxy connected to the
+   * Helper methods to get vtkPVDataInformation from input proxy connected to the
    * required property with the given function and provided input index.
    */
   virtual vtkPVDataInformation* GetInputDataInformation(
     const char* function, unsigned int index = 0);
+  virtual vtkPVDataInformation* GetInputSubsetDataInformation(
+    unsigned int compositeIndex, const char* function, unsigned int index = 0);
+  //@}
 
   /**
    * Helper method to get the number of input connections hence the number of available
@@ -122,6 +143,13 @@ public:
    * from input proxy connected to the required property with the given function.
    */
   virtual unsigned int GetNumberOfInputConnections(const char* function);
+
+  /**
+   * Returns a given required property of the given function.
+   * Function is a string associated with the require property
+   * in the XML file.
+   */
+  vtkSMProperty* GetRequiredProperty(const char* function);
 
 protected:
   vtkSMDomain();
@@ -164,13 +192,6 @@ protected:
   virtual int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* elem);
 
   friend class vtkSMProperty;
-
-  /**
-   * Returns a given required property of the given function.
-   * Function is a string associated with the require property
-   * in the XML file.
-   */
-  vtkSMProperty* GetRequiredProperty(const char* function);
 
   /**
    * Remove the given property from the required properties list.

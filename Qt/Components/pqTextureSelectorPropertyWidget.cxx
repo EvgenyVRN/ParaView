@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqView.h"
 
 // Server Manager Includes
+#include "vtkDataSetAttributes.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVXMLElement.h"
@@ -89,7 +90,7 @@ pqTextureSelectorPropertyWidget::pqTextureSelectorPropertyWidget(
   // Valid only for a RepresentationProxy
   vtkPVXMLElement* hints = smProperty->GetHints()
     ? smProperty->GetHints()->FindNestedElementByName("TextureSelectorWidget")
-    : NULL;
+    : nullptr;
   if (hints)
   {
     bool checkTCoords = strcmp(hints->GetAttributeOrDefault("check_tcoords", ""), "1") == 0;
@@ -99,6 +100,9 @@ pqTextureSelectorPropertyWidget::pqTextureSelectorPropertyWidget(
     if (this->Representation)
     {
       QObject::connect(this->Representation, &pqDataRepresentation::dataUpdated, this,
+        [=] { this->checkAttributes(checkTCoords, checkTangents); });
+
+      QObject::connect(this->Representation, &pqDataRepresentation::attrArrayNameModified, this,
         [=] { this->checkAttributes(checkTCoords, checkTangents); });
     }
     this->checkAttributes(checkTCoords, checkTangents);
@@ -113,8 +117,8 @@ void pqTextureSelectorPropertyWidget::onTextureChanged(vtkSMProxy* texture)
   vtkSMPropertyHelper(this->property()).Set(texture);
   this->proxy()->UpdateVTKObjects();
   END_UNDO_SET();
-  emit this->changeAvailable();
-  emit this->changeFinished();
+  Q_EMIT this->changeAvailable();
+  Q_EMIT this->changeFinished();
 }
 
 //-----------------------------------------------------------------------------
@@ -150,4 +154,8 @@ void pqTextureSelectorPropertyWidget::checkAttributes(bool tcoords, bool tangent
     }
   }
   this->Selector->setEnabled(enable);
+  if (enable)
+  {
+    this->setToolTip("");
+  }
 }

@@ -89,6 +89,18 @@ pqDataRepresentation::pqDataRepresentation(
   {
     vtkconnector->Connect(prop, vtkCommand::ModifiedEvent, this, SIGNAL(colorArrayNameModified()));
   }
+  if (vtkSMProperty* prop = repr->GetProperty("SelectNormalArray"))
+  {
+    vtkconnector->Connect(prop, vtkCommand::ModifiedEvent, this, SIGNAL(attrArrayNameModified()));
+  }
+  if (vtkSMProperty* prop = repr->GetProperty("SelectTCoordArray"))
+  {
+    vtkconnector->Connect(prop, vtkCommand::ModifiedEvent, this, SIGNAL(attrArrayNameModified()));
+  }
+  if (vtkSMProperty* prop = repr->GetProperty("SelectTangentArray"))
+  {
+    vtkconnector->Connect(prop, vtkCommand::ModifiedEvent, this, SIGNAL(attrArrayNameModified()));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -104,7 +116,7 @@ pqDataRepresentation::~pqDataRepresentation()
 //-----------------------------------------------------------------------------
 pqPipelineSource* pqDataRepresentation::getInput() const
 {
-  return (this->Internal->InputPort ? this->Internal->InputPort->getSource() : 0);
+  return (this->Internal->InputPort ? this->Internal->InputPort->getSource() : nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -129,7 +141,7 @@ void pqDataRepresentation::onInputChanged()
   int new_proxes_count = ivp->GetNumberOfProxies();
   if (new_proxes_count == 0)
   {
-    this->Internal->InputPort = 0;
+    this->Internal->InputPort = nullptr;
   }
   else if (new_proxes_count == 1)
   {
@@ -213,7 +225,7 @@ vtkPVDataInformation* pqDataRepresentation::getRepresentedDataInformation(
   {
     return repr->GetRepresentedDataInformation();
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -221,7 +233,7 @@ vtkPVDataInformation* pqDataRepresentation::getInputDataInformation() const
 {
   if (!this->getOutputPortFromInput())
   {
-    return 0;
+    return nullptr;
   }
 
   return this->getOutputPortFromInput()->getDataInformation();
@@ -232,7 +244,7 @@ vtkPVTemporalDataInformation* pqDataRepresentation::getInputTemporalDataInformat
 {
   if (!this->getOutputPortFromInput())
   {
-    return 0;
+    return nullptr;
   }
 
   return this->getOutputPortFromInput()->getTemporalDataInformation();
@@ -243,16 +255,16 @@ pqDataRepresentation* pqDataRepresentation::getRepresentationForUpstreamSource()
 {
   pqPipelineFilter* filter = qobject_cast<pqPipelineFilter*>(this->getInput());
   pqView* view = this->getView();
-  if (!filter || filter->getInputCount() == 0 || view == 0)
+  if (!filter || filter->getInputCount() == 0 || view == nullptr)
   {
-    return 0;
+    return nullptr;
   }
 
   // find a repre for the input of the filter
   pqOutputPort* input = filter->getInputs()[0];
   if (!input)
   {
-    return 0;
+    return nullptr;
   }
 
   return input->getRepresentation(view);

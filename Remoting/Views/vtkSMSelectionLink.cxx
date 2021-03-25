@@ -27,7 +27,6 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSelectionNode.h"
-#include "vtkStdString.h"
 #include "vtkWeakPointer.h"
 
 #include <list>
@@ -40,10 +39,10 @@ public:
   static vtkSMSelectionLinkObserver* New() { return new vtkSMSelectionLinkObserver; }
   vtkSMSelectionLinkObserver()
   {
-    this->Link = 0;
+    this->Link = nullptr;
     this->InProgress = false;
   }
-  ~vtkSMSelectionLinkObserver() override { this->Link = 0; }
+  ~vtkSMSelectionLinkObserver() override { this->Link = nullptr; }
 
   void Execute(vtkObject* c, unsigned long event, void* port) override
   {
@@ -86,7 +85,7 @@ public:
     {
     }
 
-    ~LinkedSelection() {}
+    ~LinkedSelection() = default;
 
     vtkWeakPointer<vtkSMSourceProxy> Proxy;
     int UpdateDirection;
@@ -114,7 +113,7 @@ vtkSMSelectionLink::~vtkSMSelectionLink()
     this->Internals->LinkedSelections.begin();
   for (; iter != this->Internals->LinkedSelections.end(); ++iter)
   {
-    if (iter->Proxy.GetPointer() != NULL)
+    if (iter->Proxy.GetPointer() != nullptr)
     {
       if (iter->UpdateDirection & INPUT)
       {
@@ -139,7 +138,7 @@ vtkSMSelectionLink::~vtkSMSelectionLink()
 void vtkSMSelectionLink::AddLinkedSelection(vtkSMProxy* proxy, int updateDir)
 {
   vtkSMSourceProxy* sourceProxy = vtkSMSourceProxy::SafeDownCast(proxy);
-  if (sourceProxy != NULL)
+  if (sourceProxy != nullptr)
   {
     int addToList = 1;
     int addObserver = updateDir & INPUT;
@@ -168,7 +167,7 @@ void vtkSMSelectionLink::AddLinkedSelection(vtkSMProxy* proxy, int updateDir)
 
       for (unsigned int i = 0; i < sourceProxy->GetNumberOfAlgorithmOutputPorts(); i++)
       {
-        if (sourceProxy->GetSelectionInput(i) != NULL)
+        if (sourceProxy->GetSelectionInput(i) != nullptr)
         {
           this->Internals->SelectionObserver->InProgress = true;
           this->SelectionModified(sourceProxy, i);
@@ -237,7 +236,7 @@ vtkSMProxy* vtkSMSelectionLink::GetLinkedProxy(int index)
   }
   if (iter == this->Internals->LinkedSelections.end())
   {
-    return NULL;
+    return nullptr;
   }
   return iter->Proxy;
 }
@@ -375,7 +374,7 @@ void vtkSMSelectionLink::LoadState(const vtkSMMessage* msg, vtkSMProxyLocator* l
 //-----------------------------------------------------------------------------
 void vtkSMSelectionLink::UpdateState()
 {
-  if (this->Session == NULL)
+  if (this->Session == nullptr)
   {
     return;
   }
@@ -413,7 +412,7 @@ void vtkSMSelectionLink::UpdateState()
 //-----------------------------------------------------------------------------
 void vtkSMSelectionLink::SelectionModified(vtkSMSourceProxy* caller, unsigned int portIndex)
 {
-  vtkSMSourceProxy* selectionInput = NULL;
+  vtkSMSourceProxy* selectionInput = nullptr;
   bool callerFound = false;
   vtkSMSelectionLinkInternals::LinkedSelectionType::iterator iter;
   for (iter = this->Internals->LinkedSelections.begin();
@@ -439,7 +438,7 @@ void vtkSMSelectionLink::SelectionModified(vtkSMSourceProxy* caller, unsigned in
           vtkSelectionNode::INDICES, selectionInput, caller, portIndex));
       selectionInput = newSelectionInput;
     }
-    if (selectionInput == NULL)
+    if (selectionInput == nullptr)
     {
       for (iter = this->Internals->LinkedSelections.begin();
            iter != this->Internals->LinkedSelections.end(); iter++)

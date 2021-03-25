@@ -58,16 +58,16 @@ public:
   /**
   * Edit active representation's color map (or solid color).
   */
-  static void editColorMap(pqPipelineRepresentation* repr = NULL);
+  static void editColorMap(pqPipelineRepresentation* repr = nullptr);
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.
   */
   void updateEnableState() override;
 
-public slots:
+public Q_SLOTS:
   /**
   * Set the active representation.
   */

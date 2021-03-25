@@ -98,7 +98,7 @@ pqSpherePropertyWidget::pqSpherePropertyWidget(
     qCritical("Missing required property for function 'Radius'.");
   }
 
-  if (smgroup->GetProperty("Input") == NULL)
+  if (smgroup->GetProperty("Input") == nullptr)
   {
     this->connect(ui.centerOnBounds, SIGNAL(clicked()), SLOT(centerOnBounds()));
   }
@@ -127,9 +127,7 @@ pqSpherePropertyWidget::pqSpherePropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqSpherePropertyWidget::~pqSpherePropertyWidget()
-{
-}
+pqSpherePropertyWidget::~pqSpherePropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqSpherePropertyWidget::placeWidget()
@@ -144,7 +142,7 @@ void pqSpherePropertyWidget::setCenter(double x, double y, double z)
   double origin[3] = { x, y, z };
   vtkSMPropertyHelper(wdgProxy, "Center").Set(origin, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 
@@ -160,7 +158,7 @@ void pqSpherePropertyWidget::centerOnBounds()
     vtkSMPropertyHelper(wdgProxy, "Center").Set(origin, 3);
     vtkSMPropertyHelper(wdgProxy, "Radius").Set(bbox.GetMaxLength() / 2.0);
     wdgProxy->UpdateVTKObjects();
-    emit this->changeAvailable();
+    Q_EMIT this->changeAvailable();
     this->render();
   }
 }

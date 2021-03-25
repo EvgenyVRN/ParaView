@@ -59,11 +59,11 @@ vtkVRMovePointStyle::vtkVRMovePointStyle()
 }
 
 // ----------------------------------------------------------------------------
-void vtkVRMovePointStyle::HandleButton(const vtkVREventData& data)
+void vtkVRMovePointStyle::HandleButton(const vtkVREvent& data)
 {
   this->PositionRecorded = false;
 
-  vtkStdString role = this->GetButtonRole(data.name);
+  std::string role = this->GetButtonRole(data.name);
   if (role == "Move")
   {
     this->EnableMovePoint = data.data.button.state;
@@ -71,7 +71,7 @@ void vtkVRMovePointStyle::HandleButton(const vtkVREventData& data)
 }
 
 // ----------------------------------------------------------------------------
-void vtkVRMovePointStyle::HandleTracker(const vtkVREventData& data)
+void vtkVRMovePointStyle::HandleTracker(const vtkVREvent& data)
 {
   if (this->GetTrackerRole(data.name) != "Tracker")
   {

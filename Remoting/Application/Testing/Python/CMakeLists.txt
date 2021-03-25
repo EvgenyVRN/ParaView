@@ -1,22 +1,30 @@
 ###############################################################################
 # For python scripts for testing.
 #
+# These tests depend on target ParaView::RemotingMisc, which may not
+# exist in the edition being built. Exit
+if (NOT TARGET ParaView::RemotingMisc)
+  return()
+endif ()
+
 # Add python script names here.
 set(PY_TESTS
-  AnimationCache.py,NO_VALID
   Animation.py
+  AnimationCache.py,NO_VALID
   AxesGridTestGridLines.py
   CellIntegrator.py,NO_VALID
   ChangeTimeSteps.py
+  CompositeDataFieldArraysInformation.py,NO_VALID
   ColorAttributeTypeBackwardsCompatibility.py,NO_VALID
+  ColorPaletteInStateFile.py
   CSVWriterReader.py,NO_VALID
   GenerateIdScalarsBackwardsCompatibility.py,NO_VALID
+  GetActiveCamera.py,NO_VALID
   GhostCellsInMergeBlocks.py
   IntegrateAttributes.py,NO_VALID
   LookupTable.py,NO_VALID
   MultiServer.py,NO_VALID
   PointGaussianProperties.py
-  CompositeDataFieldArraysInformation.py,NO_VALID
   ProgrammableFilterProperties.py,NO_VALID
   ProgrammableFilter.py,NO_VALID
   ProxyBackwardsCompatibilityTest.py,NO_VALID
@@ -31,6 +39,7 @@ set(PY_TESTS
   PythonSMTraceTest2.py,NO_VALID
   PythonTestBenchmark.py,NO_VALID
   ReaderReload.py,NO_VALID
+  RecolorableImageExtractor.py
   RepresentationTypeHint.py,NO_VALID
   SaveAnimation.py
   SaveScreenshot.py,NO_VALID
@@ -71,8 +80,10 @@ set(ParaView::RemotingApplication_ARGS)
 # Add tests for pvbatch.
 
 vtk_module_test_data(
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/SaveAnimation_right.png"
   "${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/MultiView_chart_view.png"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/MultiView_render_view.png")
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/MultiView_render_view.png"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../Data/Baseline/RecolorableImageExtractor_1.png")
 
 set(PVBATCH_TESTS
   AnnotationVisibility.py
@@ -95,6 +106,11 @@ endif()
 # paraview/paraview#17329
 set(PVBATCH_NO_SYMMETRIC_TESTS
   SaveAnimation.py
+  )
+
+# Test tests require symmetric mode
+set(PVBATCH_SYMMETRIC_TESTS
+  RecolorableImageExtractor.py
   )
 
 set(PVBATCH_TESTS_5_RANKS
@@ -120,6 +136,7 @@ IF (MPIEXEC_EXECUTABLE)
   paraview_add_test_pvbatch_mpi(
     JUST_VALID
     ${PVBATCH_TESTS}
+    ${PVBATCH_SYMMETRIC_TESTS}
     )
 
   set(vtkRemotingApplication_NUMPROCS 5)
@@ -143,6 +160,7 @@ else ()
   paraview_add_test_pvbatch(
     JUST_VALID
     ${PVBATCH_TESTS}
+    ${PVBATCH_SYMMETRIC_TESTS}
     )
   unset(paraview_pvbatch_args)
   unset(vtk_test_prefix)
@@ -187,12 +205,12 @@ set(paraview_python_state_tests
   ScalarOpacityFunctionPythonState
 )
 foreach(python_state_test ${paraview_python_state_tests})
-  if (PARAVIEW_USE_QT)
+  if (TARGET ParaView::paraview OR paraview_will_be_built)
     set(tname "ParaView::RemotingApplicationPython-${python_state_test}")
     ExternalData_add_test("${_vtk_build_TEST_DATA_TARGET}" NAME ${tname}
       COMMAND ${CMAKE_COMMAND}
-      -DPARAVIEW_EXECUTABLE:FILEPATH=$<TARGET_FILE:paraview>
-      -DPVPYTHON_EXECUTABLE:FILEPATH=$<TARGET_FILE:pvpython>
+      -DPARAVIEW_EXECUTABLE:FILEPATH=$<TARGET_FILE:ParaView::paraview>
+      -DPVPYTHON_EXECUTABLE:FILEPATH=$<TARGET_FILE:ParaView::pvpython>
       -DPARAVIEW_TEST_OUTPUT_BASELINE_DIR:PATH=${paraview_test_data_directory_output}/Testing/Data/Baseline
       -DTEST_DRIVER:FILEPATH=${CMAKE_CURRENT_SOURCE_DIR}/PythonStateTestDriver.py
       -DTEST_SCRIPT:FILEPATH=${CMAKE_CURRENT_SOURCE_DIR}/${python_state_test}.xml
@@ -221,3 +239,96 @@ if (PYTHON_EXECUTABLE AND NOT PARAVIEW_BUILD_SHARED_LIBS)
       "PYTHONPATH=${CMAKE_BINARY_DIR}/${PARAVIEW_PYTHON_SITE_PACKAGES_SUFFIX}"
     )
 endif()
+
+#----------------------------------------------------------------------
+# Module tests using pvpython
+#----------------------------------------------------------------------
+paraview_add_test(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvpython::paraview"
+  ARGS   "$<TARGET_FILE:ParaView::pvpython>"
+         -dr
+         --force-offscreen-rendering
+         -m paraview.tests
+         -o "${CMAKE_BINARY_DIR}/Temporary/Temporary/paraview_tests_results"
+  TEST_NAME "tests")
+
+paraview_add_test(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvpython::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvpython>"
+         -dr
+         --force-offscreen-rendering
+         -m paraview.tests.verify_eyedomelighting
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/VerifyEyeDomeLighting.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/VerifyEyeDomeLighting.png}
+  TEST_NAME "verify_eyedomelighting")
+
+paraview_add_test(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvpython::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvpython>"
+         -dr
+         --force-offscreen-rendering
+         -m paraview.tests.basic_rendering
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/BasicRendering.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/BasicRendering.png}
+  TEST_NAME "basic_rendering")
+
+#----------------------------------------------------------------------
+# Module tests using pvbatch (with or without MPI)
+#----------------------------------------------------------------------
+paraview_add_test_mpi_optional(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch::paraview"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -m paraview.tests
+         -o "${CMAKE_BINARY_DIR}/Temporary/Temporary/paraview_tests_results"
+  TEST_NAME "tests")
+
+paraview_add_test_mpi_optional(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -m paraview.tests.verify_eyedomelighting
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/VerifyEyeDomeLighting.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/VerifyEyeDomeLighting.png}
+  TEST_NAME "verify_eyedomelighting")
+
+paraview_add_test_mpi_optional(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -m paraview.tests.basic_rendering
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/BasicRendering.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/BasicRendering.png}
+  TEST_NAME "basic_rendering")
+
+#----------------------------------------------------------------------
+# Module tests using pvbatch with MPI and in symmetric mode.
+#----------------------------------------------------------------------
+paraview_add_test_mpi(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch.sym::paraview"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -sym
+         -m paraview.tests
+         -o "${CMAKE_BINARY_DIR}/Temporary/Temporary/paraview_tests_results"
+  TEST_NAME "tests")
+
+paraview_add_test_mpi(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch.sym::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -sym
+         -m paraview.tests.verify_eyedomelighting
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/VerifyEyeDomeLighting.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/VerifyEyeDomeLighting.png}
+  TEST_NAME "verify_eyedomelighting")
+
+paraview_add_test_mpi(
+  PREFIX "ParaView::RemotingApplicationPython::Module::pvbatch.sym::paraview.tests"
+  ARGS   "$<TARGET_FILE:ParaView::pvbatch>"
+         -dr
+         -sym
+         -m paraview.tests.basic_rendering
+         -o "${CMAKE_BINARY_DIR}/Testing/Temporary/BasicRendering.png"
+         -v DATA{${_vtk_build_TEST_INPUT_DATA_DIRECTORY}/Data/Baseline/BasicRendering.png}
+  TEST_NAME "basic_rendering")

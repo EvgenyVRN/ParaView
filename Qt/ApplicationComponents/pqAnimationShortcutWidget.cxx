@@ -82,16 +82,14 @@ pqAnimationShortcutWidget::pqAnimationShortcutWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqAnimationShortcutWidget::~pqAnimationShortcutWidget()
-{
-}
+pqAnimationShortcutWidget::~pqAnimationShortcutWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqAnimationShortcutWidget::setScene(pqAnimationScene* scene)
 {
   if (this->Scene)
   {
-    QObject::disconnect(this->Scene, 0, this, 0);
+    QObject::disconnect(this->Scene, nullptr, this, nullptr);
   }
   this->Scene = scene;
   if (scene)
@@ -116,10 +114,10 @@ void pqAnimationShortcutWidget::updateMenu()
   if (!cue)
   {
     QAction* playAction = new QAction(
-      QIcon(":/pqWidgets/Icons/pqVcrPlay24.png"), tr("Create a new animation track"), this);
+      QIcon(":/pqWidgets/Icons/pqVcrPlay.svg"), tr("Create a new animation track"), this);
     playAction->setData(QVariant(0));
     popupMenu->addAction(playAction);
-    this->setIcon(QIcon(":/pqWidgets/Icons/pqVcrPlay24.png"));
+    this->setIcon(QIcon(":/pqWidgets/Icons/pqVcrPlay.svg"));
   }
   else
   {
@@ -179,7 +177,7 @@ void pqAnimationShortcutWidget::onTriggered(QAction* action)
   pqLineEdit* animationLineEdit = new pqLineEdit(dialog);
   animationLineEdit->setValidator(
     new QIntValidator(1, static_cast<int>(~0u >> 1), animationLineEdit));
-  QLabel* label = NULL;
+  QLabel* label = nullptr;
   if (mode == "Sequence")
   {
     label = new QLabel(tr("No. frames:"), dialog);

@@ -158,9 +158,7 @@ pqImplicitPlanePropertyWidget::pqImplicitPlanePropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqImplicitPlanePropertyWidget::~pqImplicitPlanePropertyWidget()
-{
-}
+pqImplicitPlanePropertyWidget::~pqImplicitPlanePropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqImplicitPlanePropertyWidget::placeWidget()
@@ -220,7 +218,7 @@ void pqImplicitPlanePropertyWidget::resetToDataBounds()
     vtkSMPropertyHelper(wdgProxy, "WidgetBounds").Set(bounds, 6);
     wdgProxy->UpdateProperty("WidgetBounds", true);
     wdgProxy->UpdateVTKObjects();
-    emit this->changeAvailable();
+    Q_EMIT this->changeAvailable();
     this->render();
   }
 }
@@ -246,7 +244,7 @@ void pqImplicitPlanePropertyWidget::resetCameraToNormal()
 void pqImplicitPlanePropertyWidget::useCameraNormal()
 {
   vtkSMRenderViewProxy* viewProxy =
-    this->view() ? vtkSMRenderViewProxy::SafeDownCast(this->view()->getProxy()) : NULL;
+    this->view() ? vtkSMRenderViewProxy::SafeDownCast(this->view()->getProxy()) : nullptr;
   if (viewProxy)
   {
     vtkCamera* camera = viewProxy->GetActiveCamera();
@@ -267,7 +265,7 @@ void pqImplicitPlanePropertyWidget::setNormal(double wx, double wy, double wz)
   double n[3] = { wx, wy, wz };
   vtkSMPropertyHelper(wdgProxy, "Normal").Set(n, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 
@@ -278,6 +276,6 @@ void pqImplicitPlanePropertyWidget::setOrigin(double wx, double wy, double wz)
   double o[3] = { wx, wy, wz };
   vtkSMPropertyHelper(wdgProxy, "Origin").Set(o, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }

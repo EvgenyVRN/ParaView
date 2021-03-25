@@ -78,7 +78,7 @@ public:
   {
     vtkSMProxy* plproxy = this->Proxy;
     vtkPVXMLElement* proxyListElement =
-      plproxy->GetHints() ? plproxy->GetHints()->FindNestedElementByName("ProxyList") : NULL;
+      plproxy->GetHints() ? plproxy->GetHints()->FindNestedElementByName("ProxyList") : nullptr;
     if (!proxyListElement)
     {
       return;
@@ -174,7 +174,7 @@ public:
     vtkSMProxyInfo info;
     info.Proxy = proxy;
 
-    vtkSMProxy* parent = self->GetProperty() ? self->GetProperty()->GetParent() : NULL;
+    vtkSMProxy* parent = self->GetProperty() ? self->GetProperty()->GetParent() : nullptr;
     if (parent)
     {
       // Handle proxy-list hints.
@@ -269,7 +269,6 @@ const std::vector<vtkSMProxyListDomain::ProxyType>& vtkSMProxyListDomain::GetPro
 void vtkSMProxyListDomain::CreateProxies(vtkSMSessionProxyManager* pxm)
 {
   assert(pxm);
-  this->Internals->ClearProxies();
   for (const auto& apair : this->Internals->ProxyTypeList)
   {
     if (vtkSMProxy* proxy = pxm->NewProxy(apair.GroupName.c_str(), apair.ProxyName.c_str()))
@@ -304,7 +303,7 @@ const char* vtkSMProxyListDomain::GetProxyGroup(unsigned int cc)
   if (this->GetNumberOfProxyTypes() <= cc)
   {
     vtkErrorMacro("Invalid index " << cc);
-    return NULL;
+    return nullptr;
   }
 
   return this->Internals->ProxyTypeList[cc].GroupName.c_str();
@@ -316,7 +315,7 @@ const char* vtkSMProxyListDomain::GetProxyName(unsigned int cc)
   if (this->GetNumberOfProxyTypes() <= cc)
   {
     vtkErrorMacro("Invalid index " << cc);
-    return NULL;
+    return nullptr;
   }
 
   return this->Internals->ProxyTypeList[cc].ProxyName.c_str();
@@ -325,7 +324,7 @@ const char* vtkSMProxyListDomain::GetProxyName(unsigned int cc)
 //-----------------------------------------------------------------------------
 const char* vtkSMProxyListDomain::GetProxyName(vtkSMProxy* proxy)
 {
-  return proxy ? proxy->GetXMLName() : NULL;
+  return proxy ? proxy->GetXMLName() : nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -333,7 +332,7 @@ vtkSMProxy* vtkSMProxyListDomain::GetProxyWithName(const char* pname)
 {
   vtkSMProxyListDomainInternals::VectorOfProxies::const_iterator iter;
   const vtkSMProxyListDomainInternals::VectorOfProxies& proxies = this->Internals->GetProxies();
-  for (iter = proxies.begin(); pname != NULL && iter != proxies.end(); iter++)
+  for (iter = proxies.begin(); pname != nullptr && iter != proxies.end(); iter++)
   {
     if (iter->Proxy && iter->Proxy->GetXMLName() && strcmp(iter->Proxy->GetXMLName(), pname) == 0)
     {
@@ -341,7 +340,7 @@ vtkSMProxy* vtkSMProxyListDomain::GetProxyWithName(const char* pname)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -352,7 +351,7 @@ int vtkSMProxyListDomain::SetDefaultValues(vtkSMProperty* prop, bool use_uncheck
   {
     vtkSMPropertyHelper helper(prop);
     helper.SetUseUnchecked(use_unchecked_values);
-    vtkSMProxy* values[1] = { this->GetProxy(0) };
+    vtkSMProxy* values[1] = { this->GetProxy(this->GetDefaultIndex()) };
     helper.Set(values, 1);
     return 1;
   }
@@ -368,7 +367,6 @@ int vtkSMProxyListDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement
     return 0;
   }
 
-  int found = 0;
   unsigned int max = element->GetNumberOfNestedElements();
   for (unsigned int cc = 0; cc < max; ++cc)
   {
@@ -380,7 +378,6 @@ int vtkSMProxyListDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement
       if (name && group)
       {
         this->AddProxy(group, name);
-        found = 1;
       }
     }
     else if (strcmp(proxyElement->GetName(), "Group") == 0)
@@ -390,8 +387,6 @@ int vtkSMProxyListDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement
 
       if (name)
       {
-        found = 1;
-
         // Browse group and recover each proxy type
         vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
         vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
@@ -413,13 +408,6 @@ int vtkSMProxyListDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement
       }
     }
   }
-  if (!found)
-  {
-    vtkErrorMacro("Required element \"Proxy\" (with a 'name' and 'group' attribute) "
-                  " or \"Group\" ( with a name attribute ) was not found.");
-    return 0;
-  }
-
   return 1;
 }
 
@@ -458,7 +446,7 @@ vtkSMProxy* vtkSMProxyListDomain::GetProxy(unsigned int index)
   if (index >= proxies.size())
   {
     vtkErrorMacro("Index " << index << " greater than max " << proxies.size());
-    return 0;
+    return nullptr;
   }
   return this->Internals->GetProxies()[index].Proxy;
 }
@@ -468,7 +456,8 @@ vtkSMProxy* vtkSMProxyListDomain::FindProxy(const char* xmlgroup, const char* xm
 {
   vtkSMProxyListDomainInternals::VectorOfProxies::const_iterator iter;
   const vtkSMProxyListDomainInternals::VectorOfProxies& proxies = this->Internals->GetProxies();
-  for (iter = proxies.begin(); xmlgroup != NULL && xmlname != NULL && iter != proxies.end(); iter++)
+  for (iter = proxies.begin(); xmlgroup != nullptr && xmlname != nullptr && iter != proxies.end();
+       iter++)
   {
     if (iter->Proxy && iter->Proxy->GetXMLGroup() && iter->Proxy->GetXMLName() &&
       strcmp(iter->Proxy->GetXMLGroup(), xmlgroup) == 0 &&
@@ -477,7 +466,7 @@ vtkSMProxy* vtkSMProxyListDomain::FindProxy(const char* xmlgroup, const char* xm
       return iter->Proxy;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------

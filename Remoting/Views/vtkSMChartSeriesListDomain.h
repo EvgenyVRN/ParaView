@@ -63,8 +63,8 @@ public:
 
   /**
    * Returns the list of series that are know to this domain are are given a
-   * priority when setting default values. This array is NULL terminated i.e.
-   * the last entry in this array will be NULL.
+   * priority when setting default values. This array is nullptr terminated i.e.
+   * the last entry in this array will be nullptr.
    */
   static const char** GetKnownSeriesNames();
 
@@ -79,7 +79,7 @@ protected:
 
   int ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement* element) override;
 
-  virtual void PopulateArrayComponents(vtkPVArrayInformation*, std::vector<vtkStdString>&);
+  virtual void PopulateArrayComponents(vtkPVArrayInformation*, std::vector<std::string>&);
 
   bool HidePartialArrays;
 

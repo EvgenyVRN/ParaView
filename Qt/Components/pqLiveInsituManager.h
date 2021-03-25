@@ -61,7 +61,7 @@ public:
   static pqLiveInsituManager* instance();
 
   /**
-  * Returns the link proxy to Catalyst or NULL if not connected or if not
+  * Returns the link proxy to Catalyst or nullptr if not connected or if not
   * a catalyst server
   */
   static vtkSMLiveInsituLinkProxy* linkProxy(pqServer* insituSession);
@@ -70,12 +70,12 @@ public:
     return pqLiveInsituManager::linkProxy(this->selectedInsituServer());
   }
   static bool isInsituServer(pqServer* server);
-  static bool isInsitu(pqPipelineSource* pipelineSource);
+  static bool isInsitu(pqProxy* pipelineSource);
   static bool isWriterParametersProxy(vtkSMProxy* proxy);
   static pqPipelineSource* pipelineSource(pqServer* insituSession);
   static void time(pqPipelineSource* source, double* time, vtkIdType* timeStep);
 
-signals:
+Q_SIGNALS:
   void connectionInitiated(pqServer* displaySession);
   void timeUpdated();
   void breakpointAdded(pqServer* insituSession);
@@ -87,7 +87,7 @@ public:
   * Returns current Catalyst server. The current Catalyst server
   * is either selected or its displaySession is selected. If no server is
   * selected we choose the first Catalyst server we find.
-  *  We return NULL if the client is not connected to Catalyst.
+  *  We return nullptr if the client is not connected to Catalyst.
   */
   pqServer* selectedInsituServer();
   /**
@@ -122,7 +122,7 @@ public:
   void waitTimestep(vtkIdType timeStep);
   void waitBreakpointHit();
 
-protected slots:
+protected Q_SLOTS:
   /**
   * called when Catalyst disconnects. We clean up the Catalyst connection.
   */

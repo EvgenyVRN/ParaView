@@ -11,7 +11,7 @@
                      name="Input"
                      panel_widget="input_selector"
                      null_on_empty="1"
-                     panel_visibility="always">
+                     panel_visibility="default">
         <ProxyGroupDomain name="groups">
           <Group name="sources" />
           <Group name="filters" />
@@ -382,7 +382,7 @@
                             label="Faces Array Name"
                             default_values="Face Count"
                             number_of_elements="1"
-                            panel_visibility="always">
+                            panel_visibility="default">
         <Documentation>
           This is the name of the array in the output containing the face counts.
         </Documentation>
@@ -415,7 +415,7 @@
                             label="Vertices Array Name"
                             default_values="Vertex Count"
                             number_of_elements="1"
-                            panel_visibility="always">
+                            panel_visibility="default">
         <Documentation>
           This is the name of the array in the output containing the vertex counts.
         </Documentation>
@@ -526,7 +526,7 @@
                             default_values="%Y-%m-%d %H:%M:%S"
                             name="DateFormat"
                             number_of_elements="1"
-                            panel_visibility="always">
+                            panel_visibility="default">
         <Documentation>
           This property specifies the first format to try using to parse dates. It
           follows the standards of std::get_time.
@@ -1849,6 +1849,8 @@
         <ProxyListDomain name="proxy_list">
           <Proxy group="extended_sources"
                  name="Transform3" />
+          <Proxy group="extended_sources"
+                 name="RotateAroundOriginTransform" />
         </ProxyListDomain>
         <Documentation>The values in this property allow you to specify the
         transform (translation, rotation, and scaling) to apply to the input
@@ -2130,6 +2132,7 @@
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArrayListDomain attribute_type="Vectors"
+                         none_string="None"
                          input_domain_name="input_array3"
                          name="array_list">
           <RequiredProperties>
@@ -2147,6 +2150,7 @@
                             number_of_elements_per_command="2"
                             repeat_command="1">
         <ArrayListDomain attribute_type="Scalars"
+                         none_string="None"
                          input_domain_name="input_array1"
                          name="array_list">
           <RequiredProperties>
@@ -2164,6 +2168,70 @@
         <Property name="NormalArrays" function="NormalArrays" />
       </PropertyGroup>
       <!-- End of YoungsMaterialInterface -->
+    </SourceProxy>
+
+    <!-- ==================================================================== -->
+    <SourceProxy class="vtkDeflectNormals"
+                 label="Deflect Normals"
+                 name="DeflectNormals">
+      <Documentation long_help="This filter deflects normal orientation along a vector attribute."
+                     short_help="Deflects the normals with a given vector field." />
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="point"
+                          name="input_array"
+                          number_of_components="3" />
+        <Documentation>This property specifies the input to the filter.</Documentation>
+      </InputProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            label="Vectors"
+                            name="SelectInputVectors"
+                            number_of_elements="5"
+                            panel_visibility="default">
+        <ArrayListDomain attribute_type="Vectors"
+                         name="array_list">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>The value of this property contains the name of the
+        vector array by which to deflect the dataset's normals.</Documentation>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetScaleFactor"
+                            default_values="1.0"
+                            name="ScaleFactor"
+                            number_of_elements="1"
+                            panel_visibility="default"
+                            animateable="1">
+        <Documentation>Normal deflection factor.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetUseUserNormal"
+                         name="UseUserNormal"
+                         default_values="0"
+                         number_of_elements="1"
+                         panel_visibility="default">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Use a user specified normal instead of the existing point normals.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetUserNormal"
+                            default_values="0 0 1"
+                            name="UserNormal"
+                            number_of_elements="3"
+                            panel_visibility="default">
+        <Documentation>Specify the user constant normal.</Documentation>
+      </DoubleVectorProperty>
+      <!-- End WarpVector -->
     </SourceProxy>
 
   </ProxyGroup>

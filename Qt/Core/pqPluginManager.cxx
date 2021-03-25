@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
 #include "pqObjectBuilder.h"
+#include "pqQtDeprecated.h"
 #include "pqServer.h"
 #include "pqServerConfiguration.h"
 #include "pqServerManagerModel.h"
@@ -164,7 +165,7 @@ void pqPluginManager::loadPluginsFromSettings()
     vtkVLogScopeF(PARAVIEW_LOG_PLUGIN_VERBOSITY(),
       "Loading local Plugin configuration using settings key: %s", key.toLocal8Bit().data());
     vtkSMProxyManager::GetProxyManager()->GetPluginManager()->LoadPluginConfigurationXMLFromString(
-      local_plugin_config.toUtf8().data(), NULL, false);
+      local_plugin_config.toUtf8().data(), nullptr, false);
   }
 }
 
@@ -203,7 +204,7 @@ void pqPluginManager::onServerConnected(pqServer* server)
   // are indeed present on both.
   if (!this->verifyPlugins(server))
   {
-    emit this->requiredPluginsNotLoaded(server);
+    Q_EMIT this->requiredPluginsNotLoaded(server);
   }
 }
 
@@ -234,7 +235,7 @@ void pqPluginManager::onServerDisconnected(pqServer* server)
 //-----------------------------------------------------------------------------
 void pqPluginManager::updatePluginLists()
 {
-  emit this->pluginsUpdated();
+  Q_EMIT this->pluginsUpdated();
 }
 
 //-----------------------------------------------------------------------------
@@ -273,7 +274,7 @@ QStringList pqPluginManager::pluginPaths(pqServer* session, bool remote)
   vtkSMPluginManager* mgr = vtkSMProxyManager::GetProxyManager()->GetPluginManager();
   QString paths =
     remote ? mgr->GetRemotePluginSearchPaths(session->session()) : mgr->GetLocalPluginSearchPaths();
-  return paths.split(';', QString::SkipEmptyParts);
+  return paths.split(';', PV_QT_SKIP_EMPTY_PARTS);
 }
 
 //-----------------------------------------------------------------------------

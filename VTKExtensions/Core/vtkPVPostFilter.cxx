@@ -83,7 +83,7 @@ void DeMangleArrayName(const std::string& mangledName, vtkDataSet* dataSet,
           // has to be from -1 as -1 represents the Magnitude component
           for (int componentIndex = -1; componentIndex < componentCount; componentIndex++)
           {
-            vtkStdString componentNameString;
+            std::string componentNameString;
             const char* componentName = array->GetComponentName(componentIndex);
             if (componentName)
             {
@@ -135,9 +135,7 @@ vtkPVPostFilter::vtkPVPostFilter()
 }
 
 //----------------------------------------------------------------------------
-vtkPVPostFilter::~vtkPVPostFilter()
-{
-}
+vtkPVPostFilter::~vtkPVPostFilter() = default;
 
 //----------------------------------------------------------------------------
 vtkExecutive* vtkPVPostFilter::CreateDefaultExecutive()
@@ -146,7 +144,7 @@ vtkExecutive* vtkPVPostFilter::CreateDefaultExecutive()
 }
 
 //----------------------------------------------------------------------------
-vtkStdString vtkPVPostFilter::DefaultComponentName(int componentNumber, int componentCount)
+std::string vtkPVPostFilter::DefaultComponentName(int componentNumber, int componentCount)
 {
   if (componentCount <= 1)
   {
@@ -306,7 +304,7 @@ int vtkPVPostFilter::DoAnyNeededConversions(vtkDataSet* dataset)
 int vtkPVPostFilter::DoAnyNeededConversions(vtkDataSet* output, const char* requested_name,
   int fieldAssociation, const char* demangled_name, const char* demagled_component_name)
 {
-  vtkDataSetAttributes* dsa = NULL;
+  vtkDataSetAttributes* dsa = nullptr;
   vtkDataSetAttributes* pointData = output->GetPointData();
   vtkDataSetAttributes* cellData = output->GetCellData();
 
@@ -434,7 +432,7 @@ void CopyComponent(T* outIter, U* inIter, int compNo)
   vtkDataArray* inDa = vtkDataArray::SafeDownCast(inIter->GetArray());
   vtkIdType numTuples = inIter->GetNumberOfTuples();
 
-  if (compNo == -1 && inDa == NULL)
+  if (compNo == -1 && inDa == nullptr)
   {
     compNo = 0;
   }
@@ -479,7 +477,7 @@ int vtkPVPostFilter::ExtractComponent(vtkDataSetAttributes* dsa, const char* req
   const char* demangled_name, const char* demangled_component_name)
 {
   vtkAbstractArray* array = dsa->GetAbstractArray(demangled_name);
-  assert(array != NULL && demangled_name && demangled_component_name);
+  assert(array != nullptr && demangled_name && demangled_component_name);
 
   int cIndex = -1;
   bool found = false;
@@ -510,7 +508,7 @@ int vtkPVPostFilter::ExtractComponent(vtkDataSetAttributes* dsa, const char* req
   // compare against cIndex to only run this if component names didn't match
   for (int i = -1; i < numComps && cIndex == -1; i++)
   {
-    vtkStdString defaultName = vtkPVPostFilter::DefaultComponentName(i, numComps);
+    std::string defaultName = vtkPVPostFilter::DefaultComponentName(i, numComps);
     if (vtksys::SystemTools::Strucmp(defaultName.c_str(), demangled_component_name) == 0)
     {
       cIndex = i;

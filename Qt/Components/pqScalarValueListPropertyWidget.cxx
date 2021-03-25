@@ -72,7 +72,7 @@ class pqTableModel : public QAbstractTableModel
   }
 
 public:
-  pqTableModel(int num_columns, bool integers_only = false, QObject* parentObject = NULL)
+  pqTableModel(int num_columns, bool integers_only = false, QObject* parentObject = nullptr)
     : Superclass(parentObject)
     , NumberOfColumns(num_columns)
     , AllowIntegralValuesOnly(integers_only)
@@ -80,7 +80,7 @@ public:
     assert(num_columns > 0);
   }
 
-  ~pqTableModel() override {}
+  ~pqTableModel() override = default;
 
   void setLabels(std::vector<const char*>& labels)
   {
@@ -155,7 +155,7 @@ public:
       {
         this->Values[offset] = aValue;
       }
-      emit this->dataChanged(idx, idx);
+      Q_EMIT this->dataChanged(idx, idx);
       return true;
     }
 
@@ -174,14 +174,14 @@ public:
     if (old_row_count > new_row_count)
     {
       // rows are removed.
-      emit this->beginRemoveRows(QModelIndex(), new_row_count, old_row_count - 1);
+      Q_EMIT this->beginRemoveRows(QModelIndex(), new_row_count, old_row_count - 1);
       this->Values.resize(new_size);
-      emit this->endRemoveRows();
+      Q_EMIT this->endRemoveRows();
     }
     else if (new_row_count > old_row_count)
     {
       // rows are added.
-      emit this->beginInsertRows(QModelIndex(), old_row_count, new_row_count - 1);
+      Q_EMIT this->beginInsertRows(QModelIndex(), old_row_count, new_row_count - 1);
       this->Values.resize(new_size);
       for (int cc = old_size; cc < new_size; cc++)
       {
@@ -194,7 +194,7 @@ public:
           this->Values[cc] = values[cc];
         }
       }
-      emit this->endInsertRows();
+      Q_EMIT this->endInsertRows();
     }
 
     assert(this->Values.size() == values.size());
@@ -213,11 +213,11 @@ public:
           this->Values[cc] = values[cc];
         }
         QModelIndex idx = this->computeIndex(cc);
-        emit this->dataChanged(idx, idx);
+        Q_EMIT this->dataChanged(idx, idx);
       }
     }
   }
-  const QVector<QVariant> value() const { return this->Values; }
+  QVector<QVariant> value() const { return this->Values; }
 
   QModelIndex addRow(const QModelIndex& after = QModelIndex())
   {
@@ -232,7 +232,7 @@ public:
     // insert after current row.
     row++;
 
-    emit this->beginInsertRows(QModelIndex(), row, row);
+    Q_EMIT this->beginInsertRows(QModelIndex(), row, row);
     if (row * this->NumberOfColumns > this->Values.size())
     {
       this->Values.resize(row * this->NumberOfColumns - 1);
@@ -241,7 +241,7 @@ public:
     {
       this->Values.insert(row * this->NumberOfColumns + cc, copy[cc]);
     }
-    emit this->endInsertRows();
+    Q_EMIT this->endInsertRows();
     return this->index(row, 0);
   }
 
@@ -294,12 +294,12 @@ public:
       int numRows = rowRanges.at(g).size();
       int beginRow = rowRanges.at(g).at(0).toInt();
       int endRow = rowRanges.at(g).at(numRows - 1).toInt();
-      emit this->beginRemoveRows(QModelIndex(), beginRow, endRow);
+      Q_EMIT this->beginRemoveRows(QModelIndex(), beginRow, endRow);
       for (int r = endRow; r >= beginRow; --r)
       {
         this->Values.remove(r * this->NumberOfColumns, this->NumberOfColumns);
       }
-      emit this->endRemoveRows();
+      Q_EMIT this->endRemoveRows();
     }
 
     int firstRow = rowRanges.at(0).at(0).toInt();
@@ -320,9 +320,9 @@ public:
 
   void removeAll()
   {
-    emit this->beginResetModel();
+    Q_EMIT this->beginResetModel();
     this->Values.clear();
-    emit this->endResetModel();
+    Q_EMIT this->endResetModel();
   }
 };
 }
@@ -342,6 +342,7 @@ public:
   vtkWeakPointer<vtkSMDomain> RangeDomain;
   pqTableModel Model;
   ValueMode Mode;
+  QPointer<pqSeriesGeneratorDialog> GeneratorDialog;
 
   pqInternals(pqScalarValueListPropertyWidget* self, int columnCount)
     : Model(columnCount)
@@ -385,7 +386,7 @@ pqScalarValueListPropertyWidget::pqScalarValueListPropertyWidget(
   this->setShowLabel(false);
 
   vtkSMVectorProperty* vp = vtkSMVectorProperty::SafeDownCast(smProperty);
-  assert(vp != NULL);
+  assert(vp != nullptr);
 
   this->Internals = new pqInternals(this, vp->GetNumberOfElementsPerCommand());
   QObject::connect(&this->Internals->Model,
@@ -409,13 +410,21 @@ pqScalarValueListPropertyWidget::pqScalarValueListPropertyWidget(
     [&ui](const QItemSelection&, const QItemSelection&) {
       ui.Remove->setEnabled(ui.Table->selectionModel()->selectedIndexes().size() > 0);
     });
+
+  if (smProperty->GetInformationOnly())
+  {
+    ui.Add->hide();
+    ui.AddRange->hide();
+    ui.Remove->hide();
+    ui.RemoveAll->hide();
+  }
 }
 
 //-----------------------------------------------------------------------------
 pqScalarValueListPropertyWidget::~pqScalarValueListPropertyWidget()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -448,14 +457,14 @@ void pqScalarValueListPropertyWidget::add()
   QModelIndex idx = this->Internals->Model.addRow(this->Internals->Ui.Table->currentIndex());
   this->Internals->Ui.Table->setCurrentIndex(idx);
   this->Internals->Ui.Table->edit(idx);
-  emit this->scalarsChanged();
+  Q_EMIT this->scalarsChanged();
 }
 
 //-----------------------------------------------------------------------------
 void pqScalarValueListPropertyWidget::editPastLastRow()
 {
   this->Internals->Model.addRow(this->Internals->Ui.Table->currentIndex());
-  emit this->scalarsChanged();
+  Q_EMIT this->scalarsChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -469,7 +478,7 @@ void pqScalarValueListPropertyWidget::remove()
   }
   QModelIndex idx = this->Internals->Model.removeListedRows(indexes);
   this->Internals->Ui.Table->setCurrentIndex(idx);
-  emit this->scalarsChanged();
+  Q_EMIT this->scalarsChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -478,7 +487,7 @@ void pqScalarValueListPropertyWidget::removeAll()
   auto& internals = (*this->Internals);
   internals.Ui.Table->selectionModel()->clear();
   internals.Model.removeAll();
-  emit this->scalarsChanged();
+  Q_EMIT this->scalarsChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -493,19 +502,22 @@ void pqScalarValueListPropertyWidget::addRange()
       range_max = 10.0;
     }
 
-    pqSeriesGeneratorDialog dialog(range_min, range_max, this);
-    if (dialog.exec() != QDialog::Accepted)
+    if (!this->Internals->GeneratorDialog)
+    {
+      this->Internals->GeneratorDialog = new pqSeriesGeneratorDialog(range_min, range_max, this);
+    }
+    if (this->Internals->GeneratorDialog->exec() != QDialog::Accepted)
     {
       return;
     }
 
     QVariantList value = this->Internals->Model.value().toList();
-    for (const auto& newvalue : dialog.series())
+    for (const auto& newvalue : this->Internals->GeneratorDialog->series())
     {
       value.push_back(QVariant(newvalue));
     }
     this->Internals->Model.setValue(value);
-    emit this->scalarsChanged();
+    Q_EMIT this->scalarsChanged();
   }
   else if (this->Internals->Mode == pqInternals::MODE_INT)
   {
@@ -516,14 +528,17 @@ void pqScalarValueListPropertyWidget::addRange()
       range_max = 10;
     }
 
-    pqSeriesGeneratorDialog dialog(range_min, range_max, this);
-    if (dialog.exec() != QDialog::Accepted)
+    if (!this->Internals->GeneratorDialog)
+    {
+      this->Internals->GeneratorDialog = new pqSeriesGeneratorDialog(range_min, range_max, this);
+    }
+    if (this->Internals->GeneratorDialog->exec() != QDialog::Accepted)
     {
       return;
     }
 
     QVariantList intRange;
-    for (const auto& newvalue : dialog.series())
+    for (const auto& newvalue : this->Internals->GeneratorDialog->series())
     {
       const int ival = static_cast<int>(std::floor(newvalue + 0.5));
       if (intRange.empty() || (intRange.back().toInt() != ival))
@@ -535,7 +550,7 @@ void pqScalarValueListPropertyWidget::addRange()
     QVariantList value = this->Internals->Model.value().toList();
     value += intRange;
     this->Internals->Model.setValue(value);
-    emit this->scalarsChanged();
+    Q_EMIT this->scalarsChanged();
   }
 }
 
@@ -621,7 +636,7 @@ bool pqScalarValueListPropertyWidget::getRange(double& range_min, double& range_
     int min_exists = 0, max_exists = 0;
     vtkSMDoubleRangeDomain* doubleRange =
       vtkSMDoubleRangeDomain::SafeDownCast(this->Internals->RangeDomain);
-    assert(doubleRange != NULL);
+    assert(doubleRange != nullptr);
     range_min = doubleRange->GetMinimum(0, min_exists);
     range_max = doubleRange->GetMaximum(0, max_exists);
     return (min_exists && max_exists);
@@ -639,7 +654,7 @@ bool pqScalarValueListPropertyWidget::getRange(int& range_min, int& range_max)
     int min_exists = 0, max_exists = 0;
     vtkSMIntRangeDomain* doubleRange =
       vtkSMIntRangeDomain::SafeDownCast(this->Internals->RangeDomain);
-    assert(doubleRange != NULL);
+    assert(doubleRange != nullptr);
     range_min = doubleRange->GetMinimum(0, min_exists);
     range_max = doubleRange->GetMaximum(0, max_exists);
     return (min_exists && max_exists);

@@ -78,7 +78,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqPipelineFilter::pqPipelineFilter(
-  QString name, vtkSMProxy* proxy, pqServer* server, QObject* p /*=NULL*/)
+  QString name, vtkSMProxy* proxy, pqServer* server, QObject* p /*=nullptr*/)
   : pqPipelineSource(name, proxy, server, p)
 {
   this->Internal = new pqInternal();
@@ -298,13 +298,13 @@ pqOutputPort* pqPipelineFilter::getInput(const QString& portname, int index) con
   if (iter == this->Internal->Inputs.end())
   {
     qCritical() << "Invalid input port name: " << portname;
-    return 0;
+    return nullptr;
   }
 
   if (index < 0 || index >= iter.value().size())
   {
     qCritical() << "Invalid index: " << index;
-    return 0;
+    return nullptr;
   }
 
   return iter.value()[index];
@@ -314,7 +314,7 @@ pqOutputPort* pqPipelineFilter::getInput(const QString& portname, int index) con
 pqPipelineSource* pqPipelineFilter::getInput(int index) const
 {
   pqOutputPort* op = this->getInput(this->getInputPortName(0), index);
-  return (op ? op->getSource() : 0);
+  return (op ? op->getSource() : nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -329,7 +329,7 @@ pqOutputPort* pqPipelineFilter::getAnyInput() const
       return iter.value()[0];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -423,7 +423,7 @@ void pqPipelineFilter::inputChanged(const QString& portname)
   // The pqPipelineSource whose consumer changes raises the events when the
   // consumer is removed added, so we don't need to raise any events here to
   // let the world know that connections were broken/created.
-  emit this->producerChanged(portname);
+  Q_EMIT this->producerChanged(portname);
 }
 
 //-----------------------------------------------------------------------------

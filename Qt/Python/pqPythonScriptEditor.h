@@ -33,86 +33,123 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _pqPythonScriptEditor_h
 
 #include "pqPythonModule.h"
+
+#include "pqCoreUtilities.h"
+#include "pqPythonEditorActions.h"
+
 #include <QMainWindow>
 
 class QAction;
 class QMenu;
-class QTextEdit;
 
 class pqPythonManager;
-class pqPythonSyntaxHighlighter;
+class pqPythonTabWidget;
 
+/**
+ * @class pqPythonScriptEditor
+ * @brief Paraview Python Editor widget
+ * @details This widget can be used as a embedded Qt python editor
+ * inside paraview. It provides functionality to read, write and edit
+ * python script and paraview macros within paraview itself. The text editor
+ * provides basic functionality such as undo/redo, line numbering and
+ * syntax highlighting (through pygments).
+ *
+ * You can either use this widget as a sole editor, or get the paraview
+ * static one from \ref GetUniqueInstance (which gives you the editor
+ * used for the macro and the scripts).
+ *
+ * Note that \ref GetUniqueInstance is a lazy way of having a unique instance
+ * of the editor ready to be used. A better approach would be to actually change
+ * the code that uses this class to reflect that peculiar behavior (and not embed
+ * it inside the class). Also note that you can freely instantiate as many editor
+ * as you want as two instances of this class don't share any common data.
+ *
+ * \note This class handles the main window components. If you are interested only
+ * in the text editor itself, please see \ref pqPythonTextArea.
+ */
 class PQPYTHON_EXPORT pqPythonScriptEditor : public QMainWindow
 {
   Q_OBJECT
 
 public:
-  typedef QMainWindow Superclass;
-  pqPythonScriptEditor(QWidget* parent = 0);
+  explicit pqPythonScriptEditor(QWidget* parent = nullptr);
 
+  /**
+   * @brief Sets the default save directory for the current buffer
+   * @details Internally, it is only used for the QFileDialog
+   * directory argument when saving or loading a file (ie the
+   * folder from which the QFileDialog is launched).
+   */
   void setSaveDialogDefaultDirectory(const QString& dir);
+
+  /**
+   * @brief Sets the \ref pqPythonManager used for the macros
+   */
   void setPythonManager(pqPythonManager* manager);
 
-  /*
-   * Scroll the editor to the bottom of the scroll area
+  /**
+   * @brief Scroll the editor to the bottom of the scroll area
    */
   void scrollToBottom();
 
-public slots:
-
+  /**
+   * @brief Open a file inside the editor
+   */
   void open(const QString& filename);
-  void setText(const QString& text);
 
-  // Returns true if the new file was created.  If the user was prompted to save
-  // data before creating a new file and clicked cancel, then no new file will
-  // be created and this method returns false.
-  bool newFile();
+  /**
+   * @brief Updates the trace tab text
+   * and creates a new one if it doesn't exists
+   */
+  void updateTrace(const QString& str);
 
-signals:
-  void fileSaved();
+  /**
+   * @brief Wraps up the trace tab
+   */
+  void stopTrace(const QString& str);
+
+  /**
+   * @brief Utility function that provides a single instance
+   * of the editor.
+   */
+  static pqPythonScriptEditor* getUniqueInstance()
+  {
+    static pqPythonScriptEditor* instance = new pqPythonScriptEditor(pqCoreUtilities::mainWidget());
+    return instance;
+  }
+
+  /**
+   * @brief Triggers an macro list update
+   * if the PythonManager exists
+   */
+  static void updateMacroList();
 
 protected:
+  /**
+   * @brief Override the QMainWindow closeEvent
+   * @details We ask the user wants to save the current
+   * file if it's not already saved
+   */
   void closeEvent(QCloseEvent* event) override;
 
-private slots:
-  void open();
-  bool save();
-  bool saveAs();
-  bool saveAsMacro();
-  void documentWasModified();
-
 private:
-  void createActions();
   void createMenus();
-  void createStatusBar();
-  void readSettings();
-  void writeSettings();
-  bool maybeSave();
-  void loadFile(const QString& fileName);
-  bool saveFile(const QString& fileName);
-  void setCurrentFile(const QString& fileName);
-  QString strippedName(const QString& fullFileName);
 
-  QTextEdit* TextEdit;
-  QString CurrentFile;
-  QString DefaultSaveDirectory;
+  void createStatusBar();
 
   QMenu* fileMenu;
   QMenu* editMenu;
   QMenu* helpMenu;
-  QAction* newAct;
-  QAction* openAct;
-  QAction* saveAct;
-  QAction* saveAsAct;
-  QAction* saveAsMacroAct;
-  QAction* exitAct;
-  QAction* cutAct;
-  QAction* copyAct;
-  QAction* pasteAct;
 
+  pqPythonTabWidget* TabWidget;
+
+  pqPythonEditorActions Actions;
+
+  /**
+   * @brief The python manager only used for the
+   * paraview macro system
+   */
   pqPythonManager* pythonManager;
-
-  pqPythonSyntaxHighlighter* SyntaxHighlighter;
 };
 
 #endif

@@ -57,11 +57,11 @@ public:
   // \c server:- server on which the proxy is created.
   // \c parent:- QObject parent.
   pqRenderView(const QString& group, const QString& name, vtkSMViewProxy* renModule,
-    pqServer* server, QObject* parent = NULL);
+    pqServer* server, QObject* parent = nullptr);
 
   // This version allows subclasses to substitute their own renderViewType.
   pqRenderView(const QString& tname, const QString& group, const QString& name,
-    vtkSMViewProxy* renModule, pqServer* server, QObject* parent = NULL);
+    vtkSMViewProxy* renModule, pqServer* server, QObject* parent = nullptr);
 
   // Destructor.
   ~pqRenderView() override;
@@ -76,7 +76,7 @@ public:
   * It is essential to call this resetCamera, to ensure that the reset camera
   * action gets pushed on the interaction undo stack.
   */
-  void resetCamera() override;
+  void resetCamera(bool closest = false) override;
 
   /**
   * Resets the center of rotation to the focal point.
@@ -232,11 +232,11 @@ public:
   virtual void selectPolygonCells(
     vtkIntArray* polygon, int selectionModifier = pqView::PV_SELECTION_DEFAULT);
 
-signals:
+Q_SIGNALS:
   // Triggered when interaction mode change underneath
   void updateInteractionMode(int mode);
 
-public slots:
+public Q_SLOTS:
   // Toggle the orientation axes visibility.
   virtual void setOrientationAxesVisibility(bool visible);
 
@@ -306,11 +306,16 @@ public slots:
   */
   virtual void updateInteractionMode(pqOutputPort* opPort);
 
-protected slots:
+protected Q_SLOTS:
   /**
   * Called when VTK event get trigger to notify that the interaction mode has changed
   */
   virtual void onInteractionModeChange();
+
+  /**
+  * Called when VTK event get trigger to notify that the generic filmic presets has changed
+  */
+  virtual void onGenericFilmicPresetsChange();
 
   // Called when vtkSMRenderViewProxy fires
   // ResetCameraEvent.
@@ -360,7 +365,7 @@ private:
   void selectPolygonInternal(vtkIntArray* polygon, QList<pqOutputPort*>&, bool select_points,
     int selectionModifier, bool select_blocks);
 
-  void emitSelectionSignal(QList<pqOutputPort*>);
+  void emitSelectionSignal(QList<pqOutputPort*> outputPorts, int selectionModifier);
 
   void collectSelectionPorts(vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, QList<pqOutputPort*>& pqPorts, int selectionModifier,

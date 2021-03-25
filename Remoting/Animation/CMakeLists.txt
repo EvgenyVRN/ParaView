@@ -52,8 +52,10 @@ set(classes
   vtkSMAnimationFrameWindowDomain
   vtkSMAnimationScene
   vtkSMAnimationSceneGeometryWriter
+  vtkSMAnimationSceneWebWriter
   vtkSMAnimationSceneProxy
   vtkSMAnimationSceneWriter
+  vtkSMSaveAnimationExtractsProxy
   vtkSMSaveAnimationProxy
   vtkSequenceAnimationPlayer
   vtkTimestepsAnimationPlayer

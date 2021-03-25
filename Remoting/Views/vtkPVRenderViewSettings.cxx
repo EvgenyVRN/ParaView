@@ -26,7 +26,7 @@ vtkPVRenderViewSettings* vtkPVRenderViewSettings::New()
 {
   vtkPVRenderViewSettings* instance = vtkPVRenderViewSettings::GetInstance();
   assert(instance);
-  instance->Register(NULL);
+  instance->Register(nullptr);
   return instance;
 }
 
@@ -48,13 +48,12 @@ vtkPVRenderViewSettings::vtkPVRenderViewSettings()
   , OutlineThreshold(250)
   , PointPickingRadius(0)
   , DisableIceT(false)
+  , EnableFastPreselection(false)
 {
 }
 
 //----------------------------------------------------------------------------
-vtkPVRenderViewSettings::~vtkPVRenderViewSettings()
-{
-}
+vtkPVRenderViewSettings::~vtkPVRenderViewSettings() = default;
 
 //----------------------------------------------------------------------------
 void vtkPVRenderViewSettings::SetResolveCoincidentTopology(int mode)

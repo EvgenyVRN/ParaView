@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "QtTestingConfigure.h"
 
 #include "QVTKOpenGLNativeWidget.h"
-#include "QVTKOpenGLWidget.h"
+#include "QVTKOpenGLStereoWidget.h"
 #include "pqApplicationCore.h"
 #include "pqCollaborationEventPlayer.h"
 #include "pqColorButtonEventPlayer.h"
@@ -57,11 +57,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqEventDispatcher.h"
 #include "pqFileDialogEventPlayer.h"
 #include "pqFileDialogEventTranslator.h"
+#include "pqFileUtilitiesEventPlayer.h"
 #include "pqFlatTreeViewEventPlayer.h"
 #include "pqFlatTreeViewEventTranslator.h"
 #include "pqImageUtil.h"
 #include "pqLineEditEventPlayer.h"
 #include "pqOptions.h"
+#include "pqQVTKWidget.h"
 #include "pqQVTKWidgetEventPlayer.h"
 #include "pqQVTKWidgetEventTranslator.h"
 #include "pqServer.h"
@@ -139,6 +141,7 @@ pqCoreTestUtility::pqCoreTestUtility(QObject* p)
   this->eventTranslator()->addWidgetEventTranslator(new pqColorDialogEventTranslator(this));
   this->eventTranslator()->addWidgetEventTranslator(new pqConsoleWidgetEventTranslator(this));
 
+  this->eventPlayer()->addWidgetEventPlayer(new pqFileUtilitiesEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqLineEditEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqQVTKWidgetEventPlayer(this));
   this->eventPlayer()->addWidgetEventPlayer(new pqFileDialogEventPlayer(this));
@@ -150,9 +153,7 @@ pqCoreTestUtility::pqCoreTestUtility(QObject* p)
 }
 
 //-----------------------------------------------------------------------------
-pqCoreTestUtility::~pqCoreTestUtility()
-{
-}
+pqCoreTestUtility::~pqCoreTestUtility() = default;
 
 //-----------------------------------------------------------------------------
 QString pqCoreTestUtility::DataRoot()
@@ -193,7 +194,7 @@ QString pqCoreTestUtility::BaselineDirectory()
   if (result.isEmpty())
   {
     pqApplicationCore* core = pqApplicationCore::instance();
-    if (core != NULL)
+    if (core != nullptr)
     {
       pqTestUtility* testUtil = core->testUtility();
       result = QFileInfo(testUtil->filename()).path();
@@ -295,7 +296,7 @@ bool pqCoreTestUtility::CompareImage(QWidget* widget, const QString& referenceIm
   double threshold, ostream& vtkNotUsed(output), const QString& tempDirectory,
   const QSize& size /*=QSize(300, 300)*/)
 {
-  assert(widget != NULL);
+  assert(widget != nullptr);
 
   // try to locate a pqView, if any associated with the QWidget.
   QList<pqView*> views =
@@ -310,13 +311,13 @@ bool pqCoreTestUtility::CompareImage(QWidget* widget, const QString& referenceIm
   }
 
   // try to recover the render window directly
-  QVTKOpenGLWidget* glWidget = qobject_cast<QVTKOpenGLWidget*>(widget);
+  QVTKOpenGLStereoWidget* glWidget = qobject_cast<QVTKOpenGLStereoWidget*>(widget);
   if (glWidget)
   {
     vtkRenderWindow* rw = glWidget->renderWindow();
     if (rw)
     {
-      cout << "Using QVTKOpenGLWidget RenderWindow API for capture" << endl;
+      cout << "Using QVTKOpenGLStereoWidget RenderWindow API for capture" << endl;
       return pqCoreTestUtility::CompareImage(
         rw, referenceImage, threshold, std::cerr, tempDirectory, size);
     }
@@ -333,6 +334,17 @@ bool pqCoreTestUtility::CompareImage(QWidget* widget, const QString& referenceIm
     }
   }
 
+  if (pqQVTKWidget* const qvtkWidget = qobject_cast<pqQVTKWidget*>(widget))
+  {
+    vtkRenderWindow* rw = qvtkWidget->renderWindow();
+    if (rw)
+    {
+      cout << "Using QVTKOpenGLNativeWidget RenderWindow API for capture" << endl;
+      return pqCoreTestUtility::CompareImage(
+        rw, referenceImage, threshold, std::cerr, tempDirectory, size);
+    }
+  }
+
   qFatal("CompareImage not supported!");
   return false;
 }
@@ -341,7 +353,7 @@ bool pqCoreTestUtility::CompareImage(QWidget* widget, const QString& referenceIm
 bool pqCoreTestUtility::CompareView(pqView* curView, const QString& referenceImage,
   double threshold, const QString& tempDirectory, const QSize& size /*=QSize()*/)
 {
-  assert(curView != NULL);
+  assert(curView != nullptr);
 
   SCOPED_UNDO_EXCLUDE();
 
@@ -449,6 +461,7 @@ QString pqCoreTestUtility::fixPath(const QString& path)
   newpath.replace("$PARAVIEW_TEST_ROOT", pqCoreTestUtility::TestDirectory());
   newpath.replace("$PARAVIEW_TEST_BASELINE_DIR", pqCoreTestUtility::BaselineDirectory());
   newpath.replace("$PARAVIEW_DATA_ROOT", pqCoreTestUtility::DataRoot());
+  newpath.replace("$PARAVIEW_PID", QString::number(QCoreApplication::applicationPid()));
   return newpath;
 }
 

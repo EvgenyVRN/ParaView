@@ -92,15 +92,15 @@ public:
 
 protected:
   vtkScalarBarItem()
-    : Actor(NULL)
+    : Actor(nullptr)
   {
   }
-  ~vtkScalarBarItem() override {}
+  ~vtkScalarBarItem() override = default;
 };
 
 //----------------------------------------------------------------------------
 // Hide use of std::map from public interface
-class vtkContext2DScalarBarActor::vtkAnnotationMap : public std::map<double, vtkStdString>
+class vtkContext2DScalarBarActor::vtkAnnotationMap : public std::map<double, std::string>
 {
 };
 
@@ -123,7 +123,7 @@ vtkContext2DScalarBarActor::vtkContext2DScalarBarActor()
   this->AddRangeLabels = 1;
   this->AutomaticAnnotations = 0;
   this->AddRangeAnnotations = 0;
-  this->RangeLabelFormat = NULL;
+  this->RangeLabelFormat = nullptr;
   this->SetRangeLabelFormat("%g");
 
   this->OutlineScalarBar = 0;
@@ -145,7 +145,7 @@ vtkContext2DScalarBarActor::vtkContext2DScalarBarActor()
   localScene->AddItem(this->ScalarBarItem);
   localScene->Delete();
 
-  this->CurrentViewport = NULL;
+  this->CurrentViewport = nullptr;
 
   this->Axis = vtkAxis::New();
   this->Axis->SetScene(localScene);
@@ -154,13 +154,13 @@ vtkContext2DScalarBarActor::vtkContext2DScalarBarActor()
 //----------------------------------------------------------------------------
 vtkContext2DScalarBarActor::~vtkContext2DScalarBarActor()
 {
-  this->SetLookupTable(NULL);
+  this->SetLookupTable(nullptr);
   this->ActorDelegate->Delete();
-  this->SetTitle(NULL);
-  this->SetComponentTitle(NULL);
+  this->SetTitle(nullptr);
+  this->SetComponentTitle(nullptr);
   this->ScalarBarItem->Delete();
-  this->SetTitleTextProperty(NULL);
-  this->SetLabelTextProperty(NULL);
+  this->SetTitleTextProperty(nullptr);
+  this->SetLabelTextProperty(nullptr);
   this->Axis->Delete();
   this->SetRangeLabelFormat(nullptr);
 }
@@ -618,7 +618,7 @@ void vtkContext2DScalarBarActor::PaintColorBar(vtkContext2D* painter, double siz
       double indexedColor[4];
       vtkVariant annotatedValue = ctf->GetAnnotatedValue(i);
       ctf->GetIndexedColor(i, indexedColor);
-      vtkStdString annotation = ctf->GetAnnotation(i);
+      std::string annotation = ctf->GetAnnotation(i);
       brush->SetColorF(indexedColor);
       if (this->Orientation == VTK_ORIENT_VERTICAL)
       {
@@ -759,7 +759,7 @@ void vtkContext2DScalarBarActor::PaintColorBar(vtkContext2D* painter, double siz
         double barPosition = normalizedValue * (high - low) + low;
         if (normalizedValue >= 0.0 && normalizedValue <= 1.0 && !vtkMath::IsNan(barPosition))
         {
-          vtkStdString annotation = ctf->GetAnnotation(i);
+          std::string annotation = ctf->GetAnnotation(i);
           annotationAnchors[barPosition] = annotation;
         }
       }
@@ -948,7 +948,7 @@ void vtkContext2DScalarBarActor::PaintAxis(vtkContext2D* painter, double size[2]
   }
   else
   {
-    this->Axis->SetCustomTickPositions(NULL);
+    this->Axis->SetCustomTickPositions(nullptr);
   }
 
   this->Axis->SetUnscaledRange(range);
@@ -1152,7 +1152,7 @@ typedef struct AI
 {
   double Anchor;
   double Position;
-  vtkStdString Annotation;
+  std::string Annotation;
   double Span;
 } AnnotationInfo;
 

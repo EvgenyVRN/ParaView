@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    $RCSfile$
+   Module:  pqVRDockPanel.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -44,29 +44,29 @@ class pqVRDockPanel : public QDockWidget
   typedef QDockWidget Superclass;
 
 public:
-  pqVRDockPanel(const QString& t, QWidget* p = 0, Qt::WindowFlags f = 0)
+  pqVRDockPanel(const QString& t, QWidget* p = nullptr, Qt::WindowFlags f = Qt::WindowFlags{})
     : Superclass(t, p, f)
   {
     this->constructor();
   }
-  pqVRDockPanel(QWidget* p = 0, Qt::WindowFlags f = 0)
+  pqVRDockPanel(QWidget* p = nullptr, Qt::WindowFlags f = Qt::WindowFlags{})
     : Superclass(p, f)
   {
     this->constructor();
   }
   virtual ~pqVRDockPanel();
 
-private slots:
+private Q_SLOTS:
   void addConnection();
   void removeConnection();
   void updateConnections();
-  void editConnection(QListWidgetItem* item = NULL);
+  void editConnection(QListWidgetItem* item = nullptr);
   void updateConnectionButtons(int row);
 
   void addStyle();
   void removeStyle();
   void updateStyles();
-  void editStyle(QListWidgetItem* item = NULL);
+  void editStyle(QListWidgetItem* item = nullptr);
   void updateStyleButtons(int row);
 
   void proxyChanged(vtkSMProxy*);

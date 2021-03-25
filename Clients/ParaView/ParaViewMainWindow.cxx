@@ -71,7 +71,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef PARAVIEW_USE_PYTHON
-#include "pqExportInspector.h"
 #include "pqPythonDebugLeaksView.h"
 #include "pqPythonShell.h"
 typedef pqPythonDebugLeaksView DebugLeaksViewType;
@@ -132,15 +131,6 @@ ParaViewMainWindow::ParaViewMainWindow()
   }
 #endif
 
-#ifdef PARAVIEW_USE_PYTHON
-  pqExportInspector* catalystInspector = new pqExportInspector(this);
-  this->Internals->catalystInspectorDock->setWidget(catalystInspector);
-  this->Internals->catalystInspectorDock->hide();
-#else
-  delete this->Internals->catalystInspectorDock;
-  this->Internals->catalystInspectorDock = nullptr;
-#endif
-
   // show output widget if we received an error message.
   this->connect(this->Internals->outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
     SLOT(handleMessage(const QString&, int)));
@@ -159,8 +149,11 @@ ParaViewMainWindow::ParaViewMainWindow()
   this->tabifyDockWidget(
     this->Internals->colorMapEditorDock, this->Internals->collaborationPanelDock);
   this->tabifyDockWidget(this->Internals->colorMapEditorDock, this->Internals->lightInspectorDock);
+  this->tabifyDockWidget(this->Internals->colorMapEditorDock, this->Internals->findDataDock);
+  this->tabifyDockWidget(
+    this->Internals->colorMapEditorDock, this->Internals->multiBlockInspectorDock);
 
-  this->Internals->selectionDisplayDock->hide();
+  this->Internals->findDataDock->hide();
   this->Internals->animationViewDock->hide();
   this->Internals->statisticsDock->hide();
   this->Internals->comparativePanelDock->hide();
@@ -179,7 +172,6 @@ ParaViewMainWindow::ParaViewMainWindow()
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->viewPropertiesDock);
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->displayPropertiesDock);
   this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->informationDock);
-  this->tabifyDockWidget(this->Internals->propertiesDock, this->Internals->multiBlockInspectorDock);
 
   vtkSMSettings* settings = vtkSMSettings::GetInstance();
 
@@ -190,8 +182,8 @@ ParaViewMainWindow::ParaViewMainWindow()
     case vtkPVGeneralSettings::SEPARATE_DISPLAY_PROPERTIES:
       delete this->Internals->viewPropertiesPanel;
       delete this->Internals->viewPropertiesDock;
-      this->Internals->viewPropertiesPanel = NULL;
-      this->Internals->viewPropertiesDock = NULL;
+      this->Internals->viewPropertiesPanel = nullptr;
+      this->Internals->viewPropertiesDock = nullptr;
 
       this->Internals->propertiesPanel->setPanelMode(
         pqPropertiesPanel::SOURCE_PROPERTIES | pqPropertiesPanel::VIEW_PROPERTIES);
@@ -200,8 +192,8 @@ ParaViewMainWindow::ParaViewMainWindow()
     case vtkPVGeneralSettings::SEPARATE_VIEW_PROPERTIES:
       delete this->Internals->displayPropertiesPanel;
       delete this->Internals->displayPropertiesDock;
-      this->Internals->displayPropertiesPanel = NULL;
-      this->Internals->displayPropertiesDock = NULL;
+      this->Internals->displayPropertiesPanel = nullptr;
+      this->Internals->displayPropertiesDock = nullptr;
 
       this->Internals->propertiesPanel->setPanelMode(
         pqPropertiesPanel::SOURCE_PROPERTIES | pqPropertiesPanel::DISPLAY_PROPERTIES);
@@ -215,13 +207,13 @@ ParaViewMainWindow::ParaViewMainWindow()
     default:
       delete this->Internals->viewPropertiesPanel;
       delete this->Internals->viewPropertiesDock;
-      this->Internals->viewPropertiesPanel = NULL;
-      this->Internals->viewPropertiesDock = NULL;
+      this->Internals->viewPropertiesPanel = nullptr;
+      this->Internals->viewPropertiesDock = nullptr;
 
       delete this->Internals->displayPropertiesPanel;
       delete this->Internals->displayPropertiesDock;
-      this->Internals->displayPropertiesPanel = NULL;
-      this->Internals->displayPropertiesDock = NULL;
+      this->Internals->displayPropertiesPanel = nullptr;
+      this->Internals->displayPropertiesDock = nullptr;
       break;
   }
 
@@ -242,13 +234,16 @@ ParaViewMainWindow::ParaViewMainWindow()
   /// hook delete to pqDeleteReaction.
   QAction* tempDeleteAction = new QAction(this);
   pqDeleteReaction* handler = new pqDeleteReaction(tempDeleteAction);
-  handler->connect(this->Internals->propertiesPanel, SIGNAL(deleteRequested(pqPipelineSource*)),
-    SLOT(deleteSource(pqPipelineSource*)));
+  handler->connect(this->Internals->propertiesPanel, SIGNAL(deleteRequested(pqProxy*)),
+    SLOT(deleteSource(pqProxy*)));
 
   // setup color editor
   /// Provide access to the color-editor panel for the application.
   pqApplicationCore::instance()->registerManager(
     "COLOR_EDITOR_PANEL", this->Internals->colorMapEditorDock);
+
+  // Provide access to the find data panel for the application.
+  pqApplicationCore::instance()->registerManager("FIND_DATA_PANEL", this->Internals->findDataDock);
 
   // Populate application menus with actions.
   pqParaViewMenuBuilders::buildFileMenu(*this->Internals->menu_File);
@@ -261,12 +256,14 @@ ParaViewMainWindow::ParaViewMainWindow()
   // Populate filters menu.
   pqParaViewMenuBuilders::buildFiltersMenu(*this->Internals->menuFilters, this);
 
+  // Populate extractors menu.
+  pqParaViewMenuBuilders::buildExtractorsMenu(*this->Internals->menuExtractors, this);
+
   // Populate Tools menu.
   pqParaViewMenuBuilders::buildToolsMenu(*this->Internals->menuTools);
 
   // Populate Catalyst menu.
-  pqParaViewMenuBuilders::buildCatalystMenu(
-    *this->Internals->menu_Catalyst, this->Internals->catalystInspectorDock);
+  pqParaViewMenuBuilders::buildCatalystMenu(*this->Internals->menu_Catalyst);
 
   // setup the context menu for the pipeline browser.
   pqParaViewMenuBuilders::buildPipelineBrowserContextMenu(
@@ -286,6 +283,10 @@ ParaViewMainWindow::ParaViewMainWindow()
 
   // Final step, define application behaviors. Since we want all ParaView
   // behaviors, we use this convenience method.
+
+  // UsageLoggingBehavior needs to explicitly enabled for ParaView since it's
+  // disabled by default.
+  pqParaViewBehaviors::setEnableUsageLoggingBehavior(true);
   new pqParaViewBehaviors(this, this);
 }
 

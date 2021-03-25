@@ -39,10 +39,7 @@ set(classes
   vtkPVAlgorithmPortsInformation
   vtkPVArrayInformation
   vtkPVClassNameInformation
-  vtkPVCompositeDataInformation
-  vtkPVCompositeDataInformationIterator
   vtkPVDataInformation
-  vtkPVDataInformationHelper
   vtkPVDataSetAttributesInformation
   vtkPVDataSizeInformation
   vtkPVDisableStackTraceSignalHandler
@@ -51,8 +48,8 @@ set(classes
   vtkPVEnvironmentInformationHelper
   vtkPVFileInformation
   vtkPVFileInformationHelper
-  vtkPVGenericAttributeInformation
   vtkPVInformation
+  vtkPVLogInformation
   vtkPVMemoryUseInformation
   vtkPVMultiClientsInformation
   vtkPVOptions
@@ -147,11 +144,11 @@ if (TARGET VTK::ParallelMPI)
   list(APPEND vtkProcessModuleAutoMPI_defines
     "PARAVIEW_MPIEXEC_EXECUTABLE=\"${MPIEXEC_EXECUTABLE}\""
     "PARAVIEW_MPI_NUMPROC_FLAG=\"${MPIEXEC_NUMPROC_FLAG}\"")
-  if (MPI_PREFLAGS)
+  if (MPIEXEC_PREFLAGS)
     list(APPEND vtkProcessModuleAutoMPI_defines
       "PARAVIEW_MPI_PREFLAGS=\"${MPIEXEC_PREFLAGS}\"")
   endif ()
-  if (MPI_POSTFLAGS)
+  if (MPIEXEC_POSTFLAGS)
     list(APPEND vtkProcessModuleAutoMPI_defines
       "PARAVIEW_MPI_POSTFLAGS=\"${MPIEXEC_POSTFLAGS}\"")
   endif ()

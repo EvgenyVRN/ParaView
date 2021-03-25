@@ -59,9 +59,7 @@ pqProgressManager::pqProgressManager(QObject* _parent)
 }
 
 //-----------------------------------------------------------------------------
-pqProgressManager::~pqProgressManager()
-{
-}
+pqProgressManager::~pqProgressManager() = default;
 
 //-----------------------------------------------------------------------------
 void pqProgressManager::onServerAdded(pqServer* server)
@@ -119,14 +117,14 @@ void pqProgressManager::unlockProgress(QObject* object)
 
   if (this->Lock == object)
   {
-    this->Lock = 0;
+    this->Lock = nullptr;
   }
 }
 
 //-----------------------------------------------------------------------------
 bool pqProgressManager::isLocked() const
 {
-  return (this->Lock != 0);
+  return (this->Lock != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -142,7 +140,7 @@ void pqProgressManager::setProgress(const QString& message, int progress_val)
     return;
   }
   this->InUpdate = true;
-  emit this->progress(message, progress_val);
+  Q_EMIT this->progress(message, progress_val);
   if (progress_val > 0)
   {
     // we don't want to call a processEvents on zero progress
@@ -165,7 +163,7 @@ void pqProgressManager::setEnableAbort(bool enable)
     // When locked, ignore all other senders.
     return;
   }
-  emit this->enableAbort(enable);
+  Q_EMIT this->enableAbort(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -182,7 +180,7 @@ void pqProgressManager::setEnableProgress(bool enable)
     if (this->ProgressCount++ == 0)
     {
       this->EnableProgress = true;
-      emit this->enableProgress(true);
+      Q_EMIT this->enableProgress(true);
     }
   }
   else
@@ -190,7 +188,7 @@ void pqProgressManager::setEnableProgress(bool enable)
     if (--this->ProgressCount == 0)
     {
       this->EnableProgress = false;
-      emit this->enableProgress(false);
+      Q_EMIT this->enableProgress(false);
     }
   }
 }
@@ -198,13 +196,13 @@ void pqProgressManager::setEnableProgress(bool enable)
 //-----------------------------------------------------------------------------
 void pqProgressManager::triggerAbort()
 {
-  emit this->abort();
+  Q_EMIT this->abort();
 }
 
 //-----------------------------------------------------------------------------
 void pqProgressManager::onStartProgress()
 {
-  emit progressStartEvent();
+  Q_EMIT progressStartEvent();
   this->setEnableProgress(true);
 }
 
@@ -212,7 +210,7 @@ void pqProgressManager::onStartProgress()
 void pqProgressManager::onEndProgress()
 {
   this->setEnableProgress(false);
-  emit progressEndEvent();
+  Q_EMIT progressEndEvent();
 }
 
 //-----------------------------------------------------------------------------

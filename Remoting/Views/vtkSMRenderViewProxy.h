@@ -58,9 +58,11 @@ public:
   bool SelectFrustumPoints(const int region[4], vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections = false);
   bool SelectPolygonPoints(vtkIntArray* polygon, vtkCollection* selectedRepresentations,
-    vtkCollection* selectionSources, bool multiple_selections = false);
+    vtkCollection* selectionSources, bool multiple_selections = false, int modifier = 0,
+    bool selectBlocks = false);
   bool SelectPolygonCells(vtkIntArray* polygon, vtkCollection* selectedRepresentations,
-    vtkCollection* selectionSources, bool multiple_selections = false);
+    vtkCollection* selectionSources, bool multiple_selections = false, int modifier = 0,
+    bool selectBlocks = false);
   //@}
 
   //@{
@@ -106,15 +108,16 @@ public:
   /**
    * For backwards compatibility in Python scripts.
    */
-  void ResetCamera();
-  void ResetCamera(double bounds[6]);
-  void ResetCamera(double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
+  void ResetCamera(bool closest = false);
+  void ResetCamera(double bounds[6], bool closest = false);
+  void ResetCamera(double xmin, double xmax, double ymin, double ymax, double zmin, double zmax,
+    bool closest = false);
   //@}
 
   /**
    * Convenience method for zooming to a representation.
    */
-  virtual void ZoomTo(vtkSMProxy* representation);
+  virtual void ZoomTo(vtkSMProxy* representation, bool closest = false);
 
   //@{
   /**
@@ -203,27 +206,6 @@ public:
    */
   vtkFloatArray* CaptureDepthBuffer();
 
-  /**
-   * Access to value-rendered array. Used for deferred color mapping during
-   * in-situ visualization (Cinema).
-   */
-  vtkFloatArray* GetValuesFloat();
-
-  //@{
-
-  /**
-   * Value raster capture controls.
-   */
-  void StartCaptureValues();
-  void StopCaptureValues();
-
-  /**
-   * Access to the current vtkValuePass rendering mode.
-   */
-  int GetValueRenderingMode();
-  void SetValueRenderingMode(int mode);
-  //@}
-
 protected:
   vtkSMRenderViewProxy();
   ~vtkSMRenderViewProxy() override;
@@ -248,7 +230,8 @@ protected:
   bool SelectFrustumInternal(const int region[4], vtkCollection* selectedRepresentations,
     vtkCollection* selectionSources, bool multiple_selections, int fieldAssociation);
   bool SelectPolygonInternal(vtkIntArray* polygon, vtkCollection* selectedRepresentations,
-    vtkCollection* selectionSources, bool multiple_selections, int fieldAssociation);
+    vtkCollection* selectionSources, bool multiple_selections, int fieldAssociation, int modifier,
+    bool selectBlocks);
 
   vtkTypeUInt32 PreRender(bool interactive) override;
   void PostRender(bool interactive) override;
@@ -273,7 +256,12 @@ protected:
   bool IsInSelectionMode();
 
   bool IsSelectionCached;
-  void ClearSelectionCache(bool force = false);
+
+  /**
+   * Returns true if the cache clear request was sent to vtkPVRenderView. The
+   * return value is primarily intended for debugging/logging purposes.
+   */
+  bool ClearSelectionCache(bool force = false);
 
   // Internal fields for the observer mechanism that is used to invalidate
   // the cache of selection when the current user became master

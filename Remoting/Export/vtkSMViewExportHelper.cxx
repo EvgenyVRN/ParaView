@@ -32,21 +32,17 @@
 
 vtkObjectFactoryNewMacro(vtkSMViewExportHelper);
 //----------------------------------------------------------------------------
-vtkSMViewExportHelper::vtkSMViewExportHelper()
-{
-}
+vtkSMViewExportHelper::vtkSMViewExportHelper() = default;
 
 //----------------------------------------------------------------------------
-vtkSMViewExportHelper::~vtkSMViewExportHelper()
-{
-}
+vtkSMViewExportHelper::~vtkSMViewExportHelper() = default;
 
 //----------------------------------------------------------------------------
-vtkStdString vtkSMViewExportHelper::GetSupportedFileTypes(vtkSMViewProxy* view)
+std::string vtkSMViewExportHelper::GetSupportedFileTypes(vtkSMViewProxy* view)
 {
   if (!view)
   {
-    return vtkStdString();
+    return std::string();
   }
 
   std::ostringstream stream;
@@ -94,10 +90,10 @@ vtkStdString vtkSMViewExportHelper::GetSupportedFileTypes(vtkSMViewProxy* view)
 vtkSMExporterProxy* vtkSMViewExportHelper::CreateExporter(
   const char* filename, vtkSMViewProxy* view)
 {
-  if (!view || filename == NULL || filename[0] == '\0')
+  if (!view || filename == nullptr || filename[0] == '\0')
   {
     vtkErrorMacro("Invalid input arguments to Export.");
-    return NULL;
+    return nullptr;
   }
 
   vtkSMSessionProxyManager* pxm = view->GetSessionProxyManager();
@@ -132,7 +128,7 @@ vtkSMExporterProxy* vtkSMViewExportHelper::CreateExporter(
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------

@@ -19,7 +19,6 @@
 #include "vtkInformationVector.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 
@@ -44,9 +43,7 @@ vtkEnvironmentAnnotationFilter::vtkEnvironmentAnnotationFilter()
 }
 
 //----------------------------------------------------------------------------
-vtkEnvironmentAnnotationFilter::~vtkEnvironmentAnnotationFilter()
-{
-}
+vtkEnvironmentAnnotationFilter::~vtkEnvironmentAnnotationFilter() = default;
 
 //----------------------------------------------------------------------------
 void vtkEnvironmentAnnotationFilter::UpdateAnnotationValue()
@@ -103,7 +100,7 @@ int vtkEnvironmentAnnotationFilter::RequestData(vtkInformation* vtkNotUsed(reque
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   vtkDataObject* input = vtkDataObject::GetData(inputVector[0], 0);
-  if (input == NULL)
+  if (input == nullptr)
   {
     return 0;
   }

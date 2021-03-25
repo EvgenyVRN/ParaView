@@ -26,14 +26,15 @@
 vtkStandardNewMacro(vtkPVFileInformationHelper);
 //-----------------------------------------------------------------------------
 vtkPVFileInformationHelper::vtkPVFileInformationHelper()
+  : Path(nullptr)
+  , WorkingDirectory(nullptr)
+  , DirectoryListing(0)
+  , SpecialDirectories(0)
+  , FastFileTypeDetection(1)
+  , ReadDetailedFileInformation(false)
+  , PathSeparator(nullptr)
 {
-  this->DirectoryListing = 0;
-  this->Path = 0;
-  this->WorkingDirectory = 0;
-  this->SpecialDirectories = 0;
   this->SetPath(".");
-  this->PathSeparator = 0;
-  this->FastFileTypeDetection = 1;
 #if defined(_WIN32) && !defined(__CYGWIN__)
   this->SetPathSeparator("\\");
 #else
@@ -44,9 +45,9 @@ vtkPVFileInformationHelper::vtkPVFileInformationHelper()
 //-----------------------------------------------------------------------------
 vtkPVFileInformationHelper::~vtkPVFileInformationHelper()
 {
-  this->SetPath(0);
-  this->SetPathSeparator(0);
-  this->SetWorkingDirectory(0);
+  this->SetPath(nullptr);
+  this->SetPathSeparator(nullptr);
+  this->SetWorkingDirectory(nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -85,10 +86,10 @@ std::string vtkPVFileInformationHelper::Utf8ToLocalWin32(const std::string& path
   WCHAR* wpath = new WCHAR[wlen];
   char* lpath = new char[wlen];
   MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wpath, wlen);
-  WideCharToMultiByte(CP_ACP, 0, wpath, -1, lpath, wlen, NULL, NULL);
+  WideCharToMultiByte(CP_ACP, 0, wpath, -1, lpath, wlen, nullptr, nullptr);
   std::string localPath(lpath);
-  delete wpath;
-  delete lpath;
+  delete[] wpath;
+  delete[] lpath;
   return localPath;
 #else
   return path;
@@ -107,10 +108,10 @@ std::string vtkPVFileInformationHelper::LocalToUtf8Win32(const std::string& path
   // see vtksys::Encoding way of recovering converted string size
   // TODO
   int err = MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, wpath, wlen);
-  err = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, lpath, wlen, NULL, NULL);
+  err = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, lpath, wlen, nullptr, nullptr);
   std::string utfPath(lpath);
-  delete wpath;
-  delete lpath;
+  delete[] wpath;
+  delete[] lpath;
   return utfPath;
 #else
   return path;

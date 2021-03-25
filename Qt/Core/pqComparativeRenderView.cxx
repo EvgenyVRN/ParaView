@@ -130,7 +130,7 @@ vtkSMRenderViewProxy* pqComparativeRenderView::getRenderViewProxy() const
 }
 
 //-----------------------------------------------------------------------------
-void pqComparativeRenderView::updateViewWidgets(QWidget* container /*=NULL*/)
+void pqComparativeRenderView::updateViewWidgets(QWidget* container /*=nullptr*/)
 {
   // Create QVTKWidgets for new view modules and destroy old ones.
   vtkNew<vtkCollection> currentViews;
@@ -141,13 +141,18 @@ void pqComparativeRenderView::updateViewWidgets(QWidget* container /*=NULL*/)
 
   currentViews->InitTraversal();
   vtkSMViewProxy* temp = vtkSMViewProxy::SafeDownCast(currentViews->GetNextItemAsObject());
-  for (; temp != 0; temp = vtkSMViewProxy::SafeDownCast(currentViews->GetNextItemAsObject()))
+  for (; temp != nullptr; temp = vtkSMViewProxy::SafeDownCast(currentViews->GetNextItemAsObject()))
   {
     currentViewsSet.insert(temp);
   }
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
   QSet<vtkSMViewProxy*> oldViews =
     QSet<vtkSMViewProxy*>::fromList(this->Internal->RenderWidgets.keys());
+#else
+  auto const& render_keys = this->Internal->RenderWidgets.keys();
+  QSet<vtkSMViewProxy*> oldViews = QSet<vtkSMViewProxy*>(render_keys.begin(), render_keys.end());
+#endif
 
   QSet<vtkSMViewProxy*> removed = oldViews - currentViewsSet;
   QSet<vtkSMViewProxy*> added = currentViewsSet - oldViews;

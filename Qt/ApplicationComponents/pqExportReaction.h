@@ -49,7 +49,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqExportReaction : public pqReaction
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqExportReaction(QAction* parent);
 
@@ -59,7 +59,7 @@ public:
   */
   QString exportActiveView();
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

@@ -179,6 +179,7 @@ public:
    * Until streaming becomes mainstream, we enable streaming support by passing
    * a command line argument to all processes.
    */
+  vtkSetMacro(EnableStreaming, int);
   vtkGetMacro(EnableStreaming, int);
   //@}
 
@@ -268,6 +269,15 @@ public:
    * Is set to vtkLogger::VERBOSITY_INVALID if not specified.
    */
   vtkGetMacro(LogStdErrVerbosity, int);
+  //@}
+
+  //@{
+  /**
+   * Provides access to display selection. These can be interpreted as EGL
+   * device indices or DISPLAY selection. When not specified, this returns an
+   * empty string.
+  */
+  const std::string& GetDisplay(int myrank = 0, int num_ranks = 1);
   //@}
 
   enum ProcessTypeEnum
@@ -378,9 +388,20 @@ private:
   int LogStdErrVerbosity;
 
   std::vector<std::pair<std::string, int> > LogFiles;
+  std::vector<std::string> Displays;
+  int DisplaysAssignmentMode;
+
+  enum DisplaysAssignmentModeEnum
+  {
+    CONTIGUOUS,
+    ROUNDROBIN
+  };
 
   static int VerbosityArgumentHandler(const char* argument, const char* value, void* call_data);
   static int LogArgumentHandler(const char* argument, const char* value, void* call_data);
+  static int DisplaysArgumentHandler(const char* argument, const char* value, void* call_data);
+  static int DisplaysAssignmentModeArgumentHandler(
+    const char* argument, const char* value, void* call_data);
 };
 
 #endif

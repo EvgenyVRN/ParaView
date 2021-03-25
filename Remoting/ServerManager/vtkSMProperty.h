@@ -182,13 +182,19 @@ public:
    * Returns true if all values are in all domains, false otherwise.
    * The domains will check the unchecked values (SetUncheckedXXX())
    * instead of the actual values.
+   *
+   * Domains that return `vtkSMDomain::NOT_APPLICABLE` for `vtkSMDomain::IsInDomain`
+   * are skipped.
    */
   int IsInDomains();
 
   /**
    * Overload of IsInDomains() that provides a mechanism to return the first
-   * domain that fails the check. \c domain is set to NULL when all domain
+   * domain that fails the check. \c domain is set to nullptr when all domain
    * checks pass.
+   *
+   * Domains that return `vtkSMDomain::NOT_APPLICABLE` for `vtkSMDomain::IsInDomain`
+   * are skipped.
    */
   int IsInDomains(vtkSMDomain** domain);
 
@@ -400,7 +406,7 @@ public:
   //@{
   /**
    * Returns the documentation for this proxy. The return value
-   * may be NULL if no documentation is defined in the XML
+   * may be nullptr if no documentation is defined in the XML
    * for this property.
    */
   vtkGetObjectMacro(Documentation, vtkSMDocumentation);
@@ -424,8 +430,18 @@ public:
    * the first one returns true i.e. indicate that it can set a default value
    * and did so. Returns true if any domain can setup a default value for this
    * property. Otherwise false.
+   *
    * vtkSMVectorProperty overrides this method to add support for setting
    * default values using information_property.
+   *
+   * In symmetric MPI mode (i.e. when vtkProcessModule::GetSymmetricMPIMode() ==
+   * true), domains need not have correct values since data information is not
+   * collected by doing any reduction in parallel. To avoid setting incorrect
+   * values, or worse, different values on different ranks, this method does
+   * nothing in the case. Except for vtkSMProxyProperty. For vtkSMProxyProperty,
+   * we don't have any domain that is runtime data dependent and hence we let
+   * the property reset itself. This ensures that properties with
+   * vtkSMProxyListDomain, for example, are initialized correctly.
    */
   virtual bool ResetToDomainDefaults(bool use_unchecked_values = false);
 
@@ -462,7 +478,7 @@ public:
    * Server Manager does not (and should not) interpret the hints. Hints
    * provide a mechanism to add GUI pertinant information to the server
    * manager XML.  Returns the XML element for the hints associated with
-   * this property, if any, otherwise returns NULL.
+   * this property, if any, otherwise returns nullptr.
    */
   vtkGetObjectMacro(Hints, vtkPVXMLElement);
   void SetHints(vtkPVXMLElement* hints);
@@ -589,7 +605,7 @@ protected:
    * after SetUncheckedXXX() to tell all dependent domains to
    * update themselves according to the new value.
    * Note that when calling Update() on domains contained by
-   * this property, a NULL is passed as the argument. This is
+   * this property, a nullptr is passed as the argument. This is
    * because the domain does not really "depend" on the property.
    * When calling Update() on dependent domains, the property
    * passes itself as the argument.
@@ -721,7 +737,7 @@ private:
   vtkSMPropertyTemplateMacroCase(vtkSMDoubleVectorProperty, double, prop, call)                    \
   vtkSMPropertyTemplateMacroCase(vtkSMIntVectorProperty, int, prop, call)                          \
   vtkSMPropertyTemplateMacroCase(vtkSMIdTypeVectorProperty, vtkIdType, prop, call)                 \
-  vtkSMPropertyTemplateMacroCase(vtkSMStringVectorProperty, vtkStdString, prop, call)
+  vtkSMPropertyTemplateMacroCase(vtkSMStringVectorProperty, std::string, prop, call)
 /* clang-format on */
 
 template <class DomainType>

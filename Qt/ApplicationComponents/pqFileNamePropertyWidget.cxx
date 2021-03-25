@@ -108,9 +108,7 @@ pqFileNamePropertyWidget::pqFileNamePropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqFileNamePropertyWidget::~pqFileNamePropertyWidget()
-{
-}
+pqFileNamePropertyWidget::~pqFileNamePropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqFileNamePropertyWidget::resetButtonClicked()
@@ -134,8 +132,8 @@ void pqFileNamePropertyWidget::resetButtonClicked()
   if (strcmp(helper.GetAsString(), fileName))
   {
     vtkSMUncheckedPropertyHelper(smproxy, "FileName").Set(fileName);
-    emit this->changeAvailable();
-    emit this->changeFinished();
+    Q_EMIT this->changeAvailable();
+    Q_EMIT this->changeFinished();
     return;
   }
 }

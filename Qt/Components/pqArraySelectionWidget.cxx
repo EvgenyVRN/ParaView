@@ -110,7 +110,7 @@ public:
   {
   }
 
-  ~Model() override {}
+  ~Model() override = default;
 
   void addPixmap(const QString& key, QIcon&& pixmap)
   {
@@ -355,7 +355,7 @@ private:
   void emitHeaderDataChanged()
   {
     this->HeaderCheckState.clear();
-    emit this->headerDataChanged(Qt::Horizontal, 0, 0);
+    Q_EMIT this->headerDataChanged(Qt::Horizontal, 0, 0);
   }
 
   std::map<QString, std::map<QString, QStandardItem*> > GroupedItemsMap;
@@ -382,9 +382,7 @@ pqArraySelectionWidget::pqArraySelectionWidget(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqArraySelectionWidget::~pqArraySelectionWidget()
-{
-}
+pqArraySelectionWidget::~pqArraySelectionWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqArraySelectionWidget::setIconType(const QString& pname, const QString& icon_type)
@@ -530,7 +528,7 @@ void pqArraySelectionWidget::updateProperty(const QString& pname, const QVariant
     QScopedValueRollback<bool> rollback(this->UpdatingProperty, true);
     this->setProperty(pname.toLocal8Bit().data(), value);
   }
-  emit this->widgetModified();
+  Q_EMIT this->widgetModified();
 }
 
 //-----------------------------------------------------------------------------

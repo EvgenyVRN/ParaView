@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCoreUtilities.h"
 #include "pqManageFavoritesReaction.h"
 #include "pqPVApplicationCore.h"
+#include "pqQtDeprecated.h"
 #include "pqServerManagerModel.h"
 #include "pqSetData.h"
 #include "pqSetName.h"
@@ -91,7 +92,7 @@ public:
 
   typedef QMap<QString, CategoryInfo> CategoryInfoMap;
 
-  pqInternal() { this->LocalActiveSession = NULL; }
+  pqInternal() { this->LocalActiveSession = nullptr; }
 
   void addProxy(const QString& pgroup, const QString& pname, const QString& icon,
     const QString& omitFromToolbar = QString())
@@ -184,7 +185,7 @@ pqProxyGroupMenuManager::~pqProxyGroupMenuManager()
     vtkSMProxyManager::GetProxyManager()->RemoveObserver(this->Internal->ProxyManagerCallBackId);
   }
   delete this->Internal;
-  this->Internal = 0;
+  this->Internal = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -362,10 +363,10 @@ void pqProxyGroupMenuManager::loadRecentlyUsedItems()
   if (settings->contains(key))
   {
     QString list = settings->value(key).toString();
-    QStringList parts = list.split("|", QString::SkipEmptyParts);
+    QStringList parts = list.split("|", PV_QT_SKIP_EMPTY_PARTS);
     foreach (QString part, parts)
     {
-      QStringList pieces = part.split(";", QString::SkipEmptyParts);
+      QStringList pieces = part.split(";", PV_QT_SKIP_EMPTY_PARTS);
       if (pieces.size() == 2)
       {
         QPair<QString, QString> aKey(pieces[0], pieces[1]);
@@ -408,7 +409,7 @@ void pqProxyGroupMenuManager::populateFavoritesMenu()
 
     for (const QPair<QString, QString>& key : this->Internal->Favorites)
     {
-      QStringList categories = key.second.split(";", QString::SkipEmptyParts);
+      QStringList categories = key.second.split(";", PV_QT_SKIP_EMPTY_PARTS);
       bool isCategory = key.first.compare("categories") == 0;
       QString filter = isCategory ? QString("") : categories.takeLast();
       if (!isCategory)
@@ -466,7 +467,7 @@ QAction* pqProxyGroupMenuManager::getAddToCategoryAction(const QString& path)
   {
     if (key.first == "filters")
     {
-      QStringList categories = key.second.split(";", QString::SkipEmptyParts);
+      QStringList categories = key.second.split(";", PV_QT_SKIP_EMPTY_PARTS);
       QString filter = categories.takeLast();
       categories.removeLast();
       if (path == categories.join(";"))
@@ -490,10 +491,10 @@ void pqProxyGroupMenuManager::loadFavoritesItems()
   if (settings->contains(key))
   {
     QString list = settings->value(key).toString();
-    QStringList parts = list.split("|", QString::SkipEmptyParts);
+    QStringList parts = list.split("|", PV_QT_SKIP_EMPTY_PARTS);
     for (const QString& part : parts)
     {
-      QStringList pieces = part.split(";", QString::SkipEmptyParts);
+      QStringList pieces = part.split(";", PV_QT_SKIP_EMPTY_PARTS);
       if (pieces.size() >= 2)
       {
         QString group = pieces.takeFirst();
@@ -535,7 +536,7 @@ void pqProxyGroupMenuManager::populateMenu()
   QList<QAction*> menuActions = _menu->actions();
   foreach (QAction* action, menuActions)
   {
-    QObject::disconnect(action, 0, this, 0);
+    QObject::disconnect(action, nullptr, this, nullptr);
   }
   menuActions.clear();
   if (!this->Internal->SearchAction.isNull())
@@ -619,7 +620,7 @@ void pqProxyGroupMenuManager::populateMenu()
     }
   }
 
-  emit this->menuPopulated();
+  Q_EMIT this->menuPopulated();
 }
 
 //-----------------------------------------------------------------------------
@@ -638,7 +639,7 @@ void pqProxyGroupMenuManager::updateMenuStyle()
 
   for (auto bm : this->Internal->Favorites)
   {
-    QStringList path = bm.second.split(";", QString::SkipEmptyParts);
+    QStringList path = bm.second.split(";", PV_QT_SKIP_EMPTY_PARTS);
     QString filter = path.takeLast();
     if (QAction* action = this->getAction(bm.first, filter))
     {
@@ -654,7 +655,7 @@ QAction* pqProxyGroupMenuManager::getAction(const QString& pgroup, const QString
 {
   if (pname.isEmpty() || pgroup.isEmpty())
   {
-    return 0;
+    return nullptr;
   }
 
   // Since Proxies map keeps the QAction instance, we will reuse the QAction
@@ -664,14 +665,14 @@ QAction* pqProxyGroupMenuManager::getAction(const QString& pgroup, const QString
   QString name = QString("%1").arg(pname);
   if (iter == this->Internal->Proxies.end())
   {
-    return 0;
+    return nullptr;
   }
 
   vtkSMSessionProxyManager* pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   if (!pxm)
   {
-    return 0;
+    return nullptr;
   }
   vtkSMProxy* prototype =
     pxm->GetPrototypeProxy(pgroup.toLocal8Bit().data(), pname.toLocal8Bit().data());
@@ -724,7 +725,7 @@ QAction* pqProxyGroupMenuManager::getAction(const QString& pgroup, const QString
     this->connect(action, SIGNAL(triggered()), SLOT(triggered()), Qt::UniqueConnection);
     return action;
   }
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -741,7 +742,7 @@ void pqProxyGroupMenuManager::triggered()
     return;
   }
   QPair<QString, QString> key(data_list[0], data_list[1]);
-  emit this->triggered(key.first, key.second);
+  Q_EMIT this->triggered(key.first, key.second);
   if (this->RecentlyUsedMenuSize > 0)
   {
     this->Internal->RecentlyUsed.removeAll(key);
@@ -796,12 +797,12 @@ vtkSMProxy* pqProxyGroupMenuManager::getPrototype(QAction* action) const
 {
   if (!action)
   {
-    return NULL;
+    return nullptr;
   }
   QStringList data_list = action->data().toStringList();
   if (data_list.size() != 2)
   {
-    return NULL;
+    return nullptr;
   }
 
   QPair<QString, QString> key(data_list[0], data_list[1]);
@@ -952,7 +953,7 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
   vtkSMSessionProxyManager* pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
 
-  if (this->Internal->ProxyDefinitionGroupToListen.size() == 0 || pxm == NULL)
+  if (this->Internal->ProxyDefinitionGroupToListen.size() == 0 || pxm == nullptr)
   {
     return; // Nothing to look into...
   }
@@ -973,9 +974,9 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
     const char* group = iter->GetGroupName();
     const char* name = iter->GetProxyName();
     vtkPVXMLElement* hints = iter->GetProxyHints();
-    if (hints != NULL)
+    if (hints != nullptr)
     {
-      if (hints->FindNestedElementByName("ReaderFactory") != NULL)
+      if (hints->FindNestedElementByName("ReaderFactory") != nullptr)
       {
         // skip readers.
         continue;
@@ -983,7 +984,7 @@ void pqProxyGroupMenuManager::lookForNewDefinitions()
       for (unsigned int cc = 0; cc < hints->GetNumberOfNestedElements(); cc++)
       {
         vtkPVXMLElement* showInMenu = hints->GetNestedElement(cc);
-        if (showInMenu == NULL || showInMenu->GetName() == NULL ||
+        if (showInMenu == nullptr || showInMenu->GetName() == nullptr ||
           strcmp(showInMenu->GetName(), "ShowInMenu") != 0)
         {
           continue;
@@ -1020,7 +1021,7 @@ void pqProxyGroupMenuManager::switchActiveServer()
 {
   void* newActiveSession = vtkSMProxyManager::IsInitialized()
     ? vtkSMProxyManager::GetProxyManager()->GetActiveSession()
-    : NULL;
+    : nullptr;
 
   if (newActiveSession && newActiveSession != this->Internal->LocalActiveSession)
   {

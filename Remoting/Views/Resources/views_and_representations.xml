@@ -77,7 +77,7 @@
         <Documentation>Representations in this view.</Documentation>
       </ProxyProperty>
       <IntVectorProperty command="SetPPI"
-                         default_values="96"
+                         default_values="72"
                          name="PPI"
                          number_of_elements="1"
                          panel_visibility="never">
@@ -1917,7 +1917,7 @@
         command="SetCamera3DManipulators"
         argument_is_array="1"
         number_of_elements="9"
-        default_values="4 1 2 3 4 1 2 4 6"
+        default_values="4 1 2 3 4 7 2 4 6"
         panel_visibility="never">
         <Documentation>
           Set the interactions mode for 3D interaction. The values are specified
@@ -1937,6 +1937,7 @@
           <Entry text="Rotate" value="4" />
           <Entry text="Multi-Rotate" value="5" />
           <Entry text="ZoomToMouse" value="6" />
+          <Entry text="SkyboxRotate" value="7" />
         </EnumerationDomain>
       </IntVectorProperty>
 
@@ -2277,6 +2278,204 @@
         </Hints>
       </IntVectorProperty>
 
+      <IntVectorProperty name="UseToneMapping"
+                         command="SetUseToneMapping"
+                         default_values="0"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Enable / Disable tone mapping. Tone mapping is a technique to preserve the colors when the scene is too dark or too bright.
+          Refer to the settings for more configuration.
+        </Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="Exposure"
+                            command="SetExposure"
+                            default_values="1.0"
+                            number_of_elements="1"
+                            panel_visibility="advanced">
+        <DoubleRangeDomain name="range" min="0.0" max="10.0" />
+        <Documentation>
+          Set the exposure coefficient.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator" mode="enabled_state" property="UseToneMapping"
+                 value="1" />
+              <Expression type="or">
+                <PropertyWidgetDecorator type="GenericDecorator"
+                                         mode="visibility"
+                                         property="ToneMappingType"
+                                         value="2" />
+                <PropertyWidgetDecorator type="GenericDecorator"
+                                         mode="visibility"
+                                         property="ToneMappingType"
+                                         value="3" />
+              </Expression>
+            </Expression>
+          </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="ToneMappingType"
+                         command="SetToneMappingType"
+                         number_of_elements="1"
+                         default_values="3"
+                         panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="ToneMappingType"/>
+        </Hints>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="Contrast"
+                            command="SetContrast"
+                            default_values="1.6773"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="Contrast"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="Shoulder"
+                            command="SetShoulder"
+                            default_values="0.9714"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="Shoulder"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="MidIn"
+                            command="SetMidIn"
+                            default_values="0.18"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="MidIn"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="MidOut"
+                            command="SetMidOut"
+                            default_values="0.18"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="MidOut"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="HdrMax"
+                            command="SetHdrMax"
+                            default_values="11.0785"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="HdrMax"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="UseACES"
+                         command="SetUseACES"
+                         default_values="1"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="UseACES"/>
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty name="GenericFilmicPresets"
+                         command="SetGenericFilmicPresets"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="GenericFilmicPresets"/>
+        </Hints>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="UseSSAO"
+                         command="SetUseSSAO"
+                         label="Use Ambient Occlusion"
+                         default_values="0"
+                         panel_visibility="advanced"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Enable / Disable screen space ambient occlusion.
+        </Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty name="UseSSAODefaultPresets"
+                            command="SetUseSSAODefaultPresets"
+                            default_values="1"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="UseSSAODefaultPresets"/>
+        </Hints>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="Radius"
+                            command="SetRadius"
+                            default_values="0.5"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="Radius"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="Bias"
+                            command="SetBias"
+                            default_values="0.01"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="Bias"/>
+        </Hints>
+      </DoubleVectorProperty>
+      <IntVectorProperty name="KernelSize"
+                            command="SetKernelSize"
+                            default_values="32"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="KernelSize"/>
+        </Hints>
+      </IntVectorProperty>
+      <IntVectorProperty name="Blur"
+                            command="SetBlur"
+                            default_values="0"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyLink group="settings"
+                        proxy="RenderViewSettings"
+                        property="Blur"/>
+        </Hints>
+      </IntVectorProperty>
+
       <IntVectorProperty command="SetStereoCapableWindow"
                          default_values="none"
                          name="StereoCapableWindow"
@@ -2485,14 +2684,6 @@
         </Documentation>
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <IntVectorProperty command="SetSkyboxResolution"
-                         default_values="1000"
-                         name="SkyboxResolution"
-                         number_of_elements="1">
-        <Documentation>
-          Set the resolution of the skybox.
-        </Documentation>
-      </IntVectorProperty>
       <ProxyProperty command="SetBackgroundTexture"
                      name="BackgroundTexture" panel_widget="texture_selector">
         <ProxyGroupDomain name="groups">
@@ -2517,13 +2708,6 @@
         <DoubleRangeDomain name="range" />
         <Documentation>Set the most conservative clipping range.</Documentation>
       </DoubleVectorProperty>
-      <Property
-          name="CaptureValuesFloat"
-          command="CaptureValuesFloat"
-          >
-        <Documentation>A helper function to get the FLOATING_POINT value
-        buffer from the vtkValuePass.</Documentation>
-      </Property>
       <IntVectorProperty
           name="LockBounds"
           command="SetLockBounds"
@@ -2535,110 +2719,6 @@
         <Documentation>A helper function to force consistent Z buffer
         captures from a RenderView.</Documentation>
       </IntVectorProperty>
-      <Property
-          name="BeginValueCapture"
-          command="BeginValueCapture"
-          >
-        <Documentation>Initiates a render state where RGB colors
-        encode values from a particular array.</Documentation>
-      </Property>
-      <IntVectorProperty
-          name="DrawCells"
-          command="SetDrawCells"
-          default_values="0"
-          animateable="0"
-          number_of_elements="1"
-          >
-        <BooleanDomain name="bool" />
-        <Documentation>RGB colors will come directly from a cell (1)
-        or point (0) aligned array.</Documentation>
-      </IntVectorProperty>
-      <StringVectorProperty
-          name="ArrayNameToDraw"
-          command="SetArrayNameToDraw"
-          default_values=""
-          animateable="0"
-          number_of_elements="1"
-          >
-        <Documentation>RGB colors will come directly from a named
-        array.</Documentation>
-      </StringVectorProperty>
-      <IntVectorProperty
-          name="ArrayNumberToDraw"
-          command="SetArrayNumberToDraw"
-          default_values="0"
-          animateable="0"
-          number_of_elements="1"
-          >
-        <IntRangeDomain name="range" />
-        <Documentation>RGB colors will come directly from the numbered
-        array.</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty
-          name="ValueRenderingMode"
-          command="SetValueRenderingModeCommand"
-          default_values="1"
-          animateable="0"
-          number_of_elements="1"
-          >
-        <IntRangeDomain name="range" />
-        <Documentation>Select rendering mode of the value pass (either INVERTIBLE_LUT (1) or
-        FLOATING_POINT (2)).</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty
-          name="ValueRenderingModeGet"
-          command="GetValueRenderingModeCommand"
-          default_values="1"
-          information_only="1"
-          >
-        <Documentation>Get active rendering mode of the value pass (either INVERTIBLE_LUT (1) or
-        FLOATING_POINT (2)).</Documentation>
-      </IntVectorProperty>
-      <IntVectorProperty
-          name="ArrayComponentToDraw"
-          command="SetArrayComponentToDraw"
-          default_values="0"
-          animateable="0"
-          number_of_elements="1"
-          >
-        <IntRangeDomain name="range" />
-        <Documentation>RGB colors will come directly from the numbered
-        component of the array.</Documentation>
-      </IntVectorProperty>
-      <DoubleVectorProperty
-          name="ScalarRange"
-          argument_is_array="0"
-          command="SetScalarRange"
-          default_values="0.0 -1.0"
-          animateable="0"
-          number_of_elements="2"
-          >
-        <DoubleRangeDomain name="range" />
-        <Documentation>Map linearly between the min and max values to
-        produce RGB colors.</Documentation>
-      </DoubleVectorProperty>
-      <Property
-          name="EndValueCapture"
-          command="EndValueCapture"
-          >
-        <Documentation>Terminates the render state where RGB colors
-        encode values from a particular array and returns to normal
-        behavior.</Documentation>
-      </Property>
-      <Property
-          name="StartCaptureLuminance"
-          command="StartCaptureLuminance"
-          >
-        <Documentation>Initiates a render state where lighting contributions are
-        encoded into RGB.</Documentation>
-      </Property>
-      <Property
-          name="StopCaptureLuminance"
-          command="StopCaptureLuminance"
-        >
-        <Documentation>Terminates the render state where lighting contributions
-        are encoded into RGB.</Documentation>
-      </Property>
       <IntVectorProperty name="EnableOSPRay"
           label="Enable Ray Tracing"
           command="SetEnableOSPRay"
@@ -2651,6 +2731,22 @@
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
         </Hints>
       </IntVectorProperty>
+      <StringVectorProperty name="OSPRayRendererType"
+          command="SetOSPRayRendererType"
+          label="Back End"
+          default_values="scivis"
+          number_of_elements="1">
+        <RendererDomain name="list">
+        </RendererDomain>
+        <Documentation>Selects a specific ray traced rendering engine.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="EnableOSPRay"
+                                   values="1" />
+        </Hints>
+      </StringVectorProperty>
       <IntVectorProperty
           name="Shadows"
           command="SetShadows"
@@ -2662,28 +2758,19 @@
         or not.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                 <Property name="OSPRayRendererType" function="equals" value="OSPRay raycaster"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+	  </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
-      <StringVectorProperty name="OSPRayRendererType"
-          command="SetOSPRayRendererType"
-          label="Back End"
-          default_values="scivis"
-          number_of_elements="1">
-        <RendererDomain name="list">
-        </RendererDomain>
-        <Documentation>Set the OSPRay renderer to use.</Documentation>
-        <Hints>
-          <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
-        </Hints>
-      </StringVectorProperty>
       <IntVectorProperty
           name="AmbientSamples"
           command="SetAmbientOcclusionSamples"
@@ -2697,10 +2784,17 @@
         OSPRay raycaster sends at each intersection.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                 <Property name="OSPRayRendererType" function="equals" value="OSPRay raycaster"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+	  </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
       <IntVectorProperty
@@ -2733,8 +2827,8 @@
             min="1"
             name="range"/>
         <Documentation>Set the number of render passes ray tracers take to
-        improve image quality. Has no effect unless ParaView
-        is started with the --enable-streaming option.</Documentation>
+        improve image quality. Note, this requires turning on the
+        'Enable Streaming' setting in Edit->Preferences/Settings.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -2743,6 +2837,57 @@
                                    values="1" />
         </Hints>
       </IntVectorProperty>
+      <IntVectorProperty
+          name="RouletteDepth"
+          command="SetRouletteDepth"
+          default_values="5"
+          animateable="0"
+          number_of_elements="1">
+        <IntRangeDomain
+            min="0"
+            name="range"/>
+        <Documentation>Set the path traced recursion depth at which to start Russian roulette termination.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                 <Property name="OSPRayRendererType" function="equals" value="OSPRay pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
+      <DoubleVectorProperty
+          name="VolumeAnisotropy"
+          command="SetVolumeAnisotropy"
+          default_values="0.0"
+          animateable="0"
+          number_of_elements="1">
+        <DoubleRangeDomain
+            min="-1.0"
+            max="1.0"
+            name="range"/>
+        <Documentation>Set the tendency for light to scatter back towards (negative) or away from (positive) the light source within path traced volumes.</Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                 <Property name="OSPRayRendererType" function="equals" value="OSPRay pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+	  </PropertyWidgetDecorator>
+        </Hints>
+      </DoubleVectorProperty>
       <IntVectorProperty
           name="Denoise"
           command="SetDenoise"
@@ -2778,7 +2923,7 @@
         <DoubleRangeDomain
             min="0.0"
             name="range"/>
-        <Documentation>Diminish or Amplify all lights in the scene.</Documentation>
+        <Documentation>Diminish or amplify all lights in the scene.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -2826,10 +2971,17 @@
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
       <DoubleVectorProperty
@@ -2842,10 +2994,17 @@
         <Documentation>Sets north pole for gradient and image environmental background in path tracers.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </DoubleVectorProperty>
       <DoubleVectorProperty
@@ -2858,10 +3017,17 @@
         <Documentation>Sets east direction for image environmental background in path tracers.</Documentation>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetEnvironmentalBG"
@@ -2874,10 +3040,17 @@
                            name="range" />
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </DoubleVectorProperty>
       <DoubleVectorProperty command="SetEnvironmentalBG2"
@@ -2890,10 +3063,17 @@
                            name="range" />
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </DoubleVectorProperty>
       <IntVectorProperty command="SetGradientEnvironmentalBG"
@@ -2903,10 +3083,17 @@
         <BooleanDomain name="bool" />
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
       <IntVectorProperty command="SetTexturedEnvironmentalBG"
@@ -2916,10 +3103,17 @@
         <BooleanDomain name="bool" />
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </IntVectorProperty>
       <ProxyProperty command="SetEnvironmentalBGTexture"
@@ -2930,10 +3124,17 @@
         </ProxyGroupDomain>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="contains" value="pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </ProxyProperty>
       <ProxyProperty
@@ -2955,6 +3156,11 @@
         <Property name="OrientationAxesInteractivity"/>
         <Property name="OrientationAxesLabelColor"/>
         <Property name="OrientationAxesOutlineColor"/>
+      </PropertyGroup>
+      <PropertyGroup label="Render Passes">
+        <Property name="UseToneMapping"/>
+        <Property name="Exposure"/>
+        <Property name="UseSSAO"/>
       </PropertyGroup>
       <PropertyGroup name="Lights"
                      label="Lights"
@@ -2988,7 +3194,6 @@
         <Property name="UseTexturedBackground"/>
         <Property name="UseSkyboxBackground"/>
         <Property name="UseEnvironmentLighting"/>
-        <Property name="SkyboxResolution"/>
         <Property name="BackgroundTexture"/>
       </PropertyGroup>
       <PropertyGroup label="Stereo">
@@ -2999,21 +3204,9 @@
       </PropertyGroup>
       <PropertyGroup label="Cinema Export"
                      panel_visibility="never">
-        <Property name="ValueRenderingMode"/>
-        <Property name="ValueRenderingModeGet"/>
         <Property name="CaptureZBuffer"/>
         <Property name="MaxClipBounds"/>
         <Property name="LockBounds"/>
-        <Property name="BeginValueCapture" />
-        <Property name="DrawCells"/>
-        <Property name="ArrayNameToDraw"/>
-        <Property name="ArrayNumberToDraw"/>
-        <Property name="ArrayComponentToDraw"/>
-        <Property name="ScalarRange"/>
-        <Property name="EndValueCapture"/>
-        <Property name="CaptureValuesFloat" />
-        <Property name="StartCaptureLuminance" />
-        <Property name="StopCaptureLuminance" />
       </PropertyGroup>
       <PropertyGroup label="Ray Traced Rendering"
                      panel_visibility="advanced">
@@ -3022,15 +3215,17 @@
         <Property name="OSPRayRendererType"/>
         <Property name="AmbientSamples"/>
         <Property name="SamplesPerPixel"/>
+        <Property name="RouletteDepth"/>
         <Property name="MaxFrames"/>
         <Property name="Denoise"/>
+        <Property name="VolumeAnisotropy"/>
         <Property name="LightScale"/>
         <Property name="OSPRayTemporalCacheSize"/>
         <Property name="BackgroundNorth"/>
         <Property name="BackgroundEast"/>
         <Property name="BackgroundMode"/>
       </PropertyGroup>
-      <PropertyGroup label="Path Traced Environmental Background" panel_widget="EnvironmentalBGEditor" panel_visibility="default">
+      <PropertyGroup label="Path Traced Environment" panel_widget="EnvironmentalBGEditor" panel_visibility="default">
         <Property name="EnvironmentalBG"/>
         <Property name="EnvironmentalBG2"/>
         <Property name="UseGradientEnvironmentalBG"/>
@@ -3038,10 +3233,17 @@
         <Property name="EnvironmentalBGTexture"/>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
-          <PropertyWidgetDecorator type="GenericDecorator"
-                                   mode="visibility"
-                                   property="EnableOSPRay"
-                                   values="1" />
+          <PropertyWidgetDecorator type="CompositeDecorator">
+            <Expression type="and">
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                       mode="visibility"
+                                       property="EnableOSPRay"
+                                       values="1" />
+              <PropertyWidgetDecorator type="EnableWidgetDecorator">
+                <Property name="OSPRayRendererType" function="equals" value="OSPRay pathtracer"/>
+              </PropertyWidgetDecorator>
+            </Expression>
+          </PropertyWidgetDecorator>
         </Hints>
       </PropertyGroup>
 
@@ -3196,7 +3398,7 @@
           proxyname="ContextViewDeliveryManager"/>
       </SubProxy>
       <Hints>
-        <ShowOneRepresentationAtATime />
+        <ShowOneRepresentationAtATime type="ParallelCoordinatesRepresentation" />
         <!-- When present, vtkSMParaViewPipelineController::Show() will
              result in hiding other representations that are currently visible
              -->
@@ -3700,7 +3902,7 @@
       </PropertyGroup>
 
       <Hints>
-        <ShowOneRepresentationAtATime />
+        <ShowOneRepresentationAtATime type="PlotMatrixRepresentation" />
         <!-- When present, vtkSMParaViewPipelineController::Show() will
              result in hiding other representations that are currently visible
              -->
@@ -3774,6 +3976,9 @@
                             name="HiddenColumnLabels"
                             number_of_elements_per_command="1"
                             panel_visibility="never"
+                            default_values_delimiter=";"
+                            default_values="Block Number"
+                            number_of_elements="1"
                             repeat_command="1">
         <Documentation>This is list of labels for columns that will be hidden
           in the view i.e. these columns won't be show in the GUI or exported
@@ -3819,6 +4024,13 @@
                            processes="client|renderserver|dataserver">
       <Documentation>ParaView's default representation for showing any type of
       dataset in the render view.</Documentation>
+      <InputProperty command="SetSelectionConnection"
+                     name="Selection">
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkSelection" />
+        </DataTypeDomain>
+        <Documentation>Set the selection.</Documentation>
+      </InputProperty>
       <IntVectorProperty command="SetVisibility"
                          default_values="1"
                          name="Visibility"
@@ -4007,6 +4219,10 @@
                                            mode="visibility"
                                            property="Representation"
                                            value="Feature Edges" />
+                  <PropertyWidgetDecorator type="GenericDecorator"
+                                           mode="visibility"
+                                           property="Representation"
+                                           value="Stream Lines" />
                 </Expression>
               </PropertyWidgetDecorator>
             </Hints>
@@ -4020,6 +4236,8 @@
             <Property name="SpecularColor"
                       panel_widget="color_selector"
                       panel_visibility="advanced" />
+            <Property name="InteractiveSelectionColor"
+                      panel_visibility="never" />
             <Property name="SpecularPower"
                       panel_visibility="advanced" />
             <Property name="Luminosity"
@@ -4028,11 +4246,17 @@
             <Property name="Diffuse" panel_visibility="advanced"/>
             <Property name="Roughness" panel_visibility="advanced"/>
             <Property name="Metallic" panel_visibility="advanced"/>
+            <Property name="EdgeTint"
+                      panel_widget="color_selector"
+                      panel_visibility="advanced"/>
+            <Property name="SelectTCoordArray" panel_visibility="advanced"/>
+            <Property name="SelectNormalArray" panel_visibility="advanced"/>
+            <Property name="SelectTangentArray" panel_visibility="advanced"/>
             <Property name="Texture" panel_visibility="advanced"/>
             <Property name="RepeatTextures" panel_visibility="advanced"/>
             <Property name="InterpolateTextures" panel_visibility="advanced"/>
-            <Property name="SeamlessU" pabel_visibility="advanced"/>
-            <Property name="SeamlessV" pabel_visibility="advanced"/>
+            <Property name="SeamlessU" panel_visibility="advanced"/>
+            <Property name="SeamlessV" panel_visibility="advanced"/>
             <Property name="UseMipmapTextures" panel_visibility="advanced"/>
             <Property name="BaseColorTexture" panel_visibility="advanced"/>
             <Property name="NormalTexture" panel_visibility="advanced"/>
@@ -4100,6 +4324,8 @@
                       panel_visibility="advanced" />
             <Property name="Origin"
                       panel_visibility="advanced" />
+            <Property name="CoordinateShiftScaleMethod"
+                      panel_visibility="advanced"/>
           </PropertyGroup>
 
           <PropertyGroup label="Miscellaneous">
@@ -4119,12 +4345,6 @@
                       panel_visibility="advanced" />
             <Property name="NonlinearSubdivisionLevel"
                       panel_visibility="advanced" />
-            <Property name="BlockVisibility"
-                      panel_visibility="never" />
-            <Property name="BlockColor"
-                      panel_visibility="never" />
-            <Property name="BlockOpacity"
-                      panel_visibility="never" />
             <Property name="BlockColorsDistinctValues"
                       panel_visibility="advanced" />
             <Property name="UseDataPartitions"
@@ -4137,6 +4357,21 @@
             <Property name="OSPRayScaleArray" />
             <Property name="OSPRayScaleFunction" />
             <Property name="OSPRayMaterial" />
+          </PropertyGroup>
+
+          <PropertyGroup label="Blocks"
+                         panel_widget="DataAssemblyEditor"
+                         panel_visibility="multiblock_inspector">
+            <!--
+               place holder for future work
+               <Property name="Assembly"       function="ActiveAssembly" />
+            -->
+            <Property name="BlockSelectors" function="Selectors" />
+            <Property name="BlockColors"    function="Colors" />
+            <Property name="BlockOpacities" function="Opacities" />
+            <Hints>
+              <DataAssemblyPropertyWidget use_inputname_as_header="1" />
+            </Hints>
           </PropertyGroup>
 
         </ExposedProperties>
@@ -4408,7 +4643,11 @@
             <Property name="ScalarOpacityFunction" />
             <Property name="ScalarOpacityUnitDistance"
                       panel_visibility="advanced" />
-            <Property name="ExtractedBlockIndex"
+            <Property name="UseSeparateOpacityArray"
+                      panel_visibility="advanced" />
+            <Property name="OpacityArrayName"
+                      panel_visibility="advanced" />
+            <Property name="OpacityComponent"
                       panel_visibility="advanced" />
             <Property name="SelectMapper"
                       panel_visibility="advanced"
@@ -4480,8 +4719,6 @@
             <Property name="ScalarOpacityFunction" />
             <Property name="ScalarOpacityUnitDistance"
                       panel_visibility="advanced" />
-            <Property name="ExtractedBlockIndex"
-                      panel_visibility="never" />
             <Property name="SelectMapper"
                       panel_visibility="advanced"
                       panel_visibility_default_for_representation="volume" />
@@ -4521,9 +4758,10 @@
                           text="Slice" />
       <InputProperty command="SetInputConnection"
                      name="Input">
-        <DataTypeDomain composite_data_supported="0"
+        <DataTypeDomain composite_data_supported="1"
                         name="input_type">
           <DataType value="vtkImageData" />
+          <DataType value="vtkRectilinearGrid" />
         </DataTypeDomain>
         <InputArrayDomain attribute_type="cell"
                           name="input_array_cell"
@@ -4546,6 +4784,12 @@
             <Property name="ScalarOpacityUnitDistance"
                       panel_visibility="advanced" />
             <Property name="ScalarOpacityFunction" />
+            <Property name="UseSeparateOpacityArray"
+                      panel_visibility="advanced" />
+            <Property name="OpacityArrayName"
+                      panel_visibility="advanced" />
+            <Property name="OpacityComponent"
+                      panel_visibility="advanced" />
             <Property name="VolumeRenderingMode"
                       panel_visibility="advanced"
                       panel_visibility_default_for_representation="volume" />
@@ -4791,6 +5035,60 @@
           </RequiredProperties>
         </RepresentedArrayListDomain>
       </StringVectorProperty>
+      <IntVectorProperty command="SetUseSeparateOpacityArray"
+                         default_values="0"
+                         name="UseSeparateOpacityArray"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is on, the Opacity Array will be used to determine the
+          point gaussian sprites.
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty name="OpacityArrayName"
+                            command="SelectOpacityArray"
+                            number_of_elements="5"
+                            element_types="0 0 0 0 2"
+                            label="Volume Opacity Array"
+                            panel_visibility="advanced">
+        <ArrayListDomain name="array_list"
+          input_domain_name="input_point_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property specifies the name of the input array to map to opacity.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseSeparateOpacityArray" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SelectOpacityArrayComponent"
+                         default_values="0"
+                         name="OpacityComponent"
+                         number_of_elements="1">
+        <NumberOfComponentsDomain name="comps" enable_magnitude="1">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+            <Property function="ArraySelection"
+                      name="OpacityArrayName" />
+          </RequiredProperties>
+        </NumberOfComponentsDomain>
+        <Documentation>
+          This property indicates the component of the array to be used for opacity.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseSeparateOpacityArray" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </IntVectorProperty>
       <DoubleVectorProperty command="SetPosition"
                             default_values="0 0 0"
                             name="Position"
@@ -5545,22 +5843,97 @@
           </RequiredProperties>
         </RepresentedArrayListDomain>
       </StringVectorProperty>
-      <IntVectorProperty command="SetExtractedBlockIndex"
+      <IntVectorProperty command="SetUseSeparateOpacityArray"
                          default_values="0"
-                         name="ExtractedBlockIndex"
+                         name="UseSeparateOpacityArray"
+                         number_of_elements="1"
+                         panel_visibility="advanced">
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          If this property is on, the Opacity Array will be used to determine the
+          point gaussian sprites.
+        </Documentation>
+      </IntVectorProperty>
+      <StringVectorProperty name="OpacityArrayName"
+                            command="SelectOpacityArray"
+                            number_of_elements="5"
+                            element_types="0 0 0 0 2"
+                            label="Volume Opacity Array"
+                            panel_visibility="advanced">
+        <ArrayListDomain name="array_list"
+          input_domain_name="input_point_array">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>
+          This property specifies the name of the input array to map to opacity.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseSeparateOpacityArray" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
+      </StringVectorProperty>
+      <IntVectorProperty animateable="0"
+                         command="SelectOpacityArrayComponent"
+                         default_values="0"
+                         name="OpacityComponent"
                          number_of_elements="1">
-        <Documentation>In case of multiblock datasets, choose the index of
-        the dataset to volume render. The index must point to an
-        unstructured grid dataset. If the input is not a multiblock dataset
-        then this index is ignored.</Documentation>
-        <CompositeTreeDomain mode="leaves"
-                             name="tree">
+        <NumberOfComponentsDomain name="comps" enable_magnitude="1">
           <RequiredProperties>
             <Property function="Input"
                       name="Input" />
+            <Property function="ArraySelection"
+                      name="OpacityArrayName" />
           </RequiredProperties>
-        </CompositeTreeDomain>
+        </NumberOfComponentsDomain>
+        <Documentation>
+          This property indicates the component of the array to be used for opacity.
+        </Documentation>
+        <Hints>
+          <PropertyWidgetDecorator type="ShowWidgetDecorator">
+            <Property name="UseSeparateOpacityArray" function="boolean" />
+          </PropertyWidgetDecorator>
+        </Hints>
       </IntVectorProperty>
+
+      <StringVectorProperty name="Assembly"
+        command="SetActiveAssembly"
+        number_of_elements="1"
+        default_values="Hierarchy"
+        panel_visibility="multiblock_inspector">
+        <DataAssemblyListDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </DataAssemblyListDomain>
+        <Documentation>
+          Select which assembly is used when specify selectors
+          to choose block visibilities, block colors, etc. for composite datasets.
+        </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="BlockSelectors"
+        command="AddBlockSelector"
+        clean_command="RemoveAllBlockSelectors"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        panel_visibility="multiblock_inspector"
+        number_of_elements="1"
+        default_values="/">
+        <DataAssemblyDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ActiveAssembly" name="Assembly" />
+          </RequiredProperties>
+        </DataAssemblyDomain>
+        <Documentation>
+          For composite datasets, specify selectors to limit the view
+          to a chosen subset of blocks.
+        </Documentation>
+      </StringVectorProperty>
+
       <DoubleVectorProperty command="SetPosition"
                             default_values="0 0 0"
                             name="Position"
@@ -5611,6 +5984,28 @@
           <Group name="transfer_functions" />
         </ProxyGroupDomain>
       </ProxyProperty>
+      <IntVectorProperty command="SetMapScalars"
+                         default_values="1"
+                         name="MapScalars"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When enabled, LookupTable will always be
+        used for scalar mapping. Otherwise, when up to 4 component
+        scalars are present, the components are clamped to a valid
+        color interval (0-255 for an integral type and 0.0-1.0 for a
+        floating point type) and then directly used as
+        color.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMultiComponentsMapping"
+                         default_values="0"
+                         name="MultiComponentsMapping"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Hints>
+          <PropertyWidgetDecorator type="MultiComponentsDecorator"
+                                   components="2 4" />
+        </Hints>
+      </IntVectorProperty>
       <ProxyProperty command="SetScalarOpacity"
                      name="ScalarOpacityFunction" >
         <ProxyGroupDomain name="groups">
@@ -5908,6 +6303,10 @@
                           name="input_array_point_1"
                           number_of_components="1"
                           optional="1" />
+        <InputArrayDomain attribute_type="point"
+                          name="input_array_point_2"
+                          number_of_components="2"
+                          optional="1" />
         <InputArrayDomain attribute_type="cell"
                           name="input_array_cell_3"
                           number_of_components="3"
@@ -5982,6 +6381,12 @@
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet" />
         </DataTypeDomain>
+        <InputArrayDomain name="scale_array"
+                          number_of_components="1,3"
+                          optional="1" />
+        <InputArrayDomain name="vector_array"
+                          number_of_components="3,4"
+                          optional="1" />
         <Documentation>Set the input to the representation.</Documentation>
       </InputProperty>
       <InputProperty command="SetInputConnection"
@@ -6027,8 +6432,8 @@
                             label="Scale Array"
                             name="SelectScaleArray"
                             number_of_elements="1">
-        <ArrayListDomain attribute_type="any"
-                         input_domain_name="input_array_point"
+        <ArrayListDomain attribute_type="Scalars"
+                         input_domain_name="scale_array"
                          name="array_list"
                          none_string="None">
           <RequiredProperties>
@@ -6064,7 +6469,7 @@
                             name="SelectOrientationVectors"
                             number_of_elements="1">
         <ArrayListDomain attribute_type="Vectors"
-                         input_domain_name="input_array_point"
+                         input_domain_name="vector_array"
                          name="array_list"
                          none_string="None">
           <RequiredProperties>
@@ -6958,6 +7363,24 @@
           The opacity to use when rendering the model.
         </Documentation>
       </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetSpecular"
+                            default_values="0.0"
+                            name="Specular"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="1" min="0" name="range" />
+        <Documentation>
+          The specularity to use when rendering the model.
+        </Documentation>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetSpecularPower"
+                            default_values="100.0"
+                            name="SpecularPower"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="100" min="0" name="range" />
+        <Documentation>
+          The specularity to use when rendering the model.
+        </Documentation>
+      </DoubleVectorProperty>
       <IntVectorProperty command="SetMapScalars"
                          default_values="1"
                          name="MapScalars"
@@ -7163,6 +7586,10 @@
           <PropertyGroup label="Coloring">
             <Property name="Opacity"
                       panel_visibility="default" />
+            <Property name="Specular"
+                      panel_visibility="default" />
+            <Property name="SpecularPower"
+                      panel_visibility="default" />
             <Property name="MapScalars"
                       panel_visibility="default" />
             <Property name="ColorArrayName"
@@ -7194,6 +7621,107 @@
         </ExposedProperties>
       </SubProxy>
     </PVMoleculeRepresentationProxy>
+
+    <!-- =================================================================== -->
+    <ChartRepresentationProxy class="vtkChartTextRepresentation"
+                              name="ChartTextRepresentation"
+                              processes="client|dataserver|renderserver">
+      <Documentation>Representation to show text in Chart views</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <Documentation>Data input for the representation.</Documentation>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataObject" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty command="SetVisibility"
+                         default_values="1"
+                         name="Visibility"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>Visibility of the representation.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetForceUseCache"
+                         default_values="0"
+                         is_internal="1"
+                         name="ForceUseCache"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetForcedCacheKey"
+                            default_values="none"
+                            is_internal="1"
+                            name="ForcedCacheKey"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetInteractivity"
+                         default_values="0"
+                         name="Interactivity"
+                         number_of_elements="1"
+                         panel_visibility="never">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Set whether user should be able to interactively place the text in the view.
+        </Documentation>
+        <!-- for now, we hide this property since we don't users interact with
+             the text right now -->
+      </IntVectorProperty>
+
+      <SubProxy command="SetTextProperty">
+        <Proxy name="Prop2DProperty" proxygroup="properties" proxyname="ChartTextProperty" />
+        <ExposedProperties>
+          <PropertyGroup label="Font Properties" panel_widget="FontEditor">
+            <Property name="Color" function="Color" />
+            <Property name="Opacity" function="Opacity"/>
+            <Property name="FontFamily" function="Family"/>
+            <Property name="FontFile" function="File"/>
+            <Property name="Bold" function="Bold"/>
+            <Property name="Italic" function="Italics" />
+            <Property name="Shadow" function="Shadow"/>
+            <Property name="FontSize" function="Size"/>
+            <Property name="Justification" function="Justification"/>
+            <Property name="VerticalJustification" default_values="1" />
+          </PropertyGroup>
+        </ExposedProperties>
+      </SubProxy>
+
+      <IntVectorProperty command="SetLabelLocation"
+                         default_values="4"
+                         name="LabelLocation"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <!-- for now, we skip interactive placement functionality
+          <Entry text="AnyLocation" value="0" />
+          -->
+          <Entry text="LowerLeftCorner" value="1" />
+          <Entry text="LowerRightCorner" value="2" />
+          <Entry text="LowerCenter" value="3" />
+          <Entry text="UpperLeftCorner" value="4" />
+          <Entry text="UpperRightCorner" value="5" />
+          <Entry text="UpperCenter" value="6" />
+        </EnumerationDomain>
+        <Documentation>Specify placement of the scalar bar actor.</Documentation>
+      </IntVectorProperty>
+
+      <PropertyGroup label="Text Position" panel_widget="TextLocationEditor">
+        <Property name="LabelLocation" function="WindowLocation" />
+      </PropertyGroup>
+
+    </ChartRepresentationProxy>
 
     <!-- =================================================================== -->
     <ChartRepresentationProxy base_proxygroup="representations"
@@ -7257,7 +7785,12 @@
           </RequiredProperties>
         </CompositeTreeDomain>
         <Documentation>This property lists the ids of the blocks to extract
-        from the input multiblock dataset.</Documentation>
+          from the input multiblock dataset.</Documentation>
+        <Hints>
+          <!-- we don't want to show this property, except for MBs. -->
+          <PropertyWidgetDecorator type="InputDataTypeDecorator"
+            mode="visibility" name="vtkMultiBlockDataSet" />
+        </Hints>
       </IntVectorProperty>
       <IntVectorProperty command="SetFieldAssociation"
                          default_values="0"
@@ -7872,6 +8405,11 @@
                       name="Input" />
           </RequiredProperties>
         </CompositeTreeDomain>
+        <Hints>
+          <!-- we don't want to show this property, except for MBs. -->
+          <PropertyWidgetDecorator type="InputDataTypeDecorator"
+            mode="visibility" name="vtkMultiBlockDataSet" />
+        </Hints>
       </IntVectorProperty>
       <IntVectorProperty command="SetFieldAssociation"
                          default_values="0"
@@ -8060,6 +8598,11 @@
             <Property function="Input"
                       name="Input" />
           </RequiredProperties>
+          <Hints>
+            <!-- we don't want to show this property, except for MBs. -->
+            <PropertyWidgetDecorator type="InputDataTypeDecorator"
+              mode="visibility" name="vtkMultiBlockDataSet" />
+          </Hints>
         </CompositeTreeDomain>
       </IntVectorProperty>
       <IntVectorProperty command="SetFieldAssociation"
@@ -8552,31 +9095,51 @@
         set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
         Instead, ForcedCacheKey is used.</Documentation>
       </DoubleVectorProperty>
-      <IntVectorProperty clean_command="RemoveAllCompositeDataSetIndices"
-                         command="AddCompositeDataSetIndex"
-                         name="CompositeDataSetIndex"
-                         number_of_elements_per_command="1"
-                         number_of_elements="1"
-                         default_values="0"
-                         panel_visibility="default"
-                         repeat_command="1">
-        <CompositeTreeDomain mode="all" name="tree">
+
+      <StringVectorProperty name="Assembly"
+        command="SetActiveAssemblyForSelectors"
+        number_of_elements="1"
+        default_values="Hierarchy"
+        panel_visibility="multiblock_inspector">
+        <DataAssemblyListDomain name="data_assembly">
           <RequiredProperties>
             <Property function="Input" name="Input" />
           </RequiredProperties>
-        </CompositeTreeDomain>
-        <Hints>
-          <WidgetHeight number_of_rows="20" />
-        </Hints>
+        </DataAssemblyListDomain>
         <Documentation>
-          In case of composite datasets, set the list of flat indices to
-          show in the spreadsheet view. If the input is not a composite dataset
-          the value is ignored. If nothing is selected for composite dataset, it
-          is same as selecting the root node i.e. all blocks in the dataset.
-          Note, then multiple blocks are being shown in the spreadsheet view,
-          partial arrays, if any are skipped.
+          Select which assembly is used when specify selectors
+          to choose blocks to show for composite datasets.
         </Documentation>
-      </IntVectorProperty>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="BlockVisibilities"
+        command="AddSelector"
+        clean_command="ClearSelectors"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        panel_visibility="multiblock_inspector"
+        default_values="/">
+        <DataAssemblyDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ActiveAssembly" name="Assembly" />
+          </RequiredProperties>
+        </DataAssemblyDomain>
+        <Documentation>
+          For composite datasets, specify selectors to limit the view
+          to a chosen subset of blocks.
+        </Documentation>
+      </StringVectorProperty>
+
+      <PropertyGroup label="Blocks" panel_widget="DataAssemblyEditor"
+        panel_visibility="multiblock_inspector">
+        <Property name="Assembly" function="ActiveAssembly" />
+        <Property name="BlockVisibilities" function="Selectors" />
+        <Hints>
+          <DataAssemblyPropertyWidget use_inputname_as_header="1" />
+        </Hints>
+      </PropertyGroup>
+
       <InputProperty command="SetInputConnection"
                      is_internal="1"
                      name="InternalInput1"
@@ -8584,9 +9147,6 @@
         <Documentation>Internal property. Please don't touch
         this.</Documentation>
       </InputProperty>
-      <Hints>
-        <InitializationHelper class="vtkSMSpreadSheetRepresentationInitializationHelper" />
-      </Hints>
       <!-- end of SpreadSheetRepresentation -->
     </SpreadSheetRepresentationProxy>
     <!-- =================================================================== -->
@@ -8661,9 +9221,14 @@
         </Documentation>
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
-                                  mode="visibility"
-                                  property="TextPropMode"
-                                  value="0" />
+                                   mode="visibility"
+                                   property="TextPropMode"
+                                   value="0" />
+
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="enabled_state"
+                                   property="WindowLocation"
+                                   value="0" />
         </Hints>
       </IntVectorProperty>
 
@@ -8672,21 +9237,9 @@
                proxygroup="representations"
                proxyname="TextWidgetRepresentation"></Proxy>
         <ExposedProperties>
-          <!-- properties for Text -->
-          <Property name="Orientation" panel_visibility="never"/>
-          <PropertyGroup label="Font Properties" panel_widget="FontEditor">
-            <Property name="Color" function="Color"/>
-            <Property name="Opacity" function="Opacity"/>
-            <Property name="FontFamily" function="Family"/>
-            <Property name="FontFile" function="File"/>
-            <Property name="Bold" function="Bold"/>
-            <Property name="Italic" function="Italics" />
-            <Property name="Shadow" function="Shadow"/>
-            <Property name="FontSize" function="Size"/>
-            <Property name="Justification" function="Justification"/>
-          </PropertyGroup>
+
           <!-- properties for Text Position-->
-          <PropertyGroup label="Text Position" panel_widget="TextLocationEditor">
+          <PropertyGroup name="TextPosition" label="Text Position" panel_widget="TextLocationEditor">
             <Property name="WindowLocation" />
             <Property name="Position" />
             <Property name="Position2" panel_visibility="never"/>
@@ -8699,8 +9252,46 @@
                                        value="0" />
             </Hints>
           </PropertyGroup>
-          <Property name="TextScaleMode" panel_visibility="never"/>
+          <Property name="TextScaleMode" panel_visibility="never" default_values="0"/>
           <Property name="Resizable" panel_visibility="never"/>
+
+          <PropertyGroup label="Text Styling">
+            <Property name="ShowBorder" />
+            <Property name="BorderColor" />
+            <Property name="BorderThickness" />
+            <Property name="CornerRadius" />
+            <Property name="CornerResolution" />
+            <Property name="BackgroundColor" />
+            <Property name="BackgroundOpacity" />
+            <Property name="RightPadding" />
+            <Property name="TopPadding" />
+            <Property name="LineOffset" />
+            <Property name="LineSpacing" />
+            <Property name="CellOffset" />
+
+            <Hints>
+              <PropertyWidgetDecorator type="GenericDecorator"
+                                    mode="visibility"
+                                    property="TextPropMode"
+                                    value="0" />
+            </Hints>
+          </PropertyGroup>
+
+          <!-- properties for Text -->
+          <Property name="Orientation" panel_visibility="never"/>
+          <PropertyGroup label="Font Properties" panel_widget="FontEditor">
+            <Property name="Color" function="Color"/>
+            <Property name="Opacity" function="Opacity"/>
+            <Property name="FontFamily" function="Family"/>
+            <Property name="FontFile" function="File"/>
+            <Property name="Bold" function="Bold"/>
+            <Property name="Italic" function="Italics" />
+            <Property name="Shadow" function="Shadow"/>
+            <Property name="FontSize" function="Size"/>
+            <Property name="Justification" function="Justification"/>
+            <Property name="VerticalJustification" function="VerticalJustification"/>
+          </PropertyGroup>
+
         </ExposedProperties>
       </SubProxy>
 
@@ -10269,8 +10860,26 @@
             <Property name="UseTexturedBackground"/>
             <Property name="UseSkyboxBackground"/>
             <Property name="UseEnvironmentLighting"/>
-            <Property name="SkyboxResolution"/>
             <Property name="BackgroundTexture"/>
+          </PropertyGroup>
+
+          <PropertyGroup label="Render Passes">
+            <Property name="UseToneMapping"/>
+            <Property name="Exposure"/>
+            <Property name="UseSSAO"/>
+            <Property name="UseSSAODefaultPresets"/>
+            <Property name="Radius"/>
+            <Property name="Bias"/>
+            <Property name="KernelSize"/>
+            <Property name="Blur"/>
+            <Property name="GenericFilmicPresets"/>
+            <Property name="ToneMappingType"/>
+            <Property name="Contrast"/>
+            <Property name="Shoulder"/>
+            <Property name="MidIn"/>
+            <Property name="MidOut"/>
+            <Property name="HdrMax"/>
+            <Property name="UseACES"/>
           </PropertyGroup>
 
           <!-- Interactor -->
@@ -11130,6 +11739,91 @@
           <String value="Surface With Edges" />
         </StringListDomain>
       </StringVectorProperty>
+      <IntVectorProperty command="SetCoordinateShiftScaleMethod"
+                         default_values="2"
+                         name="CoordinateShiftScaleMethod"
+                         number_of_elements="1">
+        <Documentation>Options for normalizing the point coordinates.
+        The points are sent to the GPU as float data which can result in resolution issues
+        due to the limited precision of float. VTK includes a variety of methods to normalize
+        the point coordinates prior to sending them to the GPU. Auto shift scale is a good
+        setting that should work for most datasets. Focal point shift scale works based
+        on the current camera viewpoint which makes it the most robust setting but it
+        will renormalize the data occasionally as the camera's settings change which
+        requires reuploading the data to the GPU so there may be a performance cost.
+        </Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="Disable"
+                 value="0" />
+          <Entry text="Auto Shift Scale"
+                 value="1" />
+          <Entry text="Always Auto Shift Scale"
+                 value="2" />
+          <Entry text="Auto Shift Only"
+                 value="4" />
+          <Entry text="Near Focal Plane Shift Scale"
+                 value="5" />
+          <Entry text="Focal Point Shift Scale"
+                 value="6" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <StringVectorProperty command="SetTCoordArray"
+                            default_values=""
+                            label="Texture Coordinates"
+                            name="SelectTCoordArray"
+                            number_of_elements="1">
+        <Documentation>
+          Set the texture coordinates array used for texture mapping.
+        </Documentation>
+        <RepresentedArrayListDomain attribute_type="TCoords"
+                         input_domain_name="input_array_point_2"
+                         data_type="VTK_FLOAT VTK_DOUBLE"
+                         name="array_list"
+                         none_string="None">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </RepresentedArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty command="SetNormalArray"
+                            default_values=""
+                            label="Normal Array"
+                            name="SelectNormalArray"
+                            number_of_elements="1">
+        <Documentation>
+          Set the normal array used for smooth shading.
+        </Documentation>
+        <RepresentedArrayListDomain attribute_type="Normals"
+                         input_domain_name="input_array_point_3"
+                         data_type="VTK_FLOAT VTK_DOUBLE"
+                         name="array_list"
+                         none_string="None">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </RepresentedArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty command="SetTangentArray"
+                            default_values=""
+                            label="Tangent Array"
+                            name="SelectTangentArray"
+                            number_of_elements="1">
+        <Documentation>
+          Set the tangent coordinates array used for normal mapping.
+        </Documentation>
+        <RepresentedArrayListDomain attribute_type="Tangents"
+                         input_domain_name="input_array_point_3"
+                         data_type="VTK_FLOAT VTK_DOUBLE"
+                         name="array_list"
+                         none_string="None">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+          </RequiredProperties>
+        </RepresentedArrayListDomain>
+      </StringVectorProperty>
       <DoubleVectorProperty command="SetAmbient"
                             default_values="0.0"
                             name="Ambient"
@@ -11194,6 +11888,23 @@
         </Documentation>
         <DoubleRangeDomain max="1"
                            min="0"
+                           name="range" />
+        <Hints>
+          <PropertyWidgetDecorator type="GenericDecorator"
+                                   mode="visibility"
+                                   property="Interpolation"
+                                   value="3" />
+        </Hints>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetEdgeTint"
+                            default_values="1.0 1.0 1.0"
+                            name="EdgeTint"
+                            number_of_elements="3">
+        <Documentation>
+          For metals only. Set the tint at grazing angles.
+        </Documentation>
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
                            name="range" />
         <Hints>
           <PropertyWidgetDecorator type="GenericDecorator"
@@ -11605,6 +12316,19 @@
           <PropertyLink group="settings" proxy="ColorPalette" property="EdgeColor" unlink_if_modified="1" />
         </Hints>
       </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetInteractiveSelectionColor"
+                            default_values="0.5 0.0 1.0"
+                            name="InteractiveSelectionColor"
+                            number_of_elements="3">
+        <Documentation>Set the preselection color. This color is used to draw the edge
+        of the current preselection.</Documentation>
+        <DoubleRangeDomain max="1 1 1"
+                           min="0 0 0"
+                           name="range" />
+        <Hints>
+          <PropertyLink group="settings" proxy="ColorPalette" property="InteractiveSelectionColor" unlink_if_modified="1" />
+        </Hints>
+      </DoubleVectorProperty>
       <DoubleVectorProperty command="SetPosition"
                             default_values="0 0 0"
                             label="Translation"
@@ -11745,33 +12469,93 @@
                          number_of_elements="1">
         <BooleanDomain name="bool" />
       </IntVectorProperty>
-      <IntVectorProperty name="BlockVisibility"
-                         command="SetBlockVisibility"
-                         clean_command="RemoveBlockVisibilities"
-                         number_of_elements_per_command="2"
-                         repeatable="1">
+
+      <StringVectorProperty name="Assembly"
+        command="SetActiveAssembly"
+        number_of_elements="1"
+        default_values="Hierarchy"
+        panel_visibility="multiblock_inspector">
+        <DataAssemblyListDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </DataAssemblyListDomain>
         <Documentation>
-          Set the visibility for a block. Value is (property, visibility).
+          Select which assembly is used when specify selectors
+          to choose block visibilities, block colors, etc. for composite datasets.
         </Documentation>
-      </IntVectorProperty>
-      <DoubleMapProperty name="BlockColor"
-                         command="SetBlockColor"
-                         clean_command="RemoveBlockColors"
-                         number_of_components="3"
-                         repeatable="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty name="BlockSelectors"
+        command="AddBlockSelector"
+        clean_command="RemoveAllBlockSelectors"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        panel_visibility="multiblock_inspector"
+        number_of_elements="1"
+        default_values="/">
+        <DataAssemblyDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ActiveAssembly" name="Assembly" />
+          </RequiredProperties>
+        </DataAssemblyDomain>
         <Documentation>
-          Set the color for a block. Value is (index, r, g, b).
+          For composite datasets, specify selectors to limit the view
+          to a chosen subset of blocks.
         </Documentation>
-      </DoubleMapProperty>
-      <DoubleMapProperty name="BlockOpacity"
-                         command="SetBlockOpacity"
-                         clean_command="RemoveBlockOpacities"
-                         number_of_components="1"
-                         repeatable="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty name="BlockColors"
+                            command="SetBlockColor"
+                            clean_command="RemoveAllBlockColors"
+                            element_types="2 1 1 1"
+                            number_of_elements_per_command="4"
+                            repeat_command="1"
+                            panel_visibility="multiblock_inspector">
+         <DataAssemblyDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ActiveAssembly" name="Assembly" />
+          </RequiredProperties>
+        </DataAssemblyDomain>
         <Documentation>
-          Set the opacity for a block. Value is (index, alpha).
+          For composite datasets, specify colors associated with selectors
+          on the assembly chosen using **Assembly**.
         </Documentation>
-      </DoubleMapProperty>
+      </StringVectorProperty>
+
+      <StringVectorProperty name="BlockOpacities"
+                            command="SetBlockOpacity"
+                            clean_command="RemoveAllBlockOpacities"
+                            element_types="2 1"
+                            number_of_elements_per_command="2"
+                            repeat_command="1"
+                            panel_visibility="multiblock_inspector">
+         <DataAssemblyDomain name="data_assembly">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ActiveAssembly" name="Assembly" />
+          </RequiredProperties>
+        </DataAssemblyDomain>
+        <Documentation>
+          For composite datasets, specify opacities associated with selectors
+          on the assembly chosen using **Assembly**.
+        </Documentation>
+      </StringVectorProperty>
+
+      <PropertyGroup label="Blocks"
+                     panel_widget="DataAssemblyEditor"
+                     panel_visibility="multiblock_inspector">
+        <Property name="Assembly"       function="ActiveAssembly" />
+        <Property name="BlockSelectors" function="Selectors" />
+        <Property name="BlockColors"    function="Colors" />
+        <Property name="BlockOpacities" function="Opacities" />
+        <Hints>
+          <DataAssemblyPropertyWidget use_inputname_as_header="1" />
+        </Hints>
+      </PropertyGroup>
+
       <IntVectorProperty command="SetBlockColorsDistinctValues"
                          default_values="7"
                          name="BlockColorsDistinctValues"
@@ -11801,12 +12585,21 @@
       <IntVectorProperty command="SetEnableScaling"
                          default_values="0"
                          name="OSPRayUseScaleArray"
-                         label="Use Scale Array"
+                         label="Scaling Mode"
                          number_of_elements="1">
         <Documentation>
-          Allows OSPRay implicit points and lines to be sized by an array.
+          Choose how the size of each sphere and cylinder is determined.
         </Documentation>
-        <BooleanDomain name="bool" />
+        <EnumerationDomain name="enum">
+          <Entry text="All Exact"
+                 value="-1" />
+          <Entry text="All Approximate"
+                 value="0" />
+          <Entry text="Each Scaled"
+                 value="1" />
+          <Entry text="Each Exact"
+                 value="2" />
+        </EnumerationDomain>
         <Hints>
           <PropertyWidgetDecorator type="OSPRayHidingDecorator" />
         </Hints>

@@ -152,6 +152,7 @@ int vtkCPPythonScriptPipeline::Initialize(const char* fileName)
   loadPythonModules << "_" << moduleName << ".__file__ = '" << moduleName << ".pyc'" << std::endl;
 
   loadPythonModules << "import sys" << std::endl;
+  loadPythonModules << "sys.dont_write_bytecode = True" << std::endl;
   loadPythonModules << "sys.modules['" << moduleName << "'] = _" << moduleName << std::endl;
 
   loadPythonModules << "_source = \"\"\"" << std::endl;
@@ -165,6 +166,7 @@ int vtkCPPythonScriptPipeline::Initialize(const char* fileName)
   loadPythonModules << "del _code" << std::endl;
   loadPythonModules << moduleName << " = ";
   loadPythonModules << "__import__('" << fileNameName << "')" << std::endl;
+  loadPythonModules << "from paraview.modules import vtkPVCatalyst" << std::endl;
 
   delete[] scriptPath;
   delete[] scriptText;
@@ -183,7 +185,7 @@ int vtkCPPythonScriptPipeline::RequestDataDescription(vtkCPDataDescription* data
   }
 
   // check the script to see if it should be run...
-  vtkStdString dataDescriptionString = this->GetPythonAddress(dataDescription);
+  std::string dataDescriptionString = this->GetPythonAddress(dataDescription);
 
   std::ostringstream pythonInput;
   pythonInput << "dataDescription = vtkPVCatalyst.vtkCPDataDescription('" << dataDescriptionString
@@ -204,7 +206,7 @@ int vtkCPPythonScriptPipeline::CoProcess(vtkCPDataDescription* dataDescription)
     return 0;
   }
 
-  vtkStdString dataDescriptionString = this->GetPythonAddress(dataDescription);
+  std::string dataDescriptionString = this->GetPythonAddress(dataDescription);
 
   std::ostringstream pythonInput;
   pythonInput << "dataDescription = vtkPVCatalyst.vtkCPDataDescription('" << dataDescriptionString

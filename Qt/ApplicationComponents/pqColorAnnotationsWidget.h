@@ -131,15 +131,23 @@ public:
    * Set the annotionModel on the underlying table.
    */
   void setAnnotationsModel(pqAnnotationsModel* model);
+
   /**
    * Set reordering support on the table.
    */
   void setSupportsReorder(bool reorder);
+
+  /**
+   * Sort the underlying proxy model
+   */
+  void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+
   /**
    * Show/Hide relevant widgets.
    * If allow is false, hide the buttons that add/remove lines.
    */
   void allowsUserDefinedValues(bool allow);
+
   /**
    * Setup ChooseColor dialog.
    * If allow is true, add a line edit to specify a regexp to do the matching between data values
@@ -147,15 +155,18 @@ public:
    * Intended to be used for series preset.
    */
   void allowsRegexpMatching(bool allow);
+
   /**
    * Show/Hide relevant widgets.
    * If enable is false, hide the buttons that save / load presets.
    */
   void enablePresets(bool enable);
+
   /**
    * Show/Hide the Visibility column.
    */
   void supportsVisibilityCheck(bool val);
+
   /**
    * Show/Hide the EnableOpacityMapping button.
    */
@@ -186,11 +197,16 @@ public:
   void setSelectedAnnotations(const QStringList& annotations);
 
   /**
+   * Get if annotations should be loaded with the preset.
+   */
+  bool presetLoadAnnotations();
+
+  /**
    * Get the regular expression to use to apply the preset.
    */
   QRegularExpression presetRegularExpression();
 
-signals:
+Q_SIGNALS:
   /**
    * Fired when the annotations are changed.
    */
@@ -232,7 +248,7 @@ protected:
    */
   bool addActiveAnnotationsFromVisibleSources(bool force);
 
-private slots:
+private Q_SLOTS:
   //@{
   /**
    * slots called when user presses corresponding buttons to add/remove

@@ -15,6 +15,8 @@
 #include "vtkPVGeneralSettings.h"
 
 #include "vtkObjectFactory.h"
+#include "vtkPVOptions.h"
+#include "vtkProcessModule.h"
 #include "vtkProcessModuleAutoMPI.h"
 #include "vtkSISourceProxy.h"
 #include "vtkSMArraySelectionDomain.h"
@@ -41,7 +43,7 @@ vtkPVGeneralSettings* vtkPVGeneralSettings::New()
 {
   vtkPVGeneralSettings* instance = vtkPVGeneralSettings::GetInstance();
   assert(instance);
-  instance->Register(NULL);
+  instance->Register(nullptr);
   return instance;
 }
 
@@ -50,7 +52,7 @@ vtkPVGeneralSettings::vtkPVGeneralSettings()
   : BlockColorsDistinctValues(7)
   , AutoApply(false)
   , AutoApplyActiveOnly(false)
-  , DefaultViewType(NULL)
+  , DefaultViewType(nullptr)
 #if VTK_MODULE_ENABLE_ParaView_RemotingViews
   , TransferFunctionResetMode(vtkSMTransferFunctionManager::GROW_ON_APPLY)
 #else
@@ -68,7 +70,8 @@ vtkPVGeneralSettings::vtkPVGeneralSettings()
   , GUIFontSize(0)
   , GUIOverrideFont(false)
   , ColorByBlockColorsOnApply(true)
-  , AnimationTimeNotation('g')
+  , AnimationTimeNotation(vtkPVGeneralSettings::MIXED)
+  , EnableStreaming(false)
 {
   this->SetDefaultViewType("RenderView");
 }
@@ -76,7 +79,7 @@ vtkPVGeneralSettings::vtkPVGeneralSettings()
 //----------------------------------------------------------------------------
 vtkPVGeneralSettings::~vtkPVGeneralSettings()
 {
-  this->SetDefaultViewType(NULL);
+  this->SetDefaultViewType(nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -273,6 +276,23 @@ bool vtkPVGeneralSettings::GetLoadNoChartVariables()
 }
 
 //----------------------------------------------------------------------------
+void vtkPVGeneralSettings::SetEnableStreaming(bool val)
+{
+  if (this->GetEnableStreaming() != val)
+  {
+    vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+    if (!pm)
+    {
+      vtkErrorMacro("vtkProcessModule not initialized. Igoring streaming change.");
+      return;
+    }
+    auto options = pm->GetOptions();
+    options->SetEnableStreaming(val);
+    this->Modified();
+  }
+}
+
+//----------------------------------------------------------------------------
 void vtkPVGeneralSettings::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -286,21 +306,4 @@ void vtkPVGeneralSettings::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "AnimationGeometryCacheLimit: " << this->AnimationGeometryCacheLimit << "\n";
   os << indent << "PropertiesPanelMode: " << this->PropertiesPanelMode << "\n";
   os << indent << "LockPanels: " << this->LockPanels << "\n";
-}
-
-//----------------------------------------------------------------------------
-void vtkPVGeneralSettings::SetAnimationTimeNotation(int notation)
-{
-  switch (notation)
-  {
-    case vtkPVGeneralSettings::SCIENTIFIC:
-      this->SetAnimationTimeNotation('e');
-      break;
-    case vtkPVGeneralSettings::FIXED:
-      this->SetAnimationTimeNotation('f');
-      break;
-    case vtkPVGeneralSettings::MIXED:
-    default:
-      this->SetAnimationTimeNotation('g');
-  }
 }

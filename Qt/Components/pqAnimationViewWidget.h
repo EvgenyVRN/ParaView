@@ -53,17 +53,17 @@ class PQCOMPONENTS_EXPORT pqAnimationViewWidget : public QWidget
   typedef QWidget Superclass;
 
 public:
-  pqAnimationViewWidget(QWidget* parent = 0);
+  pqAnimationViewWidget(QWidget* parent = nullptr);
   ~pqAnimationViewWidget() override;
 
-public slots:
+public Q_SLOTS:
 
   /**
   * set the scene to view
   */
   void setScene(pqAnimationScene* scene);
 
-protected slots:
+protected Q_SLOTS:
 
   /**
   * The cues in the scene have changed, so we make sure
@@ -138,7 +138,7 @@ private:
   Q_DISABLE_COPY(pqAnimationViewWidget)
 
   class pqInternal;
-  pqInternal* Internal;
+  pqInternal* Internal = nullptr;
 };
 
 #endif

@@ -155,9 +155,7 @@ pqLinePropertyWidget::pqLinePropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqLinePropertyWidget::~pqLinePropertyWidget()
-{
-}
+pqLinePropertyWidget::~pqLinePropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqLinePropertyWidget::updateLengthLabel()
@@ -216,7 +214,7 @@ void pqLinePropertyWidget::useAxis(int axis)
 
     vtkSMPropertyHelper(wdgProxy, "Point2WorldPosition").Set(center, 3);
     wdgProxy->UpdateVTKObjects();
-    emit this->changeAvailable();
+    Q_EMIT this->changeAvailable();
     this->render();
   }
 }
@@ -234,7 +232,7 @@ void pqLinePropertyWidget::centerOnBounds()
   vtkSMPropertyHelper(wdgProxy, "Point1WorldPosition").Set(bbox.GetMinPoint(), 3);
   vtkSMPropertyHelper(wdgProxy, "Point2WorldPosition").Set(bbox.GetMaxPoint(), 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 
@@ -269,7 +267,7 @@ void pqLinePropertyWidget::pickPoint1(double wx, double wy, double wz)
   vtkSMNewWidgetRepresentationProxy* wdgProxy = this->widgetProxy();
   vtkSMPropertyHelper(wdgProxy, "Point1WorldPosition").Set(position, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 
@@ -280,6 +278,6 @@ void pqLinePropertyWidget::pickPoint2(double wx, double wy, double wz)
   vtkSMNewWidgetRepresentationProxy* wdgProxy = this->widgetProxy();
   vtkSMPropertyHelper(wdgProxy, "Point2WorldPosition").Set(position, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }

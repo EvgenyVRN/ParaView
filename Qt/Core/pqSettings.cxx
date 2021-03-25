@@ -73,9 +73,7 @@ pqSettings::pqSettings(QObject* prnt)
 }
 
 //-----------------------------------------------------------------------------
-pqSettings::~pqSettings()
-{
-}
+pqSettings::~pqSettings() = default;
 
 //-----------------------------------------------------------------------------
 QString pqSettings::backup(const QString& argName)
@@ -90,7 +88,7 @@ QString pqSettings::backup(const QString& argName)
 //-----------------------------------------------------------------------------
 void pqSettings::alertSettingsModified()
 {
-  emit this->modified();
+  Q_EMIT this->modified();
 }
 
 //-----------------------------------------------------------------------------

@@ -50,9 +50,7 @@ vtkAttributeDataToTableFilter::vtkAttributeDataToTableFilter()
 }
 
 //----------------------------------------------------------------------------
-vtkAttributeDataToTableFilter::~vtkAttributeDataToTableFilter()
-{
-}
+vtkAttributeDataToTableFilter::~vtkAttributeDataToTableFilter() = default;
 
 //----------------------------------------------------------------------------
 vtkExecutive* vtkAttributeDataToTableFilter::CreateDefaultExecutive()
@@ -194,7 +192,7 @@ void vtkAttributeDataToTableFilter::PassFieldData(vtkFieldData* output, vtkField
       arr->SetNumberOfTuples(max_count);
 
       vtkNew<vtkUnsignedCharArray> maskArray;
-      maskArray->SetName((std::string(arr->GetName()) + "__vtkValidMask__").c_str());
+      maskArray->SetName(("__vtkValidMask__" + std::string(arr->GetName())).c_str());
       maskArray->SetNumberOfTuples(max_count);
       maskArray->FillValue(static_cast<unsigned char>(1));
       output->AddArray(maskArray);
@@ -221,7 +219,7 @@ void vtkAttributeDataToTableFilter::Decorate(vtkTable* output, vtkDataObject* in
   vtkRectilinearGrid* rgInput = vtkRectilinearGrid::SafeDownCast(input);
   vtkImageData* idInput = vtkImageData::SafeDownCast(input);
   vtkStructuredGrid* sgInput = vtkStructuredGrid::SafeDownCast(input);
-  const int* dimensions = 0;
+  const int* dimensions = nullptr;
   if (rgInput)
   {
     dimensions = rgInput->GetDimensions();

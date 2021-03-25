@@ -157,7 +157,7 @@ void pqSpreadSheetViewSelectionModel::select(
   selSource.TakeReference(this->getSelectionSource());
   if (!selSource)
   {
-    emit this->selection(0);
+    Q_EMIT this->selection(nullptr);
     return;
   }
 
@@ -235,7 +235,7 @@ void pqSpreadSheetViewSelectionModel::select(
 
   if (ids.size() == 0)
   {
-    selSource = 0;
+    selSource = nullptr;
   }
   else
   {
@@ -256,7 +256,7 @@ void pqSpreadSheetViewSelectionModel::select(
       .arg("ContainingCells", vtkSMPropertyHelper(selSource, "ContainingCells").GetAsInt());
   }
 
-  emit this->selection(selSource);
+  Q_EMIT this->selection(selSource);
 }
 
 //-----------------------------------------------------------------------------
@@ -268,7 +268,7 @@ vtkSMSourceProxy* pqSpreadSheetViewSelectionModel::getSelectionSource()
   pqDataRepresentation* repr = this->Internal->Model->activeRepresentation();
   if (!repr)
   {
-    return 0;
+    return nullptr;
   }
 
   // Convert field_type to selection field type if convert-able.
@@ -297,14 +297,14 @@ vtkSMSourceProxy* pqSpreadSheetViewSelectionModel::getSelectionSource()
       break;
 
     default:
-      return 0;
+      return nullptr;
   }
 
   pqOutputPort* opport = repr->getOutputPortFromInput();
   vtkSMSourceProxy* selsource = opport->getSelectionInput();
 
   // We may be able to simply update the currently existing selection, if any.
-  bool updatable = (selsource != 0);
+  bool updatable = (selsource != nullptr);
 
   // If field types differ, not updatable.
   if (updatable &&
@@ -318,12 +318,7 @@ vtkSMSourceProxy* pqSpreadSheetViewSelectionModel::getSelectionSource()
   // updatable.
   const char* proxyname = "IDSelectionSource";
   vtkPVDataInformation* dinfo = opport->getDataInformation();
-  const char* cdclassname = dinfo->GetCompositeDataClassName();
-  if (cdclassname && strcmp(cdclassname, "vtkHierarchicalBoxDataSet") == 0)
-  {
-    proxyname = "HierarchicalDataIDSelectionSource";
-  }
-  else if (cdclassname)
+  if (dinfo->IsCompositeDataSet())
   {
     proxyname = "CompositeDataIDSelectionSource";
   }
@@ -335,7 +330,7 @@ vtkSMSourceProxy* pqSpreadSheetViewSelectionModel::getSelectionSource()
 
   if (updatable)
   {
-    selsource->Register(0);
+    selsource->Register(nullptr);
   }
   else
   {

@@ -114,7 +114,7 @@ pqLightsEditor::pqLightsEditor(vtkSMProxy* proxy, vtkSMPropertyGroup* smGroup, Q
 pqLightsEditor::~pqLightsEditor()
 {
   delete this->Internal;
-  this->Internal = 0;
+  this->Internal = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -127,6 +127,6 @@ void pqLightsEditor::resetLights()
     _property->ResetToDefault();
   }
   proxy()->UpdateVTKObjects();
-  emit this->changeFinished();
+  Q_EMIT this->changeFinished();
   END_UNDO_SET();
 }

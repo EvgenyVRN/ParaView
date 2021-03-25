@@ -79,10 +79,13 @@ set(classes
   pqCustomShortcutBehavior
   pqCustomizeShortcutsReaction
   pqCustomizeShortcutsDialog
+  pqCheckableProperty
   pqCustomViewpointsToolbar
   pqCylinderPropertyWidget
+  pqDataAssemblyPropertyWidget
   pqDataQueryReaction
   pqDataTimeStepBehavior
+  pqDefaultContextMenu
   pqDefaultMainWindow
   pqDefaultViewBehavior
   pqDeleteReaction
@@ -95,17 +98,17 @@ set(classes
   pqExampleVisualizationsDialog
   pqExampleVisualizationsDialogReaction
   pqExportReaction
+  pqExtractorsMenuReaction
   pqFileNamePropertyWidget
   pqFiltersMenuReaction
+  pqFindDataWidget
   pqFontPropertyWidget
   pqGenericPropertyWidgetDecorator
   pqGlyphScaleFactorPropertyWidget
   pqHandlePropertyWidget
   pqIgnoreSourceTimeReaction
   pqImageCompressorWidget
-  pqImmediateExportReaction
   pqImplicitPlanePropertyWidget
-  pqImportCinemaReaction
   pqInputDataTypeDecorator
   pqInteractivePropertyWidget
   pqLightPropertyWidget
@@ -120,6 +123,7 @@ set(classes
   pqLoadStateReaction
   pqLockPanelsBehavior
   pqLockPanelsReaction
+  pqLogViewerReaction
   pqMainControlsToolbar
   pqMainWindowEventBehavior
   pqManageCustomFiltersReaction
@@ -127,6 +131,7 @@ set(classes
   pqManageLinksReaction
   pqManagePluginsReaction
   pqMasterOnlyReaction
+  pqMenuReactionUtils
   pqModelTransformSupportBehavior
   pqMoleculePropertyWidget
   pqMultiComponentsDecorator
@@ -157,15 +162,20 @@ set(classes
   pqResetScalarRangeReaction
   pqResetDefaultSettingsReaction
   pqSaveAnimationGeometryReaction
+  pqAnimatedExportReaction
   pqSaveAnimationReaction
   pqSaveDataReaction
+  pqSaveExtractsReaction
   pqSaveScreenshotReaction
   pqSaveStateReaction
   pqScalarBarVisibilityReaction
+  pqSearchItemReaction
+  pqSelectionQueryPropertyWidget
   pqSelectionReaction
   pqSeriesEditorPropertyWidget
   pqServerConnectReaction
   pqServerDisconnectReaction
+  pqSessionTypeDecorator
   pqSetMainWindowTitleReaction
   pqShowHideAllReaction
   pqShowWidgetDecorator
@@ -189,6 +199,7 @@ set(classes
   pqTransferFunctionWidgetPropertyWidget
   pqUndoRedoBehavior
   pqUndoRedoReaction
+  pqUsageLoggingBehavior
   pqUseSeparateColorMapReaction
   pqVCRToolbar
   pqVerifyRequiredPluginBehavior
@@ -208,13 +219,17 @@ set_property(SOURCE pqApplicationComponentsInit.cxx APPEND
     COMPILE_DEFINITIONS "BUILD_SHARED_LIBS=${built_shared}")
 
 set(headers
-  pqCatalystContinueReaction.h)
+  pqCatalystContinueReaction.h
+  )
 
 if (TARGET ParaView::pqPython)
   list(APPEND classes
-    pqExportInspector
     pqMacroReaction
-    pqTraceReaction)
+    pqTraceReaction
+  )
+  list(APPEND headers
+    pqPythonScriptEditorReaction.h
+  )
 endif ()
 
 set(ui_files
@@ -223,7 +238,6 @@ set(ui_files
   Resources/UI/pqBoxPropertyWidget.ui
   Resources/UI/pqCameraManipulatorWidget.ui
   Resources/UI/pqCameraToolbar.ui
-  Resources/UI/pqExportInspector.ui
   Resources/UI/pqColorAnnotationsWidget.ui
   Resources/UI/pqColorEditorPropertyWidget.ui
   Resources/UI/pqColorMapEditor.ui
@@ -232,12 +246,14 @@ set(ui_files
   Resources/UI/pqCustomResolutionDialog.ui
   Resources/UI/pqCylinderPropertyWidget.ui
   Resources/UI/pqCustomizeShortcutsDialog.ui
+  Resources/UI/pqDataAssemblyPropertyWidget.ui
   Resources/UI/pqDefaultMainWindow.ui
   Resources/UI/pqDoubleRangeSliderPropertyWidget.ui
   Resources/UI/pqEditMenuBuilder.ui
   Resources/UI/pqEmptyView.ui
   Resources/UI/pqExampleVisualizationsDialog.ui
   Resources/UI/pqFileMenuBuilder.ui
+  Resources/UI/pqFindDataWidget.ui
   Resources/UI/pqFontPropertyWidget.ui
   Resources/UI/pqHandlePropertyWidget.ui
   Resources/UI/pqImageCompressorWidget.ui
@@ -267,6 +283,7 @@ set(resource_files
   Resources/pqApplicationComponents.qrc)
 
 set(qt_components
+  Network
   Widgets
   Svg)
 
@@ -302,7 +319,8 @@ vtk_module_add_module(ParaView::pqApplicationComponents
 vtk_module_link(ParaView::pqApplicationComponents
   PRIVATE
     Qt5::Widgets
-    Qt5::Svg)
+    Qt5::Svg
+    Qt5::Network)
 if (PARAVIEW_USE_QTHELP)
   vtk_module_link(ParaView::pqApplicationComponents
     PRIVATE

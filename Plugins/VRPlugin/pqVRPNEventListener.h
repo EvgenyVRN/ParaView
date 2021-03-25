@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    pqVRPNEventListener.h
+   Module:  pqVRPNEventListener.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -45,14 +45,14 @@ class pqVRPNEventListener : public QObject
   Q_OBJECT
 public:
   typedef QObject Superclass;
-  explicit pqVRPNEventListener(QObject* _parent = NULL);
+  explicit pqVRPNEventListener(QObject* _parent = nullptr);
   ~pqVRPNEventListener();
 
   // Description:
   // Returns true if the listener has started.
   bool isRunning() const { return this->Thread.isRunning(); }
 
-public slots:
+public Q_SLOTS:
   // Description:
   // Register a connection with the listener. The listener will automatically
   // start listening for events when the first connection is registered. The
@@ -70,7 +70,7 @@ public slots:
   // triggered this call.
   void removeSenderConnection();
 
-signals:
+Q_SIGNALS:
 
   // Description:
   // Internal use only.
@@ -99,11 +99,11 @@ public:
   QWaitCondition SyncCondition;
   QList<pqVRPNConnection*> Connections;
 
-public slots:
+public Q_SLOTS:
   void addConnection(pqVRPNConnection* conn);
   void removeConnection(pqVRPNConnection* conn);
 
-protected slots:
+protected Q_SLOTS:
   void listen();
 };
 

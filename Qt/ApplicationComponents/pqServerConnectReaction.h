@@ -48,7 +48,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqServerConnectReaction : public pqReaction
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqServerConnectReaction(QAction* parent);
 
@@ -83,7 +83,7 @@ protected:
   */
   void onTriggered() override { pqServerConnectReaction::connectToServerWithWarning(); }
 
-private slots:
+private Q_SLOTS:
   /**
   * Updates the state of this reaction.
   */

@@ -26,25 +26,22 @@
 #include "vtkContextScene.h"
 #include "vtkPen.h"
 #include "vtkPlot.h"
-#include "vtkStdString.h"
 #include "vtkTextProperty.h"
 #include "vtkVectorOperators.h"
 
 #include "vtkObjectFactory.h"
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkChartWarning)
+vtkStandardNewMacro(vtkChartWarning);
 
-  //-----------------------------------------------------------------------------
-  vtkChartWarning::vtkChartWarning()
+//-----------------------------------------------------------------------------
+vtkChartWarning::vtkChartWarning()
 {
   this->TextPad = 16.;
 }
 
 //-----------------------------------------------------------------------------
-vtkChartWarning::~vtkChartWarning()
-{
-}
+vtkChartWarning::~vtkChartWarning() = default;
 
 //-----------------------------------------------------------------------------
 void vtkChartWarning::PrintSelf(ostream& os, vtkIndent indent)

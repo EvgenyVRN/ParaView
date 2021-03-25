@@ -14,11 +14,14 @@
 =========================================================================*/
 #include "vtkSMInputArrayDomain.h"
 
+#include "vtkDataObjectTypes.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVXMLElement.h"
+#include "vtkSMDomainIterator.h"
+#include "vtkSMProperty.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMUncheckedPropertyHelper.h"
 
@@ -30,43 +33,58 @@ bool vtkSMInputArrayDomain::AutomaticPropertyConversion = false;
 
 //---------------------------------------------------------------------------
 static const char* const vtkSMInputArrayDomainAttributeTypes[] = { "point", "cell", "field",
-  "any-except-field", "vertex", "edge", "row", "any", NULL };
+  "any-except-field", "vertex", "edge", "row", "any", nullptr };
 
 //---------------------------------------------------------------------------
 vtkSMInputArrayDomain::vtkSMInputArrayDomain()
+  : AttributeType(vtkSMInputArrayDomain::ANY_EXCEPT_FIELD)
+  , DataType()
 {
-  this->AttributeType = vtkSMInputArrayDomain::ANY_EXCEPT_FIELD;
 }
 
 //---------------------------------------------------------------------------
-vtkSMInputArrayDomain::~vtkSMInputArrayDomain()
-{
-}
+vtkSMInputArrayDomain::~vtkSMInputArrayDomain() = default;
 
 //---------------------------------------------------------------------------
 int vtkSMInputArrayDomain::IsInDomain(vtkSMProperty* property)
 {
   if (this->IsOptional)
   {
-    return 1;
+    return vtkSMDomain::IN_DOMAIN;
   }
 
   if (!property)
   {
-    return 0;
+    return vtkSMDomain::NOT_IN_DOMAIN;
   }
 
   vtkSMUncheckedPropertyHelper helper(property);
+  if (helper.GetNumberOfElements() == 0)
+  {
+    return vtkSMDomain::NOT_IN_DOMAIN;
+  }
+
+  unsigned int skipped_count = 0;
   for (unsigned int cc = 0, max = helper.GetNumberOfElements(); cc < max; cc++)
   {
-    if (!this->IsInDomain(
-          vtkSMSourceProxy::SafeDownCast(helper.GetAsProxy(cc)), helper.GetOutputPort(cc)))
+    auto proxy = vtkSMSourceProxy::SafeDownCast(helper.GetAsProxy(cc));
+    const auto port = helper.GetOutputPort(cc);
+    switch (this->IsInDomain(proxy, port))
     {
-      return 0;
+      case vtkSMDomain::NOT_IN_DOMAIN:
+        return vtkSMDomain::NOT_IN_DOMAIN;
+
+      case vtkSMDomain::NOT_APPLICABLE:
+        ++skipped_count;
+        break;
+
+      case vtkSMDomain::IN_DOMAIN:
+        break;
     }
   }
 
-  return (helper.GetNumberOfElements() > 0);
+  return (helper.GetNumberOfElements() == skipped_count) ? vtkSMDomain::NOT_APPLICABLE
+                                                         : vtkSMDomain::IN_DOMAIN;
 }
 
 //---------------------------------------------------------------------------
@@ -74,7 +92,7 @@ int vtkSMInputArrayDomain::IsInDomain(vtkSMSourceProxy* proxy, unsigned int outp
 {
   if (!proxy)
   {
-    return 0;
+    return vtkSMDomain::NOT_IN_DOMAIN;
   }
 
   // Make sure the outputs are created.
@@ -82,7 +100,15 @@ int vtkSMInputArrayDomain::IsInDomain(vtkSMSourceProxy* proxy, unsigned int outp
   vtkPVDataInformation* info = proxy->GetDataInformation(outputport);
   if (!info)
   {
-    return 0;
+    return vtkSMDomain::NOT_IN_DOMAIN;
+  }
+
+  if (!this->DataType.empty())
+  {
+    if (!info->DataSetTypeIsA(this->DataType.c_str()))
+    {
+      return vtkSMDomain::NOT_APPLICABLE;
+    }
   }
 
   int attribute_types_to_try[] = { vtkDataObject::POINT, vtkDataObject::CELL, vtkDataObject::FIELD,
@@ -99,16 +125,17 @@ int vtkSMInputArrayDomain::IsInDomain(vtkSMSourceProxy* proxy, unsigned int outp
         info->GetAttributeInformation(attribute_types_to_try[kk]);
       if (this->HasAcceptableArray(dsaInfo))
       {
-        return 1;
+        return vtkSMDomain::IN_DOMAIN;
       }
     }
   }
-  return 0;
+
+  return vtkSMDomain::NOT_IN_DOMAIN;
 }
 
 //----------------------------------------------------------------------------
 bool vtkSMInputArrayDomain::IsAttributeTypeAcceptable(
-  int required_type, int attribute_type, int* acceptable_as_type /*=NULL*/)
+  int required_type, int attribute_type, int* acceptable_as_type /*=nullptr*/)
 {
   if (acceptable_as_type)
   {
@@ -187,7 +214,7 @@ bool vtkSMInputArrayDomain::IsAttributeTypeAcceptable(
 //----------------------------------------------------------------------------
 int vtkSMInputArrayDomain::IsArrayAcceptable(vtkPVArrayInformation* arrayInfo)
 {
-  if (arrayInfo == NULL)
+  if (arrayInfo == nullptr)
   {
     return -1;
   }
@@ -231,7 +258,8 @@ int vtkSMInputArrayDomain::IsArrayAcceptable(vtkPVArrayInformation* arrayInfo)
 //----------------------------------------------------------------------------
 bool vtkSMInputArrayDomain::IsAttributeTypeAcceptable(int attributeType)
 {
-  return vtkSMInputArrayDomain::IsAttributeTypeAcceptable(this->AttributeType, attributeType, NULL);
+  return vtkSMInputArrayDomain::IsAttributeTypeAcceptable(
+    this->AttributeType, attributeType, nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -280,6 +308,22 @@ int vtkSMInputArrayDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElemen
     }
   }
 
+  // handle optional `data_type`.
+  if (const char* dataType = element->GetAttribute("data_type"))
+  {
+    if (vtkDataObjectTypes::GetTypeIdFromClassName(dataType) != -1)
+    {
+      this->DataType = dataType;
+    }
+    else
+    {
+      vtkErrorMacro("'data_type' is set to '" << dataType << "' which is not a known data type.");
+    }
+  }
+  else
+  {
+    this->DataType.clear();
+  }
   return 1;
 }
 
@@ -297,7 +341,7 @@ const char* vtkSMInputArrayDomain::GetAttributeTypeAsString()
 //---------------------------------------------------------------------------
 void vtkSMInputArrayDomain::SetAttributeType(const char* type)
 {
-  if (type == NULL)
+  if (type == nullptr)
   {
     vtkErrorMacro("No type specified");
     return;
@@ -342,6 +386,27 @@ bool vtkSMInputArrayDomain::GetAutomaticPropertyConversion()
 }
 
 //---------------------------------------------------------------------------
+vtkSMInputArrayDomain* vtkSMInputArrayDomain::FindApplicableDomain(vtkSMProperty* property)
+{
+  auto iter = property->NewDomainIterator();
+  vtkSMInputArrayDomain* chosen = nullptr;
+  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
+  {
+    if (auto iad = vtkSMInputArrayDomain::SafeDownCast(iter->GetDomain()))
+    {
+      chosen = chosen ? chosen : iad;
+      if (iad->IsInDomain(property) == vtkSMDomain::IN_DOMAIN)
+      {
+        chosen = iad;
+        break;
+      }
+    }
+  }
+  iter->Delete();
+  return chosen;
+}
+
+//---------------------------------------------------------------------------
 void vtkSMInputArrayDomain::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -359,4 +424,6 @@ void vtkSMInputArrayDomain::PrintSelf(ostream& os, vtkIndent indent)
   }
   os << indent << "AttributeType: " << this->AttributeType << " ("
      << this->GetAttributeTypeAsString() << ")" << endl;
+  os << indent << "DataType: " << (this->DataType.empty() ? "(none)" : this->DataType.c_str())
+     << endl;
 }

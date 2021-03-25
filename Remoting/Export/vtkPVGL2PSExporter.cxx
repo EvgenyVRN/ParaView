@@ -26,17 +26,16 @@
 
 #include <cstdio> // for rename
 
-vtkStandardNewMacro(vtkPVGL2PSExporter)
+vtkStandardNewMacro(vtkPVGL2PSExporter);
 
-  //----------------------------------------------------------------------------
-  vtkPVGL2PSExporter::vtkPVGL2PSExporter()
+//----------------------------------------------------------------------------
+vtkPVGL2PSExporter::vtkPVGL2PSExporter()
+  : ExcludeCubeAxesActorsFromRasterization(true)
 {
 }
 
 //----------------------------------------------------------------------------
-vtkPVGL2PSExporter::~vtkPVGL2PSExporter()
-{
-}
+vtkPVGL2PSExporter::~vtkPVGL2PSExporter() = default;
 
 //----------------------------------------------------------------------------
 void vtkPVGL2PSExporter::WriteData()
@@ -45,13 +44,13 @@ void vtkPVGL2PSExporter::WriteData()
   // and sets the extension itself, while the ParaView export mechanism uses the
   // full filename). The full name of the temporary file will be
   // this->FileName + ".pvtmp.[format extension]".
-  vtkStdString tmpFilePrefix(this->FileName + ".pvtmp");
+  std::string tmpFilePrefix(this->FileName + ".pvtmp");
   this->SetFilePrefix(tmpFilePrefix.c_str());
 
   // Setup raster exclusions if needed
   if (this->Write3DPropsAsRasterImage != 0)
   {
-    if (this->RasterExclusions == NULL)
+    if (this->RasterExclusions == nullptr)
     {
       vtkNew<vtkPropCollection> coll;
       this->SetRasterExclusions(coll.GetPointer());
@@ -89,7 +88,7 @@ void vtkPVGL2PSExporter::WriteData()
   this->Superclass::WriteData();
 
   // Move to the requested destination
-  vtkStdString tmpFileName(tmpFilePrefix);
+  std::string tmpFileName(tmpFilePrefix);
 
   switch (this->FileFormat)
   {

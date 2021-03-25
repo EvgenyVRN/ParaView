@@ -79,7 +79,7 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelectionInternal(vtkSMS
   // Determine the type of selection source proxy to create that will
   // generate the a vtkSelection same the "selection" instance passed as an
   // argument.
-  const char* proxyname = 0;
+  const char* proxyname = nullptr;
   bool use_composite = false;
   bool use_hierarchical = false;
   switch (contentType)
@@ -208,7 +208,7 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelectionInternal(vtkSMS
     if (idList)
     {
       for (unsigned int cc = 0, max = blocks->GetNumberOfElements();
-           (cc < max && originalSelSource != NULL); ++cc)
+           (cc < max && originalSelSource != nullptr); ++cc)
       {
         block_ids.insert(blocks->GetElement(cc));
       }
@@ -245,19 +245,19 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelectionInternal(vtkSMS
       // remove default values set by the XML if we created a brand new proxy.
       ids->SetNumberOfElements(0);
     }
-    unsigned int curValues = ids->GetNumberOfElements();
     vtkIdTypeArray* idList = vtkIdTypeArray::SafeDownCast(selection->GetSelectionList());
     if (idList)
     {
       vtkIdType numIDs = idList->GetNumberOfTuples();
       if (!use_composite && !use_hierarchical)
       {
-        ids->SetNumberOfElements(curValues + numIDs * 2);
+        std::vector<vtkIdType> newVals(2 * numIDs);
         for (vtkIdType cc = 0; cc < numIDs; cc++)
         {
-          ids->SetElement(curValues + 2 * cc, procID);
-          ids->SetElement(curValues + 2 * cc + 1, idList->GetValue(cc));
+          newVals[2 * cc] = procID;
+          newVals[2 * cc + 1] = idList->GetValue(cc);
         }
+        ids->AppendElements(newVals.data(), static_cast<unsigned int>(newVals.size()));
       }
       else if (use_composite)
       {
@@ -267,25 +267,28 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelectionInternal(vtkSMS
           composite_index = selProperties->Get(vtkSelectionNode::COMPOSITE_INDEX());
         }
 
-        ids->SetNumberOfElements(curValues + numIDs * 3);
+        std::vector<vtkIdType> newVals(3 * numIDs);
         for (vtkIdType cc = 0; cc < numIDs; cc++)
         {
-          ids->SetElement(curValues + 3 * cc, composite_index);
-          ids->SetElement(curValues + 3 * cc + 1, procID);
-          ids->SetElement(curValues + 3 * cc + 2, idList->GetValue(cc));
+          newVals[3 * cc] = composite_index;
+          newVals[3 * cc + 1] = procID;
+          newVals[3 * cc + 2] = idList->GetValue(cc);
         }
+        ids->AppendElements(newVals.data(), static_cast<unsigned int>(newVals.size()));
       }
       else if (use_hierarchical)
       {
         vtkIdType level = selProperties->Get(vtkSelectionNode::HIERARCHICAL_LEVEL());
         vtkIdType dsIndex = selProperties->Get(vtkSelectionNode::HIERARCHICAL_INDEX());
-        ids->SetNumberOfElements(curValues + numIDs * 3);
+
+        std::vector<vtkIdType> newVals(3 * numIDs);
         for (vtkIdType cc = 0; cc < numIDs; cc++)
         {
-          ids->SetElement(curValues + 3 * cc, level);
-          ids->SetElement(curValues + 3 * cc + 1, dsIndex);
-          ids->SetElement(curValues + 3 * cc + 2, idList->GetValue(cc));
+          newVals[3 * cc] = level;
+          newVals[3 * cc + 1] = dsIndex;
+          newVals[3 * cc + 2] = idList->GetValue(cc);
         }
+        ids->AppendElements(newVals.data(), static_cast<unsigned int>(newVals.size()));
       }
     }
   }
@@ -334,7 +337,7 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelectionInternal(vtkSMS
 vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelection(
   vtkSMSession* session, vtkSelection* selection, bool ignore_composite_keys)
 {
-  vtkSMProxy* selSource = 0;
+  vtkSMProxy* selSource = nullptr;
   unsigned int numNodes = selection->GetNumberOfNodes();
   for (unsigned int cc = 0; cc < numNodes; cc++)
   {
@@ -353,8 +356,8 @@ vtkSMProxy* vtkSMSelectionHelper::NewSelectionSourceFromSelection(
 vtkSMProxy* vtkSMSelectionHelper::ConvertSelection(
   int outputType, vtkSMProxy* selectionSourceProxy, vtkSMSourceProxy* dataSource, int dataPort)
 {
-  const char* inproxyname = selectionSourceProxy ? selectionSourceProxy->GetXMLName() : 0;
-  const char* outproxyname = 0;
+  const char* inproxyname = selectionSourceProxy ? selectionSourceProxy->GetXMLName() : nullptr;
+  const char* outproxyname = nullptr;
   switch (outputType)
   {
     case vtkSelectionNode::GLOBALIDS:
@@ -397,19 +400,19 @@ vtkSMProxy* vtkSMSelectionHelper::ConvertSelection(
 
     default:
       vtkGenericWarningMacro("Cannot convert to type : " << outputType);
-      return 0;
+      return nullptr;
   }
 
   if (selectionSourceProxy && strcmp(inproxyname, outproxyname) == 0)
   {
     // No conversion needed.
-    selectionSourceProxy->Register(0);
+    selectionSourceProxy->Register(nullptr);
     return selectionSourceProxy;
   }
 
   if (outputType == vtkSelectionNode::INDICES && selectionSourceProxy)
   {
-    vtkSMVectorProperty* ids = 0;
+    vtkSMVectorProperty* ids = nullptr;
     ids = vtkSMVectorProperty::SafeDownCast(selectionSourceProxy->GetProperty("IDs"));
     // this "if" condition does not do any conversion in input is GLOBALIDS
     // selection with no ids.
@@ -1070,7 +1073,7 @@ vtkSMProxy* vtkLocateRepresentation(vtkSMProxy* viewProxy, vtkPVDataRepresentati
   if (!view)
   {
     vtkGenericWarningMacro("View proxy must be a proxy for vtkView.");
-    return NULL;
+    return nullptr;
   }
 
   // now locate the proxy for this repr.
@@ -1079,7 +1082,7 @@ vtkSMProxy* vtkLocateRepresentation(vtkSMProxy* viewProxy, vtkPVDataRepresentati
   {
     vtkSMProxy* reprProxy = helper.GetAsProxy(cc);
     vtkPVDataRepresentation* cur_repr =
-      vtkPVDataRepresentation::SafeDownCast(reprProxy ? reprProxy->GetClientSideObject() : NULL);
+      vtkPVDataRepresentation::SafeDownCast(reprProxy ? reprProxy->GetClientSideObject() : nullptr);
     if (cur_repr == repr)
     {
       return reprProxy;
@@ -1090,7 +1093,7 @@ vtkSMProxy* vtkLocateRepresentation(vtkSMProxy* viewProxy, vtkPVDataRepresentati
       return reprProxy;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 bool vtkInputIsComposite(vtkSMProxy* proxy)

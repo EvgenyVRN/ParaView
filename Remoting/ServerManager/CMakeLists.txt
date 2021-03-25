@@ -30,6 +30,7 @@
 #==========================================================================
 set(classes
   vtkLoadStateOptions
+  vtkRemoteWriterHelper
   vtkPVCatalystChannelInformation
   vtkPVCatalystSessionCore
   vtkPVFilePathEncodingHelper
@@ -51,6 +52,7 @@ set(classes
   vtkSIInputProperty
   vtkSIIntVectorProperty
   vtkSIMetaReaderProxy
+  vtkSIMultiplexerSourceProxy
   vtkSIObject
   vtkSIProperty
   vtkSIProxy
@@ -76,6 +78,9 @@ set(classes
   vtkSMCompoundSourceProxy
   vtkSMCompoundSourceProxyDefinitionBuilder
   vtkSMCoreUtilities
+  vtkSMDataAssemblyDomain
+  vtkSMDataAssemblyListDomain
+  vtkSMDataExtractWriterProxy
   vtkSMDataSourceProxy
   vtkSMDataTypeDomain
   vtkSMDeserializer
@@ -93,10 +98,13 @@ set(classes
   vtkSMDoubleRangeDomain
   vtkSMDoubleVectorProperty
   vtkSMEnumerationDomain
-  vtkSMExportProxyDepot
   vtkSMExtentDomain
+  vtkSMExtractsController
+  vtkSMExtractTriggerProxy
+  vtkSMExtractWriterProxy
   vtkSMFieldDataDomain
   vtkSMFileListDomain
+  vtkSMFileUtilities
   vtkSMFixedTypeDomain
   vtkSMIdTypeVectorProperty
   vtkSMIndexSelectionDomain
@@ -109,6 +117,8 @@ set(classes
   vtkSMLoadStateOptionsProxy
   vtkSMMapProperty
   vtkSMMessage
+  vtkSMMultiplexerSourceProxy
+  vtkSMMultiplexerInputDomain
   vtkSMNamedPropertyIterator
   vtkSMNullProxy
   vtkSMNumberOfComponentsDomain
@@ -134,6 +144,7 @@ set(classes
   vtkSMProxyListDomain
   vtkSMProxyLocator
   vtkSMProxyManager
+  vtkSMProxyManagerUtilities
   vtkSMProxyProperty
   vtkSMProxySelectionModel
   vtkSMPSWriterProxy
@@ -142,6 +153,7 @@ set(classes
   vtkSMReaderReloadHelper
   vtkSMRemoteObject
   vtkSMRemoteObjectUpdateUndoElement
+  vtkSMSelectionQueryDomain
   vtkSMSelfGeneratingSourceProxy
   vtkSMServerStateLocator
   vtkSMSession

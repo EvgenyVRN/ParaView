@@ -24,8 +24,10 @@
 
 #include <algorithm>
 #include <cassert>
-
+#include <chrono>
 #include <sstream>
+#include <thread>
+
 #if !defined(_WIN32) || defined(__CYGWIN__)
 #include <sys/wait.h>
 #include <unistd.h>
@@ -79,6 +81,7 @@ vtkSMTestDriver::vtkSMTestDriver()
   this->TestRemoteRendering = 0;
   this->TestMultiClient = 0;
   this->NumberOfServers = 1;
+  this->ClientUseMPI = false;
 
   // Setup process types
   this->ServerExecutable.Type = SERVER;
@@ -91,9 +94,7 @@ vtkSMTestDriver::vtkSMTestDriver()
   this->ScriptExecutable.TypeName = "script";
 }
 
-vtkSMTestDriver::~vtkSMTestDriver()
-{
-}
+vtkSMTestDriver::~vtkSMTestDriver() = default;
 
 // now implement the vtkSMTestDriver class
 
@@ -185,8 +186,9 @@ int vtkSMTestDriver::ProcessCommandLine(int argc, char* argv[])
   int i;
   for (i = 1; i < argc - 1; ++i)
   {
-    if (strcmp(argv[i], "--client") == 0)
+    if (strcmp(argv[i], "--client") == 0 || strcmp(argv[i], "--client-mpi") == 0)
     {
+      this->ClientUseMPI = (strcmp(argv[i], "--client-mpi") == 0);
       ExecutableInfo info;
       info.Executable = ::FixExecutablePath(argv[i + 1]);
       info.ArgStart = i + 2;
@@ -296,7 +298,7 @@ int vtkSMTestDriver::ProcessCommandLine(int argc, char* argv[])
 void vtkSMTestDriver::CreateCommandLine(std::vector<const char*>& commandLine, const char* paraView,
   vtkSMTestDriver::ProcessType type, const char* numProc, int argStart, int argEnd, char* argv[])
 {
-  if (this->MPIRun.size() && type != CLIENT)
+  if (this->MPIRun.size() && (type != CLIENT || this->ClientUseMPI))
   {
     commandLine.push_back(this->MPIRun.c_str());
     commandLine.push_back(this->MPINumProcessFlag.c_str());
@@ -384,7 +386,7 @@ void vtkSMTestDriver::CreateCommandLine(std::vector<const char*>& commandLine, c
   }
 #endif
 
-  commandLine.push_back(0);
+  commandLine.push_back(nullptr);
 }
 
 int vtkSMTestDriver::StartProcessAndWait(vtksysProcess* server, const char* name,
@@ -450,7 +452,7 @@ void vtkSMTestDriver::Stop(vtksysProcess* p, const char* name)
   {
     cerr << "vtkSMTestDriver: killing process " << name << "\n";
     vtksysProcess_Kill(p);
-    vtksysProcess_WaitForExit(p, 0);
+    vtksysProcess_WaitForExit(p, nullptr);
   }
 }
 
@@ -459,7 +461,7 @@ int vtkSMTestDriver::OutputStringHasError(const char* pname, std::string& output
   const char* possibleMPIErrors[] = { "error", "Missing:", "core dumped",
     "process in local group is dead", "Segmentation fault", "erroneous", "ERROR:", "Error:",
     "mpirun can *only* be used with MPI programs", "due to signal", "failure",
-    "bnormal termination", "failed", "FAILED", "Failed", 0 };
+    "bnormal termination", "failed", "FAILED", "Failed", nullptr };
 
   const char* nonErrors[] = {
     "Memcheck, a memory error detector",                  // valgrind
@@ -470,7 +472,7 @@ int vtkSMTestDriver::OutputStringHasError(const char* pname, std::string& output
     // reported as https://bugreports.qt.io/browse/QTBUG-58699
     "Layout still needs update after calling -[QNSPanelContentsWrapper layout]",
 #endif
-    0
+    nullptr
   };
 
   if (this->AllowErrorInOutput)
@@ -532,6 +534,7 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
   // we add this so that vtksys::SystemTools::EnableMSVCDebugHook() works. At
   // somepoint vtksys needs to be updated to use the newer variable.
   vtksys::SystemTools::PutEnv("DART_TEST_FROM_DART=1");
+  vtksys::SystemTools::PutEnv("PARAVIEW_SMTESTDRIVER=1");
   vtksys::SystemTools::EnableMSVCDebugHook();
 
 #ifdef PV_TEST_INIT_COMMAND
@@ -574,7 +577,7 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
   std::vector<vtksysProcess*> renderServers;
   std::vector<vtksysProcess*> servers;
   std::vector<vtksysProcess*> clients;
-  vtksysProcess* script = 0;
+  vtksysProcess* script = nullptr;
   for (int i = 0; this->TestRenderServer && i < this->NumberOfServers; i++)
   {
     vtksysProcess* renderServer = vtksysProcess_New();
@@ -771,6 +774,9 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
       if (clients.size() > 1)
       {
         client_name << cc;
+        // wait a few seconds before launching the additional clients for
+        // collaboration mode.
+        std::this_thread::sleep_for(std::chrono::seconds(2));
       }
 
       std::string output_to_ignore;
@@ -842,7 +848,7 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
     {
       output = "";
       this->WaitForAndPrintLine(
-        "server", *waitIter, output, timeout, ServerStdOut, ServerStdErr, 0);
+        "server", *waitIter, output, timeout, ServerStdOut, ServerStdErr, nullptr);
       if (!mpiError && this->OutputStringHasError("server", output))
       {
         mpiError = 1;
@@ -853,8 +859,8 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
          waitIter != renderServers.end(); waitIter++)
     {
       output = "";
-      this->WaitForAndPrintLine(
-        "renderserver", *waitIter, output, timeout, RenderServerStdOut, RenderServerStdErr, 0);
+      this->WaitForAndPrintLine("renderserver", *waitIter, output, timeout, RenderServerStdOut,
+        RenderServerStdErr, nullptr);
       if (!mpiError && this->OutputStringHasError("renderserver", output))
       {
         mpiError = 1;
@@ -864,7 +870,8 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
     if (script)
     {
       output = "";
-      this->WaitForAndPrintLine("script", script, output, timeout, ScriptStdOut, ScriptStdErr, 0);
+      this->WaitForAndPrintLine(
+        "script", script, output, timeout, ScriptStdOut, ScriptStdErr, nullptr);
       if (!mpiError &&
         (!this->ScriptIgnoreOutputErrors && this->OutputStringHasError("script", output)))
       {
@@ -878,7 +885,7 @@ int vtkSMTestDriver::Main(int argc, char* argv[])
   // Wait for the client and server to exit.
   for (size_t cc = 0; cc < clients.size(); cc++)
   {
-    vtksysProcess_WaitForExit(clients[cc], 0);
+    vtksysProcess_WaitForExit(clients[cc], nullptr);
   }
 
   // Once client is finished, the servers
@@ -1182,7 +1189,7 @@ void vtkSMTestDriver::PrintLine(const char* pname, const char* line)
 //----------------------------------------------------------------------------
 int vtkSMTestDriver::WaitForAndPrintLine(const char* pname, vtksysProcess* process,
   std::string& line, double timeout, std::vector<char>& out, std::vector<char>& err,
-  const char* string_to_wait_for, int* foundWaiting, std::string* matched_line /*=NULL*/)
+  const char* string_to_wait_for, int* foundWaiting, std::string* matched_line /*=nullptr*/)
 {
   int pipe = this->WaitForLine(process, line, timeout, out, err);
   if (pipe == vtksysProcess_Pipe_STDOUT || pipe == vtksysProcess_Pipe_STDERR)
@@ -1224,15 +1231,15 @@ bool vtkSMTestDriver::SetupClient(vtksysProcess* process, const ExecutableInfo& 
   if (process)
   {
     std::vector<const char*> clientCommand;
-    this->CreateCommandLine(
-      clientCommand, info.Executable.c_str(), CLIENT, "", info.ArgStart, info.ArgEnd, argv);
+    this->CreateCommandLine(clientCommand, info.Executable.c_str(), CLIENT,
+      this->MPIServerNumProcessFlag.c_str(), info.ArgStart, info.ArgEnd, argv);
     if (!this->ReverseConnection && !this->ServerURL.empty())
     {
       // push-back server url, if present.
       std::vector<const char*>::iterator iter = clientCommand.begin();
       iter++;
       clientCommand.insert(iter, this->ServerURL.c_str());
-      clientCommand.push_back(NULL);
+      clientCommand.push_back(nullptr);
     }
     this->ReportCommand(&clientCommand[0], "client");
     vtksysProcess_SetCommand(process, &clientCommand[0]);

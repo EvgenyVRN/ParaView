@@ -60,7 +60,7 @@ public:
     }
   }
   static void ResizeLabels(
-    TickLabelsType& labels, size_t new_size, vtkTextProperty* property = NULL)
+    TickLabelsType& labels, size_t new_size, vtkTextProperty* property = nullptr)
   {
     labels.resize(new_size);
     for (TickLabelsType::iterator iter = labels.begin(); iter != labels.end(); ++iter)
@@ -107,6 +107,36 @@ public:
       }
     }
     return counter;
+  }
+  void UpdateGeometry(vtkViewport* viewport)
+  {
+    for (int cc = 0; cc < 4; cc++)
+    {
+      for (TickLabelsType::iterator iter = this->TickLabels[cc].begin();
+           iter != this->TickLabels[cc].end(); ++iter)
+      {
+        iter->GetPointer()->UpdateGeometry(viewport);
+      }
+      if (this->TitleLabels[cc]->GetVisibility())
+      {
+        this->TitleLabels[cc]->UpdateGeometry(viewport);
+      }
+    }
+  }
+  void GetActors(vtkPropCollection* props)
+  {
+    for (int cc = 0; cc < 4; cc++)
+    {
+      for (TickLabelsType::iterator iter = this->TickLabels[cc].begin();
+           iter != this->TickLabels[cc].end(); ++iter)
+      {
+        iter->GetPointer()->GetActors(props);
+      }
+      if (this->TitleLabels[cc]->GetVisibility())
+      {
+        this->TitleLabels[cc]->GetActors(props);
+      }
+    }
   }
   int HasTranslucentPolygonalGeometry()
   {
@@ -202,7 +232,27 @@ vtkGridAxes2DActor::vtkGridAxes2DActor()
 vtkGridAxes2DActor::~vtkGridAxes2DActor()
 {
   delete this->Labels;
-  this->Labels = NULL;
+  this->Labels = nullptr;
+}
+
+//----------------------------------------------------------------------------
+void vtkGridAxes2DActor::GetActors(vtkPropCollection* props)
+{
+  if (this->GetVisibility())
+  {
+    vtkViewport* vp = nullptr;
+    if (this->NumberOfConsumers)
+    {
+      vp = vtkViewport::SafeDownCast(this->Consumers[0]);
+      if (vp)
+      {
+        this->UpdateGeometry(vp, true);
+      }
+    }
+  }
+
+  this->PlaneActor->GetActors(props);
+  this->Labels->GetActors(props);
 }
 
 //----------------------------------------------------------------------------
@@ -219,7 +269,7 @@ vtkMTimeType vtkGridAxes2DActor::GetMTime()
 }
 
 //----------------------------------------------------------------------------
-void vtkGridAxes2DActor::SetTitle(int axis, const vtkStdString& title)
+void vtkGridAxes2DActor::SetTitle(int axis, const std::string& title)
 {
   if (axis >= 0 && axis < 3 && this->Titles[axis] != title)
   {
@@ -229,9 +279,9 @@ void vtkGridAxes2DActor::SetTitle(int axis, const vtkStdString& title)
 }
 
 //----------------------------------------------------------------------------
-const vtkStdString& vtkGridAxes2DActor::GetTitle(int axis)
+const std::string& vtkGridAxes2DActor::GetTitle(int axis)
 {
-  static vtkStdString nullstring;
+  static std::string nullstring;
   return (axis >= 0 && axis < 3) ? this->Titles[axis] : nullstring;
 }
 
@@ -282,7 +332,7 @@ vtkProperty* vtkGridAxes2DActor::GetProperty()
 //----------------------------------------------------------------------------
 void vtkGridAxes2DActor::SetTitleTextProperty(int axis, vtkTextProperty* tprop)
 {
-  if (axis >= 0 && axis < 3 && this->TitleTextProperty[axis] != tprop && tprop != NULL)
+  if (axis >= 0 && axis < 3 && this->TitleTextProperty[axis] != tprop && tprop != nullptr)
   {
     this->TitleTextProperty[axis] = tprop;
     this->Modified();
@@ -292,13 +342,13 @@ void vtkGridAxes2DActor::SetTitleTextProperty(int axis, vtkTextProperty* tprop)
 //----------------------------------------------------------------------------
 vtkTextProperty* vtkGridAxes2DActor::GetTitleTextProperty(int axis)
 {
-  return (axis >= 0 && axis < 3) ? this->TitleTextProperty[axis] : NULL;
+  return (axis >= 0 && axis < 3) ? this->TitleTextProperty[axis] : nullptr;
 }
 
 //----------------------------------------------------------------------------
 void vtkGridAxes2DActor::SetLabelTextProperty(int axis, vtkTextProperty* tprop)
 {
-  if (axis >= 0 && axis < 3 && this->LabelTextProperty[axis] != tprop && tprop != NULL)
+  if (axis >= 0 && axis < 3 && this->LabelTextProperty[axis] != tprop && tprop != nullptr)
   {
     this->LabelTextProperty[axis] = tprop;
     this->Modified();
@@ -308,7 +358,7 @@ void vtkGridAxes2DActor::SetLabelTextProperty(int axis, vtkTextProperty* tprop)
 //----------------------------------------------------------------------------
 vtkTextProperty* vtkGridAxes2DActor::GetLabelTextProperty(int axis)
 {
-  return (axis >= 0 && axis < 3) ? this->LabelTextProperty[axis] : NULL;
+  return (axis >= 0 && axis < 3) ? this->LabelTextProperty[axis] : nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -342,6 +392,24 @@ int vtkGridAxes2DActor::RenderOpaqueGeometry(vtkViewport* viewport)
   counter += this->Labels->RenderOpaqueGeometry(viewport);
   counter += this->PlaneActor->RenderOpaqueGeometry(viewport);
   return counter;
+}
+
+//----------------------------------------------------------------------------
+void vtkGridAxes2DActor::UpdateGeometry(vtkViewport* viewport, bool doRegularUpdate)
+{
+  if (doRegularUpdate)
+  {
+    vtkRenderWindow* rWin = vtkRenderWindow::SafeDownCast(viewport->GetVTKWindow());
+    if (rWin == nullptr || rWin->GetDesiredUpdateRate() < 1.0)
+    {
+      this->Update(viewport);
+    }
+  }
+
+  this->UpdateTextActors(viewport);
+
+  this->Labels->UpdateGeometry(viewport);
+  this->PlaneActor->UpdateGeometry(viewport);
 }
 
 //----------------------------------------------------------------------------
@@ -401,7 +469,7 @@ bool vtkGridAxes2DActor::Update(vtkViewport* viewport)
   this->PlaneActor->SetUserMatrix(this->GetMatrix());
 
   vtkRenderer* renderer = vtkRenderer::SafeDownCast(viewport);
-  assert(renderer != NULL);
+  assert(renderer != nullptr);
 
   // This is needed so the vtkAxis labels account for tile scaling.
   this->AxisHelperScene->SetRenderer(renderer);
@@ -612,7 +680,7 @@ void vtkGridAxes2DActor::UpdateTextActors(vtkViewport* viewport)
   {
     // Setup title text.
     vtkBillboardTextActor3D* titleActor = this->Labels->TitleLabels[index].GetPointer();
-    const vtkStdString& label = this->Titles[activeAxes[index % 2]];
+    const std::string& label = this->Titles[activeAxes[index % 2]];
     if (label.empty() == false && labelVisibilties[index])
     {
       vtkVector3d midPoint = (facePoints[index] + facePoints[(index + 1) % 4]) * 0.5;

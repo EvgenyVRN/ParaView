@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vtkSMDoubleRangeDomain.h>
 #include <vtkSMDoubleVectorProperty.h>
 
+#include <cmath>
+
 ///////////////////////////////////////////////////////////////////////////
 // pqSampleScalarWidget::pqImplementation
 
@@ -269,7 +271,7 @@ void pqSampleScalarWidget::onDelete()
   this->Implementation->UI->Values->selectionModel()->clear();
 
   this->onSamplesChanged();
-  emit samplesChanged();
+  Q_EMIT samplesChanged();
 }
 void pqSampleScalarWidget::onDeleteAll()
 {
@@ -278,7 +280,7 @@ void pqSampleScalarWidget::onDeleteAll()
   this->Implementation->UI->Values->selectionModel()->clear();
 
   this->onSamplesChanged();
-  emit samplesChanged();
+  Q_EMIT samplesChanged();
 }
 void pqSampleScalarWidget::onNewValue()
 {
@@ -346,7 +348,7 @@ void pqSampleScalarWidget::onNewRange()
   }
 
   this->onSamplesChanged();
-  emit samplesChanged();
+  Q_EMIT samplesChanged();
 }
 
 void pqSampleScalarWidget::onSelectAll()

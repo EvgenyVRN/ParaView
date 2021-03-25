@@ -97,7 +97,7 @@ int vtkPEnSightGoldReader::ReadGeometryFile(
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -245,7 +245,7 @@ int vtkPEnSightGoldReader::ReadGeometryFile(
       {
         free(name);
         delete this->IS;
-        this->IS = NULL;
+        this->IS = nullptr;
         return 0;
       }
     }
@@ -253,7 +253,7 @@ int vtkPEnSightGoldReader::ReadGeometryFile(
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -297,7 +297,7 @@ int vtkPEnSightGoldReader::ReadMeasuredGeometryFile(
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -375,11 +375,11 @@ int vtkPEnSightGoldReader::ReadMeasuredGeometryFile(
   int newDimensions[3];
   int splitDimension;
   int splitDimensionBeginIndex;
-  this->PrepareStructuredDimensionsForDistribution(
-    partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, 0, NULL, NULL);
+  this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions,
+    &splitDimension, &splitDimensionBeginIndex, 0, nullptr, nullptr);
 
   vtkDataSet* ds = this->GetDataSetFromBlock(output, partId);
-  if (ds == NULL || !ds->IsA("vtkPolyData"))
+  if (ds == nullptr || !ds->IsA("vtkPolyData"))
   {
     vtkDebugMacro("creating new measured geometry output");
     vtkPolyData* pd = vtkPolyData::New();
@@ -461,7 +461,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerNode(const char* fileName, const char* 
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -557,7 +557,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerNode(const char* fileName, const char* 
       scalars->Delete();
     }
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 1;
   }
 
@@ -639,7 +639,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerNode(const char* fileName, const char* 
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -681,7 +681,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerNode(const char* fileName, const char* 
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -772,7 +772,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerNode(const char* fileName, const char* 
       vectors->Delete();
     }
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 1;
   }
 
@@ -818,7 +818,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerNode(const char* fileName, const char* 
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -860,7 +860,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerNode(const char* fileName, const char* 
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -943,7 +943,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerNode(const char* fileName, const char* 
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -986,7 +986,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerElement(const char* fileName, const cha
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -1081,7 +1081,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerElement(const char* fileName, const cha
           {
             vtkErrorMacro("Unknown element type \"" << line << "\"");
             delete this->IS;
-            this->IS = NULL;
+            this->IS = nullptr;
             if (component == 0)
             {
               scalars->Delete();
@@ -1150,7 +1150,7 @@ int vtkPEnSightGoldReader::ReadScalarsPerElement(const char* fileName, const cha
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -1193,7 +1193,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerElement(const char* fileName, const cha
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -1282,7 +1282,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerElement(const char* fileName, const cha
           {
             vtkErrorMacro("Unknown element type \"" << line << "\"");
             delete this->IS;
-            this->IS = NULL;
+            this->IS = nullptr;
             vectors->Delete();
             return 0;
           }
@@ -1318,7 +1318,7 @@ int vtkPEnSightGoldReader::ReadVectorsPerElement(const char* fileName, const cha
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -1362,7 +1362,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerElement(const char* fileName, const cha
   {
     vtkErrorMacro("Unable to open file: " << sfilename.c_str());
     delete this->IS;
-    this->IS = NULL;
+    this->IS = nullptr;
     return 0;
   }
 
@@ -1452,7 +1452,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerElement(const char* fileName, const cha
           {
             vtkErrorMacro("Unknown element type \"" << line << "\"");
             delete[] this->IS;
-            this->IS = NULL;
+            this->IS = nullptr;
             tensors->Delete();
             return 0;
           }
@@ -1484,7 +1484,7 @@ int vtkPEnSightGoldReader::ReadTensorsPerElement(const char* fileName, const cha
   }
 
   delete this->IS;
-  this->IS = NULL;
+  this->IS = nullptr;
   return 1;
 }
 
@@ -1503,7 +1503,7 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(
   this->NumberOfNewOutputs++;
 
   vtkDataSet* ds = this->GetDataSetFromBlock(compositeOutput, partId);
-  if (ds == NULL || !ds->IsA("vtkUnstructuredGrid"))
+  if (ds == nullptr || !ds->IsA("vtkUnstructuredGrid"))
   {
     vtkDebugMacro("creating new unstructured output");
     vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
@@ -2130,6 +2130,23 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(
           }
           lineRead = this->ReadNextDataLine(line);
         }
+
+        // prepare an array of Ids describing the vtkPolyhedron object
+        int nodeIndx = 0; // indexing the raw array of point Ids
+        // vtkPolyhedron's info of faces
+        std::vector<vtkIdType> faceArray(elementNodeCount + numFacesPerElement[i]);
+        vtkIdType faceArrayIdx = 0;
+        for (j = 0; j < numFacesPerElement[i]; j++)
+        {
+          // number of points constituting this face
+          faceArray[faceArrayIdx++] = numNodesPerFace[faceCount + j];
+          for (k = 0; k < numNodesPerFace[faceCount + j]; k++)
+          {
+            // convert EnSight 1-based indexing to VTK 0-based indexing
+            faceArray[faceArrayIdx++] = intIds[nodeIndx++] - 1;
+          }
+        }
+
         faceCount += numFacesPerElement[i];
 
         // Build element
@@ -2148,8 +2165,8 @@ int vtkPEnSightGoldReader::CreateUnstructuredGridOutput(
           elementNodeCount,
           nodeIds);
           this->GetCellIds(idx, vtkPEnSightReader::NFACED)->InsertNextId(cellId);*/
-        this->InsertNextCellAndId(output, VTK_CONVEX_POINT_SET, elementNodeCount, nodeIds, idx,
-          vtkPEnSightReader::NFACED, i, numElements);
+        this->InsertNextCellAndId(output, VTK_POLYHEDRON, elementNodeCount, nodeIds, idx,
+          vtkPEnSightReader::NFACED, i, numElements, faceArray);
 
         delete[] nodeIds;
         delete[] intIds;
@@ -2654,7 +2671,7 @@ int vtkPEnSightGoldReader::CreateStructuredGridOutput(
   this->NumberOfNewOutputs++;
 
   vtkDataSet* ds = this->GetDataSetFromBlock(compositeOutput, partId);
-  if (ds == NULL || !ds->IsA("vtkStructuredGrid"))
+  if (ds == nullptr || !ds->IsA("vtkStructuredGrid"))
   {
     vtkDebugMacro("creating new structured grid output");
     vtkStructuredGrid* sgrid = vtkStructuredGrid::New();
@@ -2685,12 +2702,12 @@ int vtkPEnSightGoldReader::CreateStructuredGridOutput(
   int newDimensions[3];
   int splitDimension;
   int splitDimensionBeginIndex;
-  vtkUnsignedCharArray* pointGhostArray = NULL;
-  vtkUnsignedCharArray* cellGhostArray = NULL;
+  vtkUnsignedCharArray* pointGhostArray = nullptr;
+  vtkUnsignedCharArray* cellGhostArray = nullptr;
   if (this->GhostLevels == 0)
   {
-    this->PrepareStructuredDimensionsForDistribution(
-      partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, 0, NULL, NULL);
+    this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions,
+      &splitDimension, &splitDimensionBeginIndex, 0, nullptr, nullptr);
   }
   else
   {
@@ -2782,7 +2799,7 @@ int vtkPEnSightGoldReader::CreateRectilinearGridOutput(
   this->NumberOfNewOutputs++;
 
   vtkDataSet* ds = this->GetDataSetFromBlock(compositeOutput, partId);
-  if (ds == NULL || !ds->IsA("vtkRectilinearGrid"))
+  if (ds == nullptr || !ds->IsA("vtkRectilinearGrid"))
   {
     vtkDebugMacro("creating new structured grid output");
     vtkRectilinearGrid* rgrid = vtkRectilinearGrid::New();
@@ -2812,12 +2829,12 @@ int vtkPEnSightGoldReader::CreateRectilinearGridOutput(
   int newDimensions[3];
   int splitDimension;
   int splitDimensionBeginIndex;
-  vtkUnsignedCharArray* pointGhostArray = NULL;
-  vtkUnsignedCharArray* cellGhostArray = NULL;
+  vtkUnsignedCharArray* pointGhostArray = nullptr;
+  vtkUnsignedCharArray* cellGhostArray = nullptr;
   if (this->GhostLevels == 0)
   {
-    this->PrepareStructuredDimensionsForDistribution(
-      partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, 0, NULL, NULL);
+    this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions,
+      &splitDimension, &splitDimensionBeginIndex, 0, nullptr, nullptr);
   }
   else
   {
@@ -2916,7 +2933,7 @@ int vtkPEnSightGoldReader::CreateImageDataOutput(
   this->NumberOfNewOutputs++;
 
   vtkDataSet* ds = this->GetDataSetFromBlock(compositeOutput, partId);
-  if (ds == NULL || !ds->IsA("vtkImageData"))
+  if (ds == nullptr || !ds->IsA("vtkImageData"))
   {
     vtkDebugMacro("creating new image data output");
     vtkImageData* idata = vtkImageData::New();
@@ -2945,12 +2962,12 @@ int vtkPEnSightGoldReader::CreateImageDataOutput(
   int newDimensions[3];
   int splitDimension;
   int splitDimensionBeginIndex;
-  vtkUnsignedCharArray* pointGhostArray = NULL;
-  vtkUnsignedCharArray* cellGhostArray = NULL;
+  vtkUnsignedCharArray* pointGhostArray = nullptr;
+  vtkUnsignedCharArray* cellGhostArray = nullptr;
   if (this->GhostLevels == 0)
   {
-    this->PrepareStructuredDimensionsForDistribution(
-      partId, dimensions, newDimensions, &splitDimension, &splitDimensionBeginIndex, 0, NULL, NULL);
+    this->PrepareStructuredDimensionsForDistribution(partId, dimensions, newDimensions,
+      &splitDimension, &splitDimensionBeginIndex, 0, nullptr, nullptr);
   }
   else
   {

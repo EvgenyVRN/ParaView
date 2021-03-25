@@ -57,17 +57,17 @@ class pqStreamLinesAnimationManager : public QObject
   typedef QObject Superclass;
 
 public:
-  pqStreamLinesAnimationManager(QObject* p = 0);
+  pqStreamLinesAnimationManager(QObject* p = nullptr);
   ~pqStreamLinesAnimationManager() override;
 
   void onShutdown() {}
   void onStartup() {}
 
-public slots:
+public Q_SLOTS:
   void onViewAdded(pqView*);
   void onViewRemoved(pqView*);
 
-protected slots:
+protected Q_SLOTS:
   void onRenderEnded();
 
 protected:

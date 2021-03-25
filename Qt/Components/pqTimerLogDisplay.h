@@ -46,7 +46,7 @@ class PQCOMPONENTS_EXPORT pqTimerLogDisplay : public QDialog
   Q_OBJECT
 
 public:
-  pqTimerLogDisplay(QWidget* p = NULL);
+  pqTimerLogDisplay(QWidget* p = nullptr);
   ~pqTimerLogDisplay() override;
   typedef QDialog Superclass;
 
@@ -54,7 +54,7 @@ public:
   int bufferLength() const;
   bool isEnabled() const;
 
-public slots:
+public Q_SLOTS:
   void refresh();
   void clear();
   void setTimeThreshold(float value);
@@ -73,7 +73,7 @@ protected:
   void showEvent(QShowEvent*) override;
   void hideEvent(QHideEvent*) override;
 
-protected slots:
+protected Q_SLOTS:
   void setTimeThresholdById(int id);
   void setBufferLengthById(int id);
 

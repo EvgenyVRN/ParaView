@@ -76,11 +76,9 @@ void vtkSMPVRepresentationProxy::CreateVTKObjects()
     return;
   }
 
-  // Ensure that we update the RepresentationTypesInfo property and the domain
-  // for "Representations" property before CreateVTKObjects() is finished. This
-  // ensure that all representations have valid Representations domain.
-  this->UpdatePropertyInformation();
-
+  // The RepresentationTypesInfo property and the domain
+  // for "Representations" property have been updated by the superclass.
+  // This ensure that all representations have valid Representations domain.
   // Whenever the "Representation" property is modified, we ensure that the
   // this->InvalidateDataInformation() is called.
   this->AddObserver(
@@ -149,7 +147,7 @@ int vtkSMPVRepresentationProxy::ReadXMLAttributes(
   {
     vtkPVXMLElement* child = element->GetNestedElement(cc);
     if (child->GetName() && strcmp(child->GetName(), "RepresentationType") == 0 &&
-      child->GetAttribute("subproxy") != NULL)
+      child->GetAttribute("subproxy") != nullptr)
     {
       this->RepresentationSubProxies->insert(child->GetAttribute("subproxy"));
     }
@@ -169,7 +167,7 @@ int vtkSMPVRepresentationProxy::ReadXMLAttributes(
          iter != this->RepresentationSubProxies->end(); ++iter)
     {
       vtkSMProxy* subProxy = this->GetSubProxy((*iter).c_str());
-      vtkSMProperty* subProperty = subProxy ? subProxy->GetProperty("Input") : NULL;
+      vtkSMProperty* subProperty = subProxy ? subProxy->GetProperty("Input") : nullptr;
       if (subProperty)
       {
         this->LinkProperty(inputProperty, subProperty);
@@ -185,7 +183,7 @@ bool vtkSMPVRepresentationProxy::GetUsingScalarColoring()
   if (this->GetProperty("ColorArrayName"))
   {
     vtkSMPropertyHelper helper(this->GetProperty("ColorArrayName"));
-    return (helper.GetNumberOfElements() == 5 && helper.GetAsString(4) != NULL &&
+    return (helper.GetNumberOfElements() == 5 && helper.GetAsString(4) != nullptr &&
       strcmp(helper.GetAsString(4), "") != 0);
   }
   else
@@ -362,7 +360,40 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToDataRange(
       double rangeColor[2];
       double rangeOpacity[2];
 
-      if (this->GetVolumeIndependentRanges())
+      bool useOpacityArray = false;
+      if (auto uoaProperty = this->GetProperty("UseSeparateOpacityArray"))
+      {
+        useOpacityArray = vtkSMPropertyHelper(uoaProperty).GetAsInt() == 1;
+      }
+
+      if (useOpacityArray)
+      {
+        vtkSMPropertyHelper inputHelper(this->GetProperty("Input"));
+        vtkSMSourceProxy* inputProxy = vtkSMSourceProxy::SafeDownCast(inputHelper.GetAsProxy());
+        int port = inputHelper.GetOutputPort();
+        if (!inputProxy)
+        {
+          // no input.
+          vtkWarningMacro("No input present. Cannot determine opacity data range.");
+          return false;
+        }
+
+        vtkPVDataInformation* dataInfo = inputProxy->GetDataInformation(port);
+        vtkSMPropertyHelper opacityArrayNameHelper(this, "OpacityArrayName");
+        int opacityArrayFieldAssociation = opacityArrayNameHelper.GetAsInt(3);
+        const char* opacityArrayName = opacityArrayNameHelper.GetAsString(4);
+        int opacityArrayComponent = vtkSMPropertyHelper(this, "OpacityComponent").GetAsInt();
+
+        vtkPVArrayInformation* opacityArrayInfo =
+          dataInfo->GetArrayInformation(opacityArrayName, opacityArrayFieldAssociation);
+        if (opacityArrayComponent >= opacityArrayInfo->GetNumberOfComponents())
+        {
+          opacityArrayComponent = -1;
+        }
+        info->GetComponentFiniteRange(component, rangeColor);
+        opacityArrayInfo->GetComponentFiniteRange(opacityArrayComponent, rangeOpacity);
+      }
+      else if (this->GetVolumeIndependentRanges())
       {
         info->GetComponentFiniteRange(0, rangeColor);
         info->GetComponentFiniteRange(1, rangeOpacity);
@@ -449,8 +480,8 @@ bool vtkSMPVRepresentationProxy::RescaleTransferFunctionToVisibleRange(
     return false;
   }
 
-  vtkSMProxy* lut = lutProperty ? vtkSMPropertyHelper(lutProperty).GetAsProxy() : NULL;
-  vtkSMProxy* sof = sofProperty ? vtkSMPropertyHelper(sofProperty).GetAsProxy() : NULL;
+  vtkSMProxy* lut = lutProperty ? vtkSMPropertyHelper(lutProperty).GetAsProxy() : nullptr;
+  vtkSMProxy* sof = sofProperty ? vtkSMPropertyHelper(sofProperty).GetAsProxy() : nullptr;
 
   // We need to determine the component number to use from the lut.
   int component = -1;
@@ -504,7 +535,7 @@ bool vtkSMPVRepresentationProxy::SetScalarColoring(
 bool vtkSMPVRepresentationProxy::SetScalarColoringInternal(
   const char* arrayname, int attribute_type, bool useComponent, int component)
 {
-  if (!this->GetUsingScalarColoring() && (arrayname == NULL || arrayname[0] == 0))
+  if (!this->GetUsingScalarColoring() && (arrayname == nullptr || arrayname[0] == 0))
   {
     // scalar coloring already off. Nothing to do.
     return true;
@@ -520,7 +551,7 @@ bool vtkSMPVRepresentationProxy::SetScalarColoringInternal(
   vtkSMPropertyHelper colorArrayHelper(colorArray);
   colorArrayHelper.SetInputArrayToProcess(attribute_type, arrayname);
 
-  if (arrayname == NULL || arrayname[0] == '\0')
+  if (arrayname == nullptr || arrayname[0] == '\0')
   {
     SM_SCOPED_TRACE(SetScalarColoring)
       .arg("display", this)
@@ -684,7 +715,7 @@ bool vtkSMPVRepresentationProxy::SetScalarBarVisibility(vtkSMProxy* view, bool v
   }
 
   vtkSMPropertyHelper lutPropertyHelper(lutProperty);
-  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == NULL)
+  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == nullptr)
   {
     vtkWarningMacro("Failed to determine the LookupTable being used.");
     return false;
@@ -777,7 +808,7 @@ bool vtkSMPVRepresentationProxy::HideScalarBarIfNotNeeded(vtkSMProxy* view)
   }
 
   vtkSMPropertyHelper lutPropertyHelper(lutProperty);
-  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == NULL)
+  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == nullptr)
   {
     return false;
   }
@@ -803,7 +834,7 @@ bool vtkSMPVRepresentationProxy::IsScalarBarVisible(vtkSMProxy* view)
   }
 
   vtkSMPropertyHelper lutPropertyHelper(lutProperty);
-  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == NULL)
+  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == nullptr)
   {
     return false;
   }
@@ -818,7 +849,7 @@ vtkPVArrayInformation* vtkSMPVRepresentationProxy::GetArrayInformationForColorAr
 {
   if (!this->GetUsingScalarColoring())
   {
-    return NULL;
+    return nullptr;
   }
 
   // now, determine a name for it if possible.
@@ -866,7 +897,7 @@ vtkPVArrayInformation* vtkSMPVRepresentationProxy::GetArrayInformationForColorAr
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -876,13 +907,13 @@ vtkSMPVRepresentationProxy::GetProminentValuesInformationForColorArray(
 {
   if (!this->GetUsingScalarColoring())
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkPVArrayInformation* arrayInfo = this->GetArrayInformationForColorArray();
   if (!arrayInfo)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkSMPropertyHelper colorArrayHelper(this, "ColorArrayName");
@@ -897,7 +928,7 @@ bool vtkSMPVRepresentationProxy::SetRepresentationType(const char* type)
   const int CALL_SUPERCLASS = 0;
   try
   {
-    if (type == 0)
+    if (type == nullptr)
     {
       throw CALL_SUPERCLASS;
     }
@@ -982,7 +1013,7 @@ int vtkSMPVRepresentationProxy::GetEstimatedNumberOfAnnotationsOnScalarBar(vtkSM
   }
 
   vtkSMPropertyHelper lutPropertyHelper(lutProperty);
-  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == NULL)
+  if (lutPropertyHelper.GetNumberOfElements() == 0 || lutPropertyHelper.GetAsProxy(0) == nullptr)
   {
     vtkWarningMacro("Failed to determine the LookupTable being used.");
     return -1;
@@ -1011,9 +1042,11 @@ bool vtkSMPVRepresentationProxy::GetVolumeIndependentRanges()
     return false;
   }
 
-  // MapScalars and MultiComponentsMapping are checked
+  // MapScalars and (MultiComponentsMapping or UseSeparateOpacityArray) are checked
   vtkSMProperty* msProperty = this->GetProperty("MapScalars");
   vtkSMProperty* mcmProperty = this->GetProperty("MultiComponentsMapping");
+  vtkSMProperty* uoaProperty = this->GetProperty("UseSeparateOpacityArray");
   return (vtkSMPropertyHelper(msProperty).GetAsInt() != 0 &&
-    vtkSMPropertyHelper(mcmProperty).GetAsInt() != 0);
+    (vtkSMPropertyHelper(mcmProperty).GetAsInt() != 0 ||
+            vtkSMPropertyHelper(uoaProperty).GetAsInt() != 0));
 }

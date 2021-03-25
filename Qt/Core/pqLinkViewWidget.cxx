@@ -82,9 +82,7 @@ pqLinkViewWidget::pqLinkViewWidget(pqRenderView* firstLink)
 }
 
 //-----------------------------------------------------------------------------
-pqLinkViewWidget::~pqLinkViewWidget()
-{
-}
+pqLinkViewWidget::~pqLinkViewWidget() = default;
 
 //-----------------------------------------------------------------------------
 bool pqLinkViewWidget::event(QEvent* e)
@@ -110,15 +108,19 @@ bool pqLinkViewWidget::eventFilter(QObject* watched, QEvent* e)
   {
     pqServerManagerModel* smModel = pqApplicationCore::instance()->getServerManagerModel();
 
-    QMouseEvent* me = static_cast<QMouseEvent*>(e);
-    QPoint globalpos(me->globalX(), me->globalY());
-    QWidget* wid = QApplication::widgetAt(globalpos);
-    pqRenderView* otherView = 0;
+    if (watched->inherits("QWidgetWindow"))
+    {
+      // Pass down to the actual widget
+      return QObject::eventFilter(watched, e);
+    }
+
+    QWidget* wid = qobject_cast<QWidget*>(watched);
+    pqRenderView* otherView = nullptr;
 
     QList<pqRenderView*> views = smModel->findItems<pqRenderView*>();
     foreach (pqRenderView* view, views)
     {
-      if (view && view->widget() == wid)
+      if (view && wid && view->widget() == wid->parent())
       {
         otherView = view;
         break;
@@ -141,8 +143,8 @@ bool pqLinkViewWidget::eventFilter(QObject* watched, QEvent* e)
 
       this->close();
     }
-    // if the user didn't click in this window
-    else if (!this->geometry().contains(globalpos))
+    // if the user didn't click in this widget
+    else if (!watched || (watched != this && watched->parent() != this))
     {
       // consume invalid mouse events
       return true;

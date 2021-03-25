@@ -5,11 +5,12 @@
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>
 #include <vtkCPProcessor.h>
-#include <vtkCPPythonScriptPipeline.h>
+#include <vtkCPPythonPipeline.h>
 #include <vtkCellData.h>
 #include <vtkCellType.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
+#include <vtkLogger.h>
 #include <vtkMPI.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
@@ -18,9 +19,9 @@
 
 namespace
 {
-vtkCPProcessor* Processor = NULL;
+vtkCPProcessor* Processor = nullptr;
 vtkUnstructuredGrid* VTKGrid;
-vtkMPICommunicatorOpaqueComm* Comm = NULL;
+vtkMPICommunicatorOpaqueComm* Comm = nullptr;
 
 void BuildVTKGrid(Grid& grid)
 {
@@ -30,8 +31,8 @@ void BuildVTKGrid(Grid& grid)
   pointArray->SetArray(
     grid.GetPointsArray(), static_cast<vtkIdType>(grid.GetNumberOfPoints() * 3), 1);
   vtkNew<vtkPoints> points;
-  points->SetData(pointArray.GetPointer());
-  VTKGrid->SetPoints(points.GetPointer());
+  points->SetData(pointArray);
+  VTKGrid->SetPoints(points);
 
   // create the cells
   size_t numCells = grid.GetNumberOfCells();
@@ -56,7 +57,7 @@ void UpdateVTKAttributes(Grid& grid, Attributes& attributes, vtkCPInputDataDescr
       velocity->SetName("velocity");
       velocity->SetNumberOfComponents(3);
       velocity->SetNumberOfTuples(static_cast<vtkIdType>(grid.GetNumberOfPoints()));
-      VTKGrid->GetPointData()->AddArray(velocity.GetPointer());
+      VTKGrid->GetPointData()->AddArray(velocity);
     }
     vtkDoubleArray* velocity =
       vtkDoubleArray::SafeDownCast(VTKGrid->GetPointData()->GetArray("velocity"));
@@ -80,7 +81,7 @@ void UpdateVTKAttributes(Grid& grid, Attributes& attributes, vtkCPInputDataDescr
       vtkNew<vtkFloatArray> pressure;
       pressure->SetName("pressure");
       pressure->SetNumberOfComponents(1);
-      VTKGrid->GetCellData()->AddArray(pressure.GetPointer());
+      VTKGrid->GetCellData()->AddArray(pressure);
     }
     vtkFloatArray* pressure =
       vtkFloatArray::SafeDownCast(VTKGrid->GetCellData()->GetArray("pressure"));
@@ -93,7 +94,7 @@ void UpdateVTKAttributes(Grid& grid, Attributes& attributes, vtkCPInputDataDescr
 
 void BuildVTKDataStructures(Grid& grid, Attributes& attributes, vtkCPInputDataDescription* idd)
 {
-  if (VTKGrid == NULL)
+  if (VTKGrid == nullptr)
   {
     // The grid structure isn't changing so we only build it
     // the first time it's needed. If we needed the memory
@@ -110,7 +111,7 @@ namespace FEAdaptor
 
 void Initialize(int numScripts, char* scripts[], MPI_Comm* handle)
 {
-  if (Processor == NULL)
+  if (Processor == nullptr)
   {
     Processor = vtkCPProcessor::New();
     Comm = new vtkMPICommunicatorOpaqueComm(handle);
@@ -122,9 +123,14 @@ void Initialize(int numScripts, char* scripts[], MPI_Comm* handle)
   }
   for (int i = 1; i < numScripts; i++)
   {
-    vtkNew<vtkCPPythonScriptPipeline> pipeline;
-    pipeline->Initialize(scripts[i]);
-    Processor->AddPipeline(pipeline.GetPointer());
+    if (auto pipeline = vtkCPPythonPipeline::CreateAndInitializePipeline(scripts[i]))
+    {
+      Processor->AddPipeline(pipeline);
+    }
+    else
+    {
+      vtkLogF(ERROR, "failed to setup pipeline for '%s'", scripts[i]);
+    }
   }
 }
 
@@ -134,17 +140,17 @@ void Finalize()
   {
     Processor->Finalize();
     Processor->Delete();
-    Processor = NULL;
+    Processor = nullptr;
   }
   if (VTKGrid)
   {
     VTKGrid->Delete();
-    VTKGrid = NULL;
+    VTKGrid = nullptr;
   }
   if (Comm)
   {
     delete Comm;
-    Comm = NULL;
+    Comm = nullptr;
   }
 }
 
@@ -160,12 +166,12 @@ void CoProcess(
     // is the last time step.
     dataDescription->ForceOutputOn();
   }
-  if (Processor->RequestDataDescription(dataDescription.GetPointer()) != 0)
+  if (Processor->RequestDataDescription(dataDescription) != 0)
   {
     vtkCPInputDataDescription* idd = dataDescription->GetInputDescriptionByName("input");
     BuildVTKDataStructures(grid, attributes, idd);
     idd->SetGrid(VTKGrid);
-    Processor->CoProcess(dataDescription.GetPointer());
+    Processor->CoProcess(dataDescription);
   }
 }
 } // end of Catalyst namespace

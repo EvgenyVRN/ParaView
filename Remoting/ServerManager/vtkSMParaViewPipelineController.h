@@ -34,7 +34,7 @@
  * behaviour (see vtkSMParaViewPipelineControllerWithRender).
  *
  * For an example of using vtkSMParaViewPipelineController in your application,
- * see `ParaView/ParaViewCore/ServerManager/Core/Testing/Cxx/TestParaViewPipelineController.cxx`.
+ * see `Remoting/Views/Testing/Cxx/TestParaViewPipelineController.cxx`.
  *
 */
 
@@ -42,6 +42,8 @@
 #define vtkSMParaViewPipelineController_h
 
 #include "vtkSMObject.h"
+
+#include <string>
 
 class vtkSMProxy;
 class vtkSMSession;
@@ -125,7 +127,7 @@ public:
   virtual bool RegisterPipelineProxy(vtkSMProxy* proxy, const char* proxyname);
   virtual bool RegisterPipelineProxy(vtkSMProxy* proxy)
   {
-    return this->RegisterPipelineProxy(proxy, NULL);
+    return this->RegisterPipelineProxy(proxy, nullptr);
   }
 
   /**
@@ -147,7 +149,10 @@ public:
    * additional setups as needed e.g. registering the view with the
    * animation scene and the timer keeper.
    */
-  virtual bool RegisterViewProxy(vtkSMProxy* proxy) { return this->RegisterViewProxy(proxy, NULL); }
+  virtual bool RegisterViewProxy(vtkSMProxy* proxy)
+  {
+    return this->RegisterViewProxy(proxy, nullptr);
+  }
   virtual bool RegisterViewProxy(vtkSMProxy* proxy, const char* proxyname);
 
   /**
@@ -186,7 +191,7 @@ public:
   virtual bool RegisterColorTransferFunctionProxy(vtkSMProxy* proxy, const char* proxyname);
   virtual bool RegisterColorTransferFunctionProxy(vtkSMProxy* proxy)
   {
-    return this->RegisterColorTransferFunctionProxy(proxy, NULL);
+    return this->RegisterColorTransferFunctionProxy(proxy, nullptr);
   }
 
   /**
@@ -195,7 +200,7 @@ public:
   virtual bool RegisterOpacityTransferFunction(vtkSMProxy* proxy, const char* proxyname);
   virtual bool RegisterOpacityTransferFunction(vtkSMProxy* proxy)
   {
-    return this->RegisterOpacityTransferFunction(proxy, NULL);
+    return this->RegisterOpacityTransferFunction(proxy, nullptr);
   }
 
   /**
@@ -206,7 +211,7 @@ public:
   virtual bool RegisterLightProxy(vtkSMProxy* proxy, vtkSMProxy* view, const char* proxyname);
   virtual bool RegisterLightProxy(vtkSMProxy* proxy, vtkSMProxy* view)
   {
-    return this->RegisterLightProxy(proxy, view, NULL);
+    return this->RegisterLightProxy(proxy, view, nullptr);
   }
 
   /**
@@ -217,28 +222,40 @@ public:
   virtual bool RegisterTextureProxy(vtkSMProxy* proxy, const char* filename);
 
   //---------------------------------------------------------------------------
+  // *******  Methods for Extractors  *********
+
+  /**
+   * Registers an extractor.
+   */
+  virtual bool RegisterExtractorProxy(vtkSMProxy* proxy, const char* proxyname);
+  virtual bool RegisterExtractorProxy(vtkSMProxy* proxy)
+  {
+    return this->RegisterExtractorProxy(proxy, nullptr);
+  }
+
+  //---------------------------------------------------------------------------
   // *******  Methods for Animation   *********
 
   /**
-   * Returns the animation scene, if any. Returns NULL if none exists.
+   * Returns the animation scene, if any. Returns nullptr if none exists.
    */
   virtual vtkSMProxy* FindAnimationScene(vtkSMSession* session);
 
   /**
    * Returns the animation scene for the session. If none exists, a new one will
-   * be created. This may returns NULL if animation scene proxy is not available
+   * be created. This may returns nullptr if animation scene proxy is not available
    * in the session.
    */
   virtual vtkSMProxy* GetAnimationScene(vtkSMSession* session);
 
   /**
-   * Return the animation track for time, if any. Returns NULL if none exists.
+   * Return the animation track for time, if any. Returns nullptr if none exists.
    */
   virtual vtkSMProxy* FindTimeAnimationTrack(vtkSMProxy* scene);
 
   /**
    * Return the animation track for time. If none exists, a new one will be
-   * created. Returns NULL if the proxy is not available in the session.
+   * created. Returns nullptr if the proxy is not available in the session.
    */
   virtual vtkSMProxy* GetTimeAnimationTrack(vtkSMProxy* scene);
 
@@ -282,7 +299,7 @@ public:
   /**
    * For a given proxy returns the name of the group used for helper proxies.
    */
-  static vtkStdString GetHelperProxyGroupName(vtkSMProxy*);
+  static std::string GetHelperProxyGroupName(vtkSMProxy*);
 
 protected:
   vtkSMParaViewPipelineController();

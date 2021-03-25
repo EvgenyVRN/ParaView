@@ -63,14 +63,10 @@ vtkPVProcessWindowSingletonCleaner::~vtkPVProcessWindowSingletonCleaner()
 //============================================================================
 
 //----------------------------------------------------------------------------
-vtkPVProcessWindow::vtkPVProcessWindow()
-{
-}
+vtkPVProcessWindow::vtkPVProcessWindow() = default;
 
 //----------------------------------------------------------------------------
-vtkPVProcessWindow::~vtkPVProcessWindow()
-{
-}
+vtkPVProcessWindow::~vtkPVProcessWindow() = default;
 
 //----------------------------------------------------------------------------
 void vtkPVProcessWindow::PrintSelf(ostream& os, vtkIndent indent)
@@ -160,6 +156,7 @@ vtkRenderWindow* vtkPVProcessWindow::NewWindow()
 
   window->DoubleBufferOn();
   window->AlphaBitPlanesOn();
+  window->SetMultiSamples(0);
 
   vtkNew<vtkRenderer> renderer;
   renderer->SetBackground(1.0, 1.0, 1.0);

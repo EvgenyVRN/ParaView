@@ -47,6 +47,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cassert>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+#define QT_ENDL endl
+#else
+#define QT_ENDL Qt::endl
+#endif
+
 //-----------------------------------------------------------------------------
 class pqPluginDocumentationBehavior::pqInternals
 {
@@ -66,7 +72,7 @@ pqPluginDocumentationBehavior::pqPluginDocumentationBehavior(QHelpEngine* parent
   : Superclass(parentObject)
   , Internals(new pqInternals())
 {
-  assert(parentObject != NULL);
+  assert(parentObject != nullptr);
 
   QObject::connect(&this->Internals->Timer, SIGNAL(timeout()), this, SLOT(refreshHelpEngine()));
 
@@ -79,7 +85,7 @@ pqPluginDocumentationBehavior::pqPluginDocumentationBehavior(QHelpEngine* parent
 pqPluginDocumentationBehavior::~pqPluginDocumentationBehavior()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -120,9 +126,9 @@ void pqPluginDocumentationBehavior::updatePlugin(vtkPVPlugin* plugin)
     QTemporaryFile* file = new QTemporaryFile(this);
     if (!file->open())
     {
-      qCritical() << "Failed to create temporary files." << endl;
+      qCritical() << "Failed to create temporary files." << QT_ENDL;
       delete[] decoded_stream;
-      decoded_stream = NULL;
+      decoded_stream = nullptr;
       continue;
     }
     qint64 written =
@@ -132,7 +138,7 @@ void pqPluginDocumentationBehavior::updatePlugin(vtkPVPlugin* plugin)
     engine->registerDocumentation(file->fileName());
 
     delete[] decoded_stream;
-    decoded_stream = NULL;
+    decoded_stream = nullptr;
 
     this->Internals->Timer.start();
   }

@@ -27,14 +27,16 @@
 
 #ifndef vtkGeometryRepresentation_h
 #define vtkGeometryRepresentation_h
-#include <array>         // needed for array
-#include <unordered_map> // needed for unordered_map
 
 #include "vtkPVDataRepresentation.h"
 #include "vtkProperty.h"            // needed for VTK_POINTS etc.
 #include "vtkRemotingViewsModule.h" // needed for exports
+#include "vtkVector.h"              // for vtkVector.
 
-class vtkCallbackCommand;
+#include <set>           // needed for std::set
+#include <string>        // needed for std::string
+#include <unordered_map> // needed for std::unordered_map
+
 class vtkCompositeDataDisplayAttributes;
 class vtkCompositePolyDataMapper2;
 class vtkMapper;
@@ -114,6 +116,15 @@ public:
 
   //@{
   /**
+   * Set the shift scale method for the point coordinates
+   * see vtkOpenGLVertexBufferObject.h for more information.
+   */
+  void SetCoordinateShiftScaleMethod(int val);
+  int GetCoordinateShiftScaleMethod();
+  //@}
+
+  //@{
+  /**
    * Set the representation type. This adds VTK_SURFACE_WITH_EDGES to those
    * defined in vtkProperty.
    */
@@ -143,6 +154,24 @@ public:
   vtkBooleanMacro(RequestGhostCellsIfNeeded, bool);
   //@}
 
+  /**
+   * Set the normal array used for smooth shading.
+   * It must be a three components array.
+   */
+  virtual void SetNormalArray(const char* val);
+
+  /**
+   * Set the texture coordinates array used for texture mapping.
+   * It must be a two components array.
+   */
+  virtual void SetTCoordArray(const char* val);
+
+  /**
+   * Set the tangent coordinates array used for normal mapping.
+   * It must be a three components array.
+   */
+  virtual void SetTangentArray(const char* val);
+
   //***************************************************************************
   // Forwarded to vtkPVGeometryFilter
   virtual void SetUseOutline(int);
@@ -156,6 +185,7 @@ public:
   virtual void SetColor(double r, double g, double b);
   virtual void SetDiffuseColor(double r, double g, double b);
   virtual void SetEdgeColor(double r, double g, double b);
+  virtual void SetInteractiveSelectionColor(double r, double g, double b);
   virtual void SetInterpolation(int val);
   virtual void SetLineWidth(double val);
   virtual void SetOpacity(double val);
@@ -167,6 +197,7 @@ public:
   virtual void SetRenderLinesAsTubes(bool);
   virtual void SetRoughness(double val);
   virtual void SetMetallic(double val);
+  virtual void SetEdgeTint(double r, double g, double b);
   virtual void SetBaseColorTexture(vtkTexture* tex);
   virtual void SetMaterialTexture(vtkTexture* tex);
   virtual void SetNormalTexture(vtkTexture* tex);
@@ -214,40 +245,50 @@ public:
   //@}
 
   /**
+   * Sets the selection used by the mapper.
+   */
+  virtual void SetSelection(vtkSelection* selection);
+
+  /**
    * Provides access to the actor used by this representation.
    */
   vtkPVLODActor* GetActor() { return this->GetRenderedProp(); }
 
   //@{
   /**
-   * Set/get the visibility for a single block.
+   * Get/Set the name of the assembly to use for mapping block visibilities,
+   * colors and opacities.
+   *
+   * TODO: this is simply a placeholder for the future. Since this
+   * representation doesn't really support PartitionedDataSetCollections and
+   * hence assembly, the only assembly supported is the
+   * `vtkDataAssemblyUtilities::HierarchyName`. All others are simply ignored.
    */
-  virtual void SetBlockVisibility(unsigned int index, bool visible);
-  virtual bool GetBlockVisibility(unsigned int index) const;
-  virtual void RemoveBlockVisibility(unsigned int index, bool = true);
-  virtual void RemoveBlockVisibilities();
+  void SetActiveAssembly(const char*){};
+  //@}
+
+  //@{
+  /**
+   * Update list of selectors that determine the selected blocks.
+   */
+  void AddBlockSelector(const char*);
+  void RemoveAllBlockSelectors();
   //@}
 
   //@{
   /**
    * Set/get the color for a single block.
    */
-  virtual void SetBlockColor(unsigned int index, double r, double g, double b);
-  virtual void SetBlockColor(unsigned int index, double* color);
-  virtual double* GetBlockColor(unsigned int index);
-  virtual void RemoveBlockColor(unsigned int index);
-  virtual void RemoveBlockColors();
+  void SetBlockColor(const char*, double, double, double);
+  void RemoveAllBlockColors();
   //@}
 
   //@{
   /**
    * Set/get the opacityfor a single block.
    */
-  virtual void SetBlockOpacity(unsigned int index, double opacity);
-  virtual void SetBlockOpacity(unsigned int index, double* opacity);
-  virtual double GetBlockOpacity(unsigned int index);
-  virtual void RemoveBlockOpacity(unsigned int index);
-  virtual void RemoveBlockOpacities();
+  void SetBlockOpacity(const char*, double);
+  void RemoveAllBlockOpacities();
   //@}
 
   /**
@@ -381,7 +422,7 @@ protected:
    * the mapper's attributes with those cached in this representation; This is done
    * after the data has updated (multi-block nodes change after an update).
    */
-  void UpdateBlockAttributes(vtkMapper* mapper);
+  void PopulateBlockAttributes(vtkCompositeDataDisplayAttributes* attrs, vtkDataObject* data) const;
 
   /**
    * Computes the bounds of the visible data based on the block visibilities in the
@@ -401,6 +442,11 @@ protected:
    * all the data to decide if it is doing translucent rendering.
    */
   virtual bool NeedsOrderedCompositing();
+
+  /**
+   * Used by SetNormalArray, SetTCoordArray and SetTangentArray
+   */
+  virtual void SetPointArrayToProcess(int p, const char* val);
 
   vtkAlgorithm* GeometryFilter;
   vtkAlgorithm* MultiBlockMaker;
@@ -435,9 +481,10 @@ protected:
   bool BlockAttrChanged = false;
   vtkTimeStamp BlockAttributeTime;
   bool UpdateBlockAttrLOD = false;
-  std::unordered_map<unsigned int, bool> BlockVisibilities;
-  std::unordered_map<unsigned int, double> BlockOpacities;
-  std::unordered_map<unsigned int, std::array<double, 3> > BlockColors;
+
+  std::set<std::string> BlockSelectors;
+  std::unordered_map<std::string, double> BlockOpacities;
+  std::unordered_map<std::string, vtkVector3d> BlockColors;
 
 private:
   vtkGeometryRepresentation(const vtkGeometryRepresentation&) = delete;

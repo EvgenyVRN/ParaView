@@ -51,7 +51,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkPythonInteractiveInterpreter.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkSmartPointer.h"
-#include "vtkStdString.h"
 #include "vtkStringOutputWindow.h"
 
 #include <QAbstractItemView>
@@ -96,8 +95,9 @@ public:
   }
 
 protected:
-  pqPythonShellOutputWindow() {}
-  ~pqPythonShellOutputWindow() override {}
+  pqPythonShellOutputWindow() = default;
+  ~pqPythonShellOutputWindow() override = default;
+
 private:
   pqPythonShellOutputWindow(const pqPythonShellOutputWindow&) = delete;
   void operator=(const pqPythonShellOutputWindow&) = delete;
@@ -145,7 +145,7 @@ public:
     if (this->ExecutionCounter == 0)
     {
       assert(this->OldInstance == nullptr);
-      emit this->Parent->executing(true);
+      Q_EMIT this->Parent->executing(true);
 
       if (this->isInterpreterInitialized() == false)
       {
@@ -174,7 +174,7 @@ public:
       this->OldCapture = false;
       vtkOutputWindow::SetInstance(this->OldInstance);
       this->OldInstance = nullptr;
-      emit this->Parent->executing(false);
+      Q_EMIT this->Parent->executing(false);
     }
   }
 
@@ -439,7 +439,7 @@ void pqPythonShell::HandleInterpreterEvents(vtkObject*, unsigned long eventid, v
   {
     case vtkCommand::UpdateEvent:
     {
-      vtkStdString* strData = reinterpret_cast<vtkStdString*>(calldata);
+      std::string* strData = reinterpret_cast<std::string*>(calldata);
       bool ok;
       QString inputText = QInputDialog::getText(this, tr("Enter Input requested by Python"),
         tr("Input: "), QLineEdit::Normal, QString(), &ok);
@@ -466,12 +466,14 @@ void pqPythonShell::runScript()
       QFile file(filename);
       if (file.open(QIODevice::ReadOnly))
       {
-        QByteArray code;
+        QString code;
         // First inject code to let the script know its own path
         code.append(QString("__file__ = r'%1'\n").arg(filename));
         // Then append the file content
         code.append(file.readAll());
-        this->executeScript(code.data());
+        code.append("\n");
+        code.append("del __file__\n");
+        this->executeScript(code.toLocal8Bit().data());
       }
       else
       {

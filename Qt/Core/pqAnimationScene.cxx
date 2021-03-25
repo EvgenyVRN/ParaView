@@ -71,12 +71,12 @@ class pqAnimationScene::pqInternals
 public:
   QSet<QPointer<pqAnimationCue> > Cues;
   QPointer<pqAnimationCue> GlobalTimeCue;
-  pqInternals() {}
+  pqInternals() = default;
 };
 
 //-----------------------------------------------------------------------------
 pqAnimationScene::pqAnimationScene(const QString& group, const QString& name, vtkSMProxy* proxy,
-  pqServer* server, QObject* _parent /*=NULL*/)
+  pqServer* server, QObject* _parent /*=nullptr*/)
   : pqProxy(group, name, proxy, server, _parent)
 {
   vtkObject* animationScene = vtkObject::SafeDownCast(proxy->GetClientSideObject());
@@ -158,21 +158,21 @@ void pqAnimationScene::onCuesChanged()
 
   foreach (pqAnimationCue* cue, removed)
   {
-    emit this->preRemovedCue(cue);
+    Q_EMIT this->preRemovedCue(cue);
     this->Internals->Cues.remove(cue);
-    emit this->removedCue(cue);
+    Q_EMIT this->removedCue(cue);
   }
 
   foreach (pqAnimationCue* cue, added)
   {
-    emit this->preAddedCue(cue);
+    Q_EMIT this->preAddedCue(cue);
     this->Internals->Cues.insert(cue);
-    emit this->addedCue(cue);
+    Q_EMIT this->addedCue(cue);
   }
 
   if (removed.size() > 0 || added.size() > 0)
   {
-    emit this->cuesChanged();
+    Q_EMIT this->cuesChanged();
   }
 }
 
@@ -216,7 +216,7 @@ pqAnimationCue* pqAnimationScene::getCue(
       return pqCue;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -235,16 +235,17 @@ pqAnimationCue* pqAnimationScene::createCue(
 //-----------------------------------------------------------------------------
 pqAnimationCue* pqAnimationScene::createCue(const QString& cuetype)
 {
-  return this->createCueInternal(cuetype, NULL, NULL, -1);
+  return this->createCueInternal(cuetype, nullptr, nullptr, -1);
 }
 
 //-----------------------------------------------------------------------------
 static void pqAnimationSceneResetCameraKeyFrameToCurrent(vtkSMProxy* ren, vtkSMProxy* dest)
 {
   ren->UpdatePropertyInformation();
-  const char* names[] = { "Position", "FocalPoint", "ViewUp", "ViewAngle", "ParallelScale", 0 };
+  const char* names[] = { "Position", "FocalPoint", "ViewUp", "ViewAngle", "ParallelScale",
+    nullptr };
   const char* snames[] = { "CameraPositionInfo", "CameraFocalPointInfo", "CameraViewUpInfo",
-    "CameraViewAngle", "CameraParallelScale", 0 };
+    "CameraViewAngle", "CameraParallelScale", nullptr };
   for (int cc = 0; names[cc] && snames[cc]; cc++)
   {
     QList<QVariant> p = pqSMAdaptor::getMultipleElementProperty(ren->GetProperty(snames[cc]));
@@ -365,7 +366,7 @@ pqAnimationCue* pqAnimationScene::createCueInternal(
   if (!cue)
   {
     qDebug() << "Failed to create AnimationCue.";
-    return 0;
+    return nullptr;
   }
 
   if (proxy)
@@ -468,7 +469,7 @@ void pqAnimationScene::setAnimationTime(double time)
 //-----------------------------------------------------------------------------
 void pqAnimationScene::onAnimationTimePropertyChanged()
 {
-  emit this->animationTime(this->getAnimationTime());
+  Q_EMIT this->animationTime(this->getAnimationTime());
 }
 
 //-----------------------------------------------------------------------------
@@ -490,5 +491,5 @@ void pqAnimationScene::onTick(vtkObject*, unsigned long, void*, void* info)
     (cueInfo->AnimationTime - cueInfo->StartTime) * 100 / (cueInfo->EndTime - cueInfo->StartTime));
 
   this->setAnimationTime(cueInfo->AnimationTime);
-  emit this->tick(progress);
+  Q_EMIT this->tick(progress);
 }

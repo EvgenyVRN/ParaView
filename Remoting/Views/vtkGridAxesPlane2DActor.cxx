@@ -49,9 +49,9 @@ vtkGridAxesPlane2DActor::vtkGridAxesPlane2DActor(vtkGridAxesHelper* helper)
   , GenerateTicks(true)
   , TickDirection(vtkGridAxesPlane2DActor::TICK_DIRECTION_BOTH)
   , Helper(helper)
-  , HelperManagedExternally(helper != NULL)
+  , HelperManagedExternally(helper != nullptr)
 {
-  if (helper == NULL)
+  if (helper == nullptr)
   {
     this->Helper = vtkSmartPointer<vtkGridAxesHelper>::New();
     this->GridBounds[0] = this->GridBounds[2] = this->GridBounds[4] = -1.0;
@@ -69,8 +69,25 @@ vtkGridAxesPlane2DActor::vtkGridAxesPlane2DActor(vtkGridAxesHelper* helper)
 }
 
 //----------------------------------------------------------------------------
-vtkGridAxesPlane2DActor::~vtkGridAxesPlane2DActor()
+vtkGridAxesPlane2DActor::~vtkGridAxesPlane2DActor() = default;
+
+//----------------------------------------------------------------------------
+void vtkGridAxesPlane2DActor::GetActors(vtkPropCollection* props)
 {
+  if (this->GetVisibility())
+  {
+    vtkViewport* vp = nullptr;
+    if (this->NumberOfConsumers)
+    {
+      vp = vtkViewport::SafeDownCast(this->Consumers[0]);
+      if (vp)
+      {
+        this->UpdateGeometry(vp);
+      }
+    }
+  }
+
+  props->AddItem(this->Actor.Get());
 }
 
 //----------------------------------------------------------------------------
@@ -92,8 +109,8 @@ vtkProperty* vtkGridAxesPlane2DActor::GetProperty()
 //----------------------------------------------------------------------------
 void vtkGridAxesPlane2DActor::SetTickPositions(int index, vtkDoubleArray* data)
 {
-  assert(index >= 0 && index < 3 && (data == NULL || data->GetNumberOfComponents() <= 1));
-  if (data == NULL)
+  assert(index >= 0 && index < 3 && (data == nullptr || data->GetNumberOfComponents() <= 1));
+  if (data == nullptr)
   {
     if (this->TickPositions[index].size() != 0)
     {
@@ -118,6 +135,13 @@ int vtkGridAxesPlane2DActor::RenderOpaqueGeometry(vtkViewport* viewport)
   // Do tasks that need to be done when this->MTime changes.
   this->Update(viewport);
   return this->Actor->RenderOpaqueGeometry(viewport);
+}
+
+//----------------------------------------------------------------------------
+void vtkGridAxesPlane2DActor::UpdateGeometry(vtkViewport* viewport)
+{
+  // Do tasks that need to be done when this->MTime changes.
+  this->Update(viewport);
 }
 
 //----------------------------------------------------------------------------

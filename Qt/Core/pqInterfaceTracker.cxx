@@ -83,7 +83,7 @@ void pqInterfaceTracker::initialize()
   // got autoloaded when the application started.
   for (unsigned int cc = 0; cc < tracker->GetNumberOfPlugins(); cc++)
   {
-    this->onPluginLoaded(NULL, 0, tracker->GetPlugin(cc));
+    this->onPluginLoaded(nullptr, 0, tracker->GetPlugin(cc));
   }
 }
 
@@ -92,13 +92,13 @@ void pqInterfaceTracker::onPluginLoaded(vtkObject*, unsigned long, void* calldat
 {
   vtkPVPlugin* plugin = reinterpret_cast<vtkPVPlugin*>(calldata);
   vtkPVGUIPluginInterface* guiplugin = dynamic_cast<vtkPVGUIPluginInterface*>(plugin);
-  if (guiplugin != NULL)
+  if (guiplugin != nullptr)
   {
     QObjectList ifaces = guiplugin->interfaces();
     foreach (QObject* iface, ifaces)
     {
       this->Interfaces.append(iface);
-      emit this->interfaceRegistered(iface);
+      Q_EMIT this->interfaceRegistered(iface);
 
       pqAutoStartInterface* asi = qobject_cast<pqAutoStartInterface*>(iface);
       if (asi)
@@ -115,7 +115,7 @@ void pqInterfaceTracker::addInterface(QObject* iface)
   if (!this->Interfaces.contains(iface) && !this->RegisteredInterfaces.contains(iface))
   {
     this->RegisteredInterfaces.push_back(iface);
-    emit this->interfaceRegistered(iface);
+    Q_EMIT this->interfaceRegistered(iface);
 
     pqAutoStartInterface* asi = qobject_cast<pqAutoStartInterface*>(iface);
     if (asi)

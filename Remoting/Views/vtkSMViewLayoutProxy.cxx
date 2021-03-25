@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <queue>
 
 class vtkSMViewLayoutProxy::vtkInternals
@@ -167,7 +168,7 @@ public:
     if (root == 0)
     {
       this->Sizes.resize(this->KDTree.size() * 2);
-      this->ComputeSizes();
+      this->ComputeSizes(root, spacing);
     }
 
     const Cell& cell = this->KDTree[root];
@@ -254,7 +255,7 @@ private:
   // UpdateViewPositions().
   std::vector<int> Sizes;
 
-  const int* ComputeSizes(int root = 0)
+  const int* ComputeSizes(int root, const int spacing)
   {
     assert(2 * root + 1 < static_cast<int>(this->Sizes.size()));
 
@@ -271,19 +272,19 @@ private:
       return &this->Sizes[2 * root];
     }
 
-    const int* size0 = this->ComputeSizes(2 * root + 1);
-    const int* size1 = this->ComputeSizes(2 * root + 2);
+    const int* size0 = this->ComputeSizes(2 * root + 1, spacing);
+    const int* size1 = this->ComputeSizes(2 * root + 2, spacing);
 
     // now double the width (or height) based on the split direction.
     if (cell.Direction == vtkSMViewLayoutProxy::HORIZONTAL)
     {
-      this->Sizes[2 * root] = size0[0] + size1[0];
+      this->Sizes[2 * root] = size0[0] + size1[0] + spacing;
       this->Sizes[2 * root + 1] = std::max(size0[1], size1[1]);
     }
     else
     {
       this->Sizes[2 * root] = std::max(size0[0], size1[0]);
-      this->Sizes[2 * root + 1] = size0[1] + size1[1];
+      this->Sizes[2 * root + 1] = size0[1] + size1[1] + spacing;
     }
     return &this->Sizes[2 * root];
   }
@@ -310,9 +311,9 @@ vtkSMViewLayoutProxy::~vtkSMViewLayoutProxy()
 {
   vtkMemberFunctionCommand<vtkSMViewLayoutProxy>::SafeDownCast(this->Internals->Observer)->Reset();
   this->Internals->Observer->Delete();
-  this->Internals->Observer = NULL;
+  this->Internals->Observer = nullptr;
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -451,7 +452,7 @@ vtkPVXMLElement* vtkSMViewLayoutProxy::SaveXMLState(
   vtkPVXMLElement* element = this->Superclass::SaveXMLState(root, iter);
   if (!element)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkPVXMLElement* layout = vtkPVXMLElement::New();
@@ -510,7 +511,7 @@ int vtkSMViewLayoutProxy::LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocat
   for (unsigned int cc = 0; cc < layout->GetNumberOfNestedElements(); cc++)
   {
     vtkPVXMLElement* item = layout->GetNestedElement(cc);
-    if (item == NULL || item->GetName() == NULL || strcmp(item->GetName(), "Item") != 0)
+    if (item == nullptr || item->GetName() == nullptr || strcmp(item->GetName(), "Item") != 0)
     {
       vtkErrorMacro("Invalid nested element at index : " << cc);
       return 0;
@@ -534,7 +535,7 @@ int vtkSMViewLayoutProxy::LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocat
     }
     else
     {
-      cell.ViewProxy = NULL;
+      cell.ViewProxy = nullptr;
     }
     if (cell.ViewProxy && cell.ViewProxy->GetProperty("ViewSize"))
     {
@@ -600,7 +601,7 @@ int vtkSMViewLayoutProxy::Split(int location, int direction, double fraction)
   {
     vtkInternals::Cell& child = this->Internals->KDTree[child_location];
     child.ViewProxy = cell.ViewProxy;
-    cell.ViewProxy = NULL;
+    cell.ViewProxy = nullptr;
   }
   this->Internals->KDTree[location] = cell;
   this->MaximizedCell = -1;
@@ -611,7 +612,7 @@ int vtkSMViewLayoutProxy::Split(int location, int direction, double fraction)
 //----------------------------------------------------------------------------
 bool vtkSMViewLayoutProxy::AssignView(int location, vtkSMViewProxy* view)
 {
-  if (view == NULL)
+  if (view == nullptr)
   {
     return false;
   }
@@ -630,7 +631,7 @@ bool vtkSMViewLayoutProxy::AssignView(int location, vtkSMViewProxy* view)
     return false;
   }
 
-  if (cell.ViewProxy != NULL && cell.ViewProxy != view)
+  if (cell.ViewProxy != nullptr && cell.ViewProxy != view)
   {
     vtkErrorMacro("Cell is not empty.");
     return false;
@@ -725,7 +726,7 @@ int vtkSMViewLayoutProxy::AssignViewToAnyCell(vtkSMViewProxy* view, int location
   int new_cell = this->Split(split_cell, direction, 0.5);
   this->SetBlockUpdate(prev);
 
-  if (this->GetView(new_cell) == NULL)
+  if (this->GetView(new_cell) == nullptr)
   {
     return this->AssignView(new_cell, view);
   }
@@ -757,7 +758,7 @@ int vtkSMViewLayoutProxy::RemoveView(vtkSMViewProxy* view)
       {
         iter->ViewProxy->GetProperty("ViewSize")->RemoveObserver(this->Internals->Observer);
       }
-      iter->ViewProxy = NULL;
+      iter->ViewProxy = nullptr;
       this->UpdateState();
       return index;
     }
@@ -812,7 +813,7 @@ bool vtkSMViewLayoutProxy::Collapse(int location)
     return false;
   }
 
-  if (cell.ViewProxy != NULL)
+  if (cell.ViewProxy != nullptr)
   {
     vtkErrorMacro("Only empty cells can be collapsed.");
     return false;
@@ -857,7 +858,7 @@ bool vtkSMViewLayoutProxy::IsSplitCell(int location)
 int vtkSMViewLayoutProxy::GetEmptyCell(int root)
 {
   vtkInternals::Cell& cell = this->Internals->KDTree[root];
-  if (cell.Direction == NONE && cell.ViewProxy == NULL)
+  if (cell.Direction == NONE && cell.ViewProxy == nullptr)
   {
     return root;
   }
@@ -927,7 +928,7 @@ vtkSMViewProxy* vtkSMViewLayoutProxy::GetView(int location)
   if (!this->Internals->IsCellValid(location))
   {
     vtkErrorMacro("Invalid location '" << location << "' specified.");
-    return NULL;
+    return nullptr;
   }
 
   return this->Internals->KDTree[location].ViewProxy;
@@ -1001,7 +1002,7 @@ void vtkSMViewLayoutProxy::UpdateViewPositions()
     for (vtkInternals::KDTreeType::iterator iter = this->Internals->KDTree.begin();
          iter != this->Internals->KDTree.end(); ++iter)
     {
-      if (iter->ViewProxy.GetPointer() != NULL)
+      if (iter->ViewProxy.GetPointer() != nullptr)
       {
         int pos[2] = { 0, 0 };
         vtkSMPropertyHelper(iter->ViewProxy, "ViewPosition").Set(pos, 2);
@@ -1020,7 +1021,7 @@ void vtkSMViewLayoutProxy::GetLayoutExtent(int extent[4])
   for (vtkInternals::KDTreeType::iterator iter = this->Internals->KDTree.begin();
        iter != this->Internals->KDTree.end(); ++iter)
   {
-    if (iter->ViewProxy.GetPointer() != NULL)
+    if (iter->ViewProxy.GetPointer() != nullptr)
     {
       int vpos[2] = { 0, 0 };
       vtkSMPropertyHelper(iter->ViewProxy, "ViewPosition").Get(vpos, 2);
@@ -1103,7 +1104,7 @@ vtkImageData* vtkSMViewLayoutProxy::CaptureWindow(int magX, int magY)
       return view->CaptureWindow(magX, magY);
     }
     vtkErrorMacro("No view present in the layout.");
-    return NULL;
+    return nullptr;
   }
 
   std::vector<vtkSmartPointer<vtkImageData> > images;
@@ -1124,7 +1125,7 @@ vtkImageData* vtkSMViewLayoutProxy::CaptureWindow(int magX, int magY)
   if (images.size() == 0)
   {
     vtkErrorMacro("No view present in the layout.");
-    return NULL;
+    return nullptr;
   }
 
   auto vlayout = vtkViewLayout::SafeDownCast(this->GetClientSideObject());
@@ -1152,7 +1153,7 @@ vtkSMViewLayoutProxy* vtkSMViewLayoutProxy::FindLayout(
 {
   if (!view)
   {
-    return NULL;
+    return nullptr;
   }
   vtkSMSessionProxyManager* pxm = view->GetSessionProxyManager();
   vtkNew<vtkSMProxyIterator> iter;
@@ -1161,12 +1162,12 @@ vtkSMViewLayoutProxy* vtkSMViewLayoutProxy::FindLayout(
   for (iter->Begin(reggroup); !iter->IsAtEnd(); iter->Next())
   {
     vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::SafeDownCast(iter->GetProxy());
-    if (layout != NULL && layout->GetViewLocation(view) != -1)
+    if (layout != nullptr && layout->GetViewLocation(view) != -1)
     {
       return layout;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------

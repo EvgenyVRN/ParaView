@@ -26,10 +26,17 @@
 #define vtkSortedTableStreamer_h
 
 #include "vtkPVVTKExtensionsFiltersRenderingModule.h" // needed for export macro
+#include "vtkSmartPointer.h"                          // for vtkSmartPointer
 #include "vtkTableAlgorithm.h"
-class vtkTable;
+#include <utility> // for std::pair
+
 class vtkDataArray;
+class vtkIdTypeArray;
 class vtkMultiProcessController;
+class vtkPartitionedDataSet;
+class vtkStringArray;
+class vtkTable;
+class vtkUnsignedIntArray;
 
 class VTKPVVTKEXTENSIONSFILTERSRENDERING_EXPORT vtkSortedTableStreamer : public vtkTableAlgorithm
 {
@@ -129,6 +136,12 @@ protected:
 private:
   vtkSortedTableStreamer(const vtkSortedTableStreamer&) = delete;
   void operator=(const vtkSortedTableStreamer&) = delete;
+
+  vtkSmartPointer<vtkTable> MergeBlocks(vtkPartitionedDataSet* cd);
+  vtkSmartPointer<vtkUnsignedIntArray> GenerateCompositeIndexArray(
+    vtkPartitionedDataSet* cd, vtkIdType maxSize);
+  std::pair<vtkSmartPointer<vtkStringArray>, vtkSmartPointer<vtkIdTypeArray> >
+  GenerateBlockNameArray(vtkPartitionedDataSet* cd, vtkIdType maxSize);
 };
 
 #endif

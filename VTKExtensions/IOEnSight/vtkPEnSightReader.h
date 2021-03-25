@@ -74,12 +74,12 @@ public:
     typedef std::vector<int> IntVector;
 
     vtkPEnSightReaderCellIds()
-      : cellMap(NULL)
+      : cellMap(nullptr)
       , cellNumberOfIds(-1)
       , cellLocalNumberOfIds(-1)
-      , cellVector(NULL)
-      , ImplicitDimensions(NULL)
-      , ImplicitLocalDimensions(NULL)
+      , cellVector(nullptr)
+      , ImplicitDimensions(nullptr)
+      , ImplicitLocalDimensions(nullptr)
       , ImplicitSplitDimension(-1)
       , ImplicitSplitDimensionBeginIndex(-1)
       , ImplicitSplitDimensionEndIndex(-1)
@@ -88,12 +88,12 @@ public:
     }
 
     vtkPEnSightReaderCellIds(EnsightReaderCellIdMode amode)
-      : cellMap(NULL)
+      : cellMap(nullptr)
       , cellNumberOfIds(-1)
       , cellLocalNumberOfIds(-1)
-      , cellVector(NULL)
-      , ImplicitDimensions(NULL)
-      , ImplicitLocalDimensions(NULL)
+      , cellVector(nullptr)
+      , ImplicitDimensions(nullptr)
+      , ImplicitLocalDimensions(nullptr)
       , ImplicitSplitDimension(-1)
       , ImplicitSplitDimensionBeginIndex(-1)
       , ImplicitSplitDimensionEndIndex(-1)
@@ -103,7 +103,7 @@ public:
       {
         this->cellMap = new IntIntMap;
         this->cellNumberOfIds = 0;
-        this->cellVector = NULL;
+        this->cellVector = nullptr;
       }
       else if (this->mode == IMPLICIT_STRUCTURED_MODE)
       {
@@ -114,7 +114,7 @@ public:
       }
       else
       {
-        this->cellMap = NULL;
+        this->cellMap = nullptr;
         this->cellVector = new IntVector;
         this->cellNumberOfIds = -1;
         this->cellLocalNumberOfIds = -1;
@@ -135,7 +135,7 @@ public:
       {
         this->cellMap = new IntIntMap;
         this->cellNumberOfIds = 0;
-        this->cellVector = NULL;
+        this->cellVector = nullptr;
       }
       else if (this->mode == IMPLICIT_STRUCTURED_MODE)
       {
@@ -146,7 +146,7 @@ public:
       }
       else
       {
-        this->cellMap = NULL;
+        this->cellMap = nullptr;
         this->cellVector = new IntVector;
         this->cellNumberOfIds = -1;
         this->cellLocalNumberOfIds = -1;
@@ -704,7 +704,7 @@ protected:
   /**
    * Add another file name to the list for a particular variable type.
    */
-  void AddVariableFileName(const char* fileName1, const char* fileName2 = NULL);
+  void AddVariableFileName(const char* fileName1, const char* fileName2 = nullptr);
 
   /**
    * Add another description to the list for a particular variable type.
@@ -779,12 +779,20 @@ protected:
   /**
    * Merge InsertNextCell & GetId->InsertNextId
    * Take Distributed Read into account.
+   * faces should be specified for VTK_POLYHEDRON cells and is unused otherwise.
    */
   void InsertNextCellAndId(vtkUnstructuredGrid*, int vtkCellType, vtkIdType numPoints,
-    vtkIdType* points, int partId, int ensightCellType, vtkIdType globalId, vtkIdType numElements);
+    vtkIdType* points, int partId, int ensightCellType, vtkIdType globalId, vtkIdType numElements,
+    const std::vector<vtkIdType>& faces = {});
   void InsertVariableComponent(vtkFloatArray* array, int i, int component, float* content,
     int partId, int ensightCellType, int insertionType);
   //@}
+
+  /**
+   * Convenience method to map the point ids from current rank to global ids.
+   */
+  void MapToGlobalIds(
+    const vtkIdType* inputIds, vtkIdType numPoints, int partId, vtkIdType* globalIds);
 
   /**
    * 1. Find future split dimension for distribution (biggest)

@@ -69,14 +69,13 @@ protected:
   */
   void onTriggered() override;
 
-protected slots:
+protected Q_SLOTS:
   virtual void updateTrace();
 
 private:
   Q_DISABLE_COPY(pqTraceReaction)
   QString StartTraceLabel;
   QString StopTraceLabel;
-  QPointer<pqPythonScriptEditor> Editor;
 
   void editTrace(const QString& txt, bool incremental);
 };

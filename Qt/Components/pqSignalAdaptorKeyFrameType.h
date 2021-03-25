@@ -61,7 +61,7 @@ public:
   * Note that this class will toggle the visibility of this frame as needed.
   */
   pqSignalAdaptorKeyFrameType(
-    pqKeyFrameTypeWidget* widget, pqPropertyLinks* links, QLabel* valueLabel = NULL);
+    pqKeyFrameTypeWidget* widget, pqPropertyLinks* links, QLabel* valueLabel = nullptr);
   ~pqSignalAdaptorKeyFrameType() override;
 
   /**
@@ -72,7 +72,7 @@ public:
   void setKeyFrameProxy(vtkSMProxy* keyframe);
   vtkSMProxy* getKeyFrameProxy() const;
 
-private slots:
+private Q_SLOTS:
   /**
   * Called when the combo-box changes
   */

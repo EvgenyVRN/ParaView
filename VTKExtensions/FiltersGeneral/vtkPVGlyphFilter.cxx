@@ -215,7 +215,7 @@ public:
     this->Bounds.Reset();
     this->Points.clear();
     this->Locator->Initialize();
-    this->Locator->SetDataSet(NULL);
+    this->Locator->SetDataSet(nullptr);
 
     this->UniformSamplingVectorMap.clear();
     this->SamplingRunningSum = 0;
@@ -225,7 +225,7 @@ public:
   vtkSmartPointer<vtkDataSet> UpdateWithDataset(
     unsigned int index, vtkDataSet* ds, vtkPVGlyphFilter* self)
   {
-    assert(ds != NULL && self != NULL);
+    assert(ds != nullptr && self != nullptr);
 
     vtkSmartPointer<vtkDataSet> dataSetToReturn = ds;
 
@@ -454,7 +454,7 @@ public:
   inline bool IsPointVisible(
     unsigned int index, vtkDataSet* ds, vtkIdType ptId, bool cellCenters, vtkPVGlyphFilter* self)
   {
-    assert(ds != NULL && self != NULL);
+    assert(ds != nullptr && self != nullptr);
     switch (self->GetGlyphMode())
     {
       case vtkPVGlyphFilter::ALL_POINTS:
@@ -502,11 +502,13 @@ vtkCxxSetObjectMacro(vtkPVGlyphFilter, SourceTransform, vtkTransform);
 vtkPVGlyphFilter::vtkPVGlyphFilter()
   : VectorScaleMode(SCALE_BY_MAGNITUDE)
   , SourceTransform(nullptr)
+  , ScaleFactor(1.0)
   , GlyphMode(ALL_POINTS)
   , MaximumNumberOfSamplePoints(5000)
   , Seed(1)
   , Stride(1)
-  , Controller(0)
+  , Controller(nullptr)
+  , OutputPointsPrecision(vtkAlgorithm::DEFAULT_PRECISION)
   , Internals(new vtkPVGlyphFilter::vtkInternals())
 {
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -610,7 +612,7 @@ int vtkPVGlyphFilter::RequestDataObject(
   if (vtkCompositeDataSet::GetData(inputVector[0], 0))
   {
     vtkMultiBlockDataSet* mds = vtkMultiBlockDataSet::GetData(outputVector, 0);
-    if (mds == NULL)
+    if (mds == nullptr)
     {
       mds = vtkMultiBlockDataSet::New();
       outputVector->GetInformationObject(0)->Set(vtkDataObject::DATA_OBJECT(), mds);
@@ -620,7 +622,7 @@ int vtkPVGlyphFilter::RequestDataObject(
   else
   {
     vtkPolyData* pd = vtkPolyData::GetData(outputVector, 0);
-    if (pd == NULL)
+    if (pd == nullptr)
     {
       pd = vtkPolyData::New();
       outputVector->GetInformationObject(0)->Set(vtkDataObject::DATA_OBJECT(), pd);
@@ -816,15 +818,6 @@ bool vtkPVGlyphFilter::Execute(unsigned int index, vtkDataSet* input,
     return true;
   }
 
-#if 0
-  if (this->GlyphDataRange[0] > this->GlyphDataRange[1])
-  {
-    vtkErrorMacro(
-      "First element in GlyphDataRange must be less than or equal to the second element.");
-    return false;
-  }
-#endif
-
   if (orientArray && orientArray->GetNumberOfComponents() > 3)
   {
     vtkErrorMacro(<< "vtkDataArray " << orientArray->GetName() << " has more than 3 components.\n");
@@ -859,12 +852,6 @@ bool vtkPVGlyphFilter::Execute(unsigned int index, vtkDataSet* input,
     return 1;
   }
 
-  // Allocate storage for output PolyData
-  vtkPointData* outputPD = output->GetPointData();
-  outputPD->CopyVectorsOff();
-  outputPD->CopyNormalsOff();
-  outputPD->CopyTCoordsOff();
-
   vtkSmartPointer<vtkPolyData> source = this->GetSource(0, sourceVector);
   if (source == nullptr)
   {
@@ -888,8 +875,10 @@ bool vtkPVGlyphFilter::Execute(unsigned int index, vtkDataSet* input,
 
   vtkDataArray* sourceNormals = source->GetPointData()->GetNormals();
 
-  // Prepare to copy output.
-  pd = input->GetPointData();
+  // Allocate storage for output point data
+  vtkPointData* outputPD = output->GetPointData();
+  outputPD->CopyNormalsOff();
+
   outputPD->CopyAllocate(pd, numPts * numSourcePts);
 
   vtkNew<vtkIdList> srcPointIdList;
@@ -1122,6 +1111,9 @@ bool vtkPVGlyphFilter::Execute(unsigned int index, vtkDataSet* input,
 
   // In certain cases, we can have a left over processing array, remove it.
   outputPD->RemoveArray(IDS_ARRAY_NAME.c_str());
+
+  // Pass the field data
+  output->GetFieldData()->PassData(input->GetFieldData());
 
   // Update ourselves and release memory
   //

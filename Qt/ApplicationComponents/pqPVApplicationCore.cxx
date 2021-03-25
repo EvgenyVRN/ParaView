@@ -91,7 +91,7 @@ pqPVApplicationCore::pqPVApplicationCore(int& argc, char** argv, pqOptions* opti
   presetGroupManager->loadGroups(groupString);
   pqApplicationCore::instance()->registerManager("PRESET_GROUP_MANAGER", presetGroupManager);
 
-  this->PythonManager = 0;
+  this->PythonManager = nullptr;
 #if VTK_MODULE_ENABLE_ParaView_pqPython
   this->PythonManager = new pqPythonManager(this);
 
@@ -125,7 +125,7 @@ void pqPVApplicationCore::registerForQuicklaunch(QWidget* menu)
 //-----------------------------------------------------------------------------
 void pqPVApplicationCore::quickLaunch()
 {
-  emit this->aboutToShowQuickLaunch();
+  Q_EMIT this->aboutToShowQuickLaunch();
   if (this->QuickLaunchMenus.size() > 0)
   {
     pqQuickLaunchDialog dialog(pqCoreUtilities::mainWidget());

@@ -58,9 +58,10 @@
 
 #include "vtksys/FStream.hxx"
 
-#include "cdi.h"
+#include "ThirdParty/cdi.h"
 #include "vtk_netcdf.h"
 
+#include <cmath>
 #include <sstream>
 
 using namespace std;
@@ -382,7 +383,7 @@ vtkCDIReader::vtkCDIReader()
   this->Internals = new vtkCDIReader::Internal;
   this->StreamID = -1;
   this->VListID = -1;
-  this->CellMask = 0;
+  this->CellMask = nullptr;
   this->LoadingDimensions = vtkSmartPointer<vtkIntArray>::New();
   this->VariableDimensions = vtkStringArray::New();
   this->AllDimensions = vtkStringArray::New();

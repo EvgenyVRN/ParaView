@@ -122,7 +122,7 @@ public:
   }
 
 protected:
-  pqInternal() {}
+  pqInternal() = default;
   ~pqInternal() override
   {
     // clean up interactiveViewLinks
@@ -166,7 +166,7 @@ pqLinksModel::pqLinksModel(QObject* p)
 /// destruct a links model
 pqLinksModel::~pqLinksModel()
 {
-  this->Internal->Model = NULL;
+  this->Internal->Model = nullptr;
   this->Internal->Delete();
 }
 
@@ -268,7 +268,7 @@ void pqLinksModel::onStateLoaded(vtkPVXMLElement* root, vtkSMProxyLocator* locat
 
 void pqLinksModel::onStateSaved(vtkPVXMLElement* root)
 {
-  assert(root != NULL);
+  assert(root != nullptr);
   vtkPVXMLElement* tempParent = vtkPVXMLElement::New();
   tempParent->SetName("InteractiveViewLinks");
 
@@ -276,7 +276,7 @@ void pqLinksModel::onStateSaved(vtkPVXMLElement* root)
   foreach (QString linkName, this->Internal->InteractiveViewLinks.keys())
   {
     pqInteractiveViewLink* interLink = this->Internal->InteractiveViewLinks[linkName];
-    if (interLink != NULL)
+    if (interLink != nullptr)
     {
       vtkPVXMLElement* interLinkXML = vtkPVXMLElement::New();
       interLinkXML->SetName("InteractiveViewLink");
@@ -302,7 +302,7 @@ static vtkSMProxy* getProxyFromLink(vtkSMLink* link, int desiredDir)
       return proxy;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // TODO: fix this so it isn't dependent on the order of links
@@ -532,7 +532,7 @@ vtkSMLink* pqLinksModel::getLink(const QString& name) const
     vtkSMLink* link = pxm->GetRegisteredLink(name.toLocal8Bit().data());
     return link;
   }
-  return NULL;
+  return nullptr;
 }
 
 vtkSMLink* pqLinksModel::getLink(const QModelIndex& idx) const
@@ -593,7 +593,7 @@ void pqLinksModel::addProxyLink(
   }
   iter->Delete();
   link->Delete();
-  emit this->linkAdded(pqLinksModel::Proxy);
+  Q_EMIT this->linkAdded(pqLinksModel::Proxy);
   CLEAR_UNDO_STACK();
 }
 
@@ -610,7 +610,7 @@ void pqLinksModel::addCameraLink(
   link->AddLinkedProxy(outputProxy, vtkSMLink::INPUT);
   link->AddLinkedProxy(inputProxy, vtkSMLink::OUTPUT);
   link->Delete();
-  emit this->linkAdded(pqLinksModel::Camera);
+  Q_EMIT this->linkAdded(pqLinksModel::Camera);
   CLEAR_UNDO_STACK();
 
   SM_SCOPED_TRACE(CallFunction)
@@ -631,8 +631,8 @@ void pqLinksModel::createInteractiveViewLink(const QString& name, vtkSMProxy* di
 {
   // Look for corresponding pqRenderView
   pqServerManagerModel* smModel = pqApplicationCore::instance()->getServerManagerModel();
-  pqRenderView* firstView = NULL;
-  pqRenderView* otherView = NULL;
+  pqRenderView* firstView = nullptr;
+  pqRenderView* otherView = nullptr;
   QList<pqRenderView*> views = smModel->findItems<pqRenderView*>();
   foreach (pqRenderView* view, views)
   {
@@ -647,7 +647,7 @@ void pqLinksModel::createInteractiveViewLink(const QString& name, vtkSMProxy* di
   }
 
   // If found, create the pqInteractiveViewLink
-  if (firstView != NULL && otherView != NULL)
+  if (firstView != nullptr && otherView != nullptr)
   {
     this->Internal->InteractiveViewLinks[name] =
       new pqInteractiveViewLink(firstView, otherView, xPos, yPos, xSize, ySize);
@@ -663,7 +663,7 @@ pqInteractiveViewLink* pqLinksModel::getInteractiveViewLink(const QString& name)
 {
   return this->Internal->InteractiveViewLinks.contains(name)
     ? this->Internal->InteractiveViewLinks[name]
-    : NULL;
+    : nullptr;
 }
 
 void pqLinksModel::addPropertyLink(const QString& name, vtkSMProxy* inputProxy,
@@ -679,7 +679,7 @@ void pqLinksModel::addPropertyLink(const QString& name, vtkSMProxy* inputProxy,
   link->AddLinkedProperty(outputProxy, outputProp.toLocal8Bit().data(), vtkSMLink::INPUT);
   link->AddLinkedProperty(inputProxy, inputProp.toLocal8Bit().data(), vtkSMLink::OUTPUT);
   link->Delete();
-  emit this->linkAdded(pqLinksModel::Property);
+  Q_EMIT this->linkAdded(pqLinksModel::Property);
   CLEAR_UNDO_STACK();
 }
 
@@ -698,8 +698,16 @@ void pqLinksModel::addSelectionLink(
   link->AddLinkedSelection(inputProxy, vtkSMLink::INPUT);
 
   link->Delete();
-  emit this->linkAdded(pqLinksModel::Selection);
+  Q_EMIT this->linkAdded(pqLinksModel::Selection);
   CLEAR_UNDO_STACK();
+
+  SM_SCOPED_TRACE(CallFunction)
+    .arg("AddSelectionLink")
+    .arg(inputProxy)
+    .arg(outputProxy)
+    .arg(name.toLocal8Bit().data())
+    .arg(convertToIndices)
+    .arg("comment", "link selection between two objects");
 }
 
 void pqLinksModel::removeLink(const QModelIndex& idx)
@@ -725,6 +733,11 @@ void pqLinksModel::removeLink(const QString& name)
     pxm->UnRegisterLink(name.toLocal8Bit().data());
     this->emitLinkRemoved(name);
     CLEAR_UNDO_STACK();
+
+    SM_SCOPED_TRACE(CallFunction)
+      .arg("RemoveLink")
+      .arg(name.toLocal8Bit().data())
+      .arg("comment", "Remove any link given its name");
   }
 }
 
@@ -735,7 +748,7 @@ void pqLinksModel::emitLinkRemoved(const QString& name)
     delete this->Internal->InteractiveViewLinks[name];
     this->Internal->InteractiveViewLinks.remove(name);
   }
-  emit this->linkRemoved(name);
+  Q_EMIT this->linkRemoved(name);
 }
 
 pqProxy* pqLinksModel::representativeProxy(vtkSMProxy* pxy)
@@ -748,7 +761,7 @@ pqProxy* pqLinksModel::representativeProxy(vtkSMProxy* pxy)
   {
     // get the owner of this internal proxy
     int numConsumers = pxy->GetNumberOfConsumers();
-    for (int i = 0; rep == NULL && i < numConsumers; i++)
+    for (int i = 0; rep == nullptr && i < numConsumers; i++)
     {
       vtkSMProxy* consumer = pxy->GetConsumerProxy(i);
       rep = smModel->findItem<pqProxy*>(consumer);
@@ -759,16 +772,16 @@ pqProxy* pqLinksModel::representativeProxy(vtkSMProxy* pxy)
 
 vtkSMProxyListDomain* pqLinksModel::proxyListDomain(vtkSMProxy* pxy)
 {
-  vtkSMProxyListDomain* pxyDomain = NULL;
+  vtkSMProxyListDomain* pxyDomain = nullptr;
 
-  if (pxy == NULL)
+  if (pxy == nullptr)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkSMPropertyIterator* iter = vtkSMPropertyIterator::New();
   iter->SetProxy(pxy);
-  for (iter->Begin(); pxyDomain == NULL && !iter->IsAtEnd(); iter->Next())
+  for (iter->Begin(); pxyDomain == nullptr && !iter->IsAtEnd(); iter->Next())
   {
     vtkSMProxyProperty* pxyProperty = vtkSMProxyProperty::SafeDownCast(iter->GetProperty());
     if (pxyProperty)

@@ -41,12 +41,12 @@ class SignalCatcher : public QObject
   Q_OBJECT
 
 public:
-  explicit SignalCatcher(QObject* _parent = NULL)
+  explicit SignalCatcher(QObject* _parent = nullptr)
     : QObject(_parent)
   {
   }
 
-public slots:
+public Q_SLOTS:
   void onValuesChanged(int min, int max)
   {
     std::cout << "Integer, min: " << min << std::endl;

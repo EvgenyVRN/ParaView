@@ -81,7 +81,7 @@ public:
     bool CanCreatePrototype(vtkSMSourceProxy* source)
     {
       vtkSMSessionProxyManager* pxm = source->GetSession()->GetSessionProxyManager();
-      return (pxm->GetPrototypeProxy(this->Group.c_str(), this->Name.c_str()) != NULL);
+      return (pxm->GetPrototypeProxy(this->Group.c_str(), this->Name.c_str()) != nullptr);
     }
 
     // Returns true if the data from the given output port can be written.
@@ -282,7 +282,7 @@ vtkSMProxy* vtkSMWriterFactory::CreateWriter(
   if (!filename || filename[0] == 0)
   {
     vtkErrorMacro("No filename. Cannot create any writer.");
-    return NULL;
+    return nullptr;
   }
 
   std::string extension = vtksys::SystemTools::GetFilenameExtension(filename);
@@ -291,7 +291,7 @@ vtkSMProxy* vtkSMWriterFactory::CreateWriter(
     if (extension.size() > 0)
     {
       // Find characters after last "."
-      std::string::size_type found = extension.find_last_of(".");
+      std::string::size_type found = extension.find_last_of('.');
       if (found != std::string::npos)
       {
         extension = extension.substr(found + 1);
@@ -299,13 +299,13 @@ vtkSMProxy* vtkSMWriterFactory::CreateWriter(
       else
       {
         vtkErrorMacro("No extension. Cannot determine writer to create.");
-        return NULL;
+        return nullptr;
       }
     }
     else
     {
       vtkErrorMacro("No extension. Cannot determine writer to create.");
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -342,7 +342,7 @@ vtkSMProxy* vtkSMWriterFactory::CreateWriter(
   }
 
   vtkErrorMacro("No matching writer found for extension: " << extension);
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -361,7 +361,10 @@ static std::string vtkJoin(const std::set<std::string> exts, const char* prefix,
 const char* vtkSMWriterFactory::GetSupportedFileTypes(
   vtkSMSourceProxy* source, unsigned int outputport)
 {
-  std::set<std::string> sorted_types;
+  auto case_insensitive_comp = [](const std::string& s1, const std::string& s2) {
+    return vtksys::SystemTools::Strucmp(s1.c_str(), s2.c_str()) < 0;
+  };
+  std::set<std::string, decltype(case_insensitive_comp)> sorted_types(case_insensitive_comp);
 
   vtkInternals::PrototypesType::iterator iter;
   for (iter = this->Internals->Prototypes.begin(); iter != this->Internals->Prototypes.end();
@@ -459,7 +462,7 @@ void vtkSMWriterFactory::PrintSelf(ostream& os, vtkIndent indent)
 //----------------------------------------------------------------------------
 void vtkSMWriterFactory::AddWriterToWhitelist(const char* readerxmlgroup, const char* readerxmlname)
 {
-  if (readerxmlgroup != NULL && readerxmlname != NULL)
+  if (readerxmlgroup != nullptr && readerxmlname != nullptr)
   {
     vtkSMWriterFactory::vtkInternals::WriterWhitelist.insert(
       std::pair<std::string, std::string>(readerxmlgroup, readerxmlname));

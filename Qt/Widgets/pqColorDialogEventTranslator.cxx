@@ -44,9 +44,7 @@ pqColorDialogEventTranslator::pqColorDialogEventTranslator(QObject* parentObject
 }
 
 //-----------------------------------------------------------------------------
-pqColorDialogEventTranslator::~pqColorDialogEventTranslator()
-{
-}
+pqColorDialogEventTranslator::~pqColorDialogEventTranslator() = default;
 
 //-----------------------------------------------------------------------------
 bool pqColorDialogEventTranslator::translateEvent(
@@ -54,7 +52,7 @@ bool pqColorDialogEventTranslator::translateEvent(
 {
   // Capture events from QColorDialog and all its children.
 
-  QColorDialog* color_dialog = 0;
+  QColorDialog* color_dialog = nullptr;
   while (object && !color_dialog)
   {
     color_dialog = qobject_cast<QColorDialog*>(object);
@@ -84,12 +82,12 @@ void pqColorDialogEventTranslator::onColorChosen(const QColor& color)
 
   QString colorvalue = QString("%1,%2,%3").arg(color.red()).arg(color.green()).arg(color.blue());
 
-  emit this->recordEvent(color_dialog, pqColorDialogEventPlayer::EVENT_NAME(), colorvalue);
+  Q_EMIT this->recordEvent(color_dialog, pqColorDialogEventPlayer::EVENT_NAME(), colorvalue);
 }
 
 //-----------------------------------------------------------------------------
 void pqColorDialogEventTranslator::onFinished(int result)
 {
   QColorDialog* color_dialog = qobject_cast<QColorDialog*>(this->sender());
-  emit recordEvent(color_dialog, "done", QString::number(result));
+  Q_EMIT recordEvent(color_dialog, "done", QString::number(result));
 }

@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCTHArraySelectionDecorator.h"
 #include "pqCalculatorWidget.h"
 #include "pqCameraManipulatorWidget.h"
+#include "pqCheckableProperty.h"
 #include "pqColorAnnotationsPropertyWidget.h"
 #include "pqColorEditorPropertyWidget.h"
 #include "pqColorOpacityEditorWidget.h"
@@ -48,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCommandButtonPropertyWidget.h"
 #include "pqCompositePropertyWidgetDecorator.h"
 #include "pqCylinderPropertyWidget.h"
+#include "pqDataAssemblyPropertyWidget.h"
 #include "pqDisplayRepresentationWidget.h"
 #include "pqDoubleRangeSliderPropertyWidget.h"
 #include "pqEnableWidgetDecorator.h"
@@ -72,7 +74,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPauseLiveSourcePropertyWidget.h"
 #include "pqPropertyCollectionWidget.h"
 #include "pqProxyEditorPropertyWidget.h"
+#include "pqSelectionQueryPropertyWidget.h"
 #include "pqSeriesEditorPropertyWidget.h"
+#include "pqSessionTypeDecorator.h"
 #include "pqShaderReplacementsSelectorPropertyWidget.h"
 #include "pqShowWidgetDecorator.h"
 #include "pqSpherePropertyWidget.h"
@@ -83,6 +87,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqViewResolutionPropertyWidget.h"
 #include "pqViewTypePropertyWidget.h"
 #include "pqYoungsMaterialPropertyWidget.h"
+#include "vtkSMCompositeTreeDomain.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyGroup.h"
 
@@ -95,9 +100,7 @@ pqStandardPropertyWidgetInterface::pqStandardPropertyWidgetInterface(QObject* p)
 }
 
 //-----------------------------------------------------------------------------
-pqStandardPropertyWidgetInterface::~pqStandardPropertyWidgetInterface()
-{
-}
+pqStandardPropertyWidgetInterface::~pqStandardPropertyWidgetInterface() = default;
 
 //-----------------------------------------------------------------------------
 pqPropertyWidget* pqStandardPropertyWidgetInterface::createWidgetForProperty(
@@ -105,9 +108,13 @@ pqPropertyWidget* pqStandardPropertyWidgetInterface::createWidgetForProperty(
 {
   // handle properties that specify custom panel widgets
   const char* custom_widget = smProperty->GetPanelWidget();
-  if (!custom_widget)
+  if (custom_widget == nullptr)
   {
-    return NULL;
+    if (smProperty->FindDomain<vtkSMCompositeTreeDomain>() != nullptr)
+    {
+      return new pqDataAssemblyPropertyWidget(smProxy, smProperty, parentWidget);
+    }
+    return nullptr;
   }
 
   std::string name = custom_widget;
@@ -203,9 +210,17 @@ pqPropertyWidget* pqStandardPropertyWidgetInterface::createWidgetForProperty(
   {
     return new pqPauseLiveSourcePropertyWidget(smProxy, smProperty, parentWidget);
   }
+  else if (name == "data_assembly_editor")
+  {
+    return new pqDataAssemblyPropertyWidget(smProxy, smProperty, parentWidget);
+  }
+  else if (name == "selection_query")
+  {
+    return new pqSelectionQueryPropertyWidget(smProxy, smProperty, parentWidget);
+  }
 
   // *** NOTE: When adding new types, please update the header documentation ***
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -307,9 +322,17 @@ pqPropertyWidget* pqStandardPropertyWidgetInterface::createWidgetForPropertyGrou
   {
     return new pqPropertyCollectionWidget(proxy, group, parentWidget);
   }
+  else if (panelWidget == "DataAssemblyEditor")
+  {
+    return new pqDataAssemblyPropertyWidget(proxy, group, parentWidget);
+  }
+  else if (panelWidget == "CheckableProperty")
+  {
+    return new pqCheckableProperty(proxy, group, parentWidget);
+  }
   // *** NOTE: When adding new types, please update the header documentation ***
 
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -349,9 +372,13 @@ pqPropertyWidgetDecorator* pqStandardPropertyWidgetInterface::createWidgetDecora
   {
     return new pqCompositePropertyWidgetDecorator(config, widget);
   }
+  if (type == "SessionTypeDecorator")
+  {
+    return new pqSessionTypeDecorator(config, widget);
+  }
 
   // *** NOTE: When adding new types, please update the header documentation ***
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------

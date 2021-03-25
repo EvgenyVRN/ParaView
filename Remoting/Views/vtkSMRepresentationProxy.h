@@ -99,7 +99,7 @@ public:
   virtual vtkPVDataInformation* GetRepresentedDataInformation();
 
   /**
-   * Returns information about a specific array component's prominent values (or NULL).
+   * Returns information about a specific array component's prominent values (or nullptr).
 
    * The \a name, \a fieldAssoc, and \a numComponents arguments specify
    * which arrays on the input dataset to examine. Because multiblock
@@ -113,7 +113,7 @@ public:
    * See vtkAbstractArray::GetProminentComponentValues for more information
    * about the \a uncertaintyAllowed and \a fraction arguments.
    */
-  virtual vtkPVProminentValuesInformation* GetProminentValuesInformation(vtkStdString name,
+  virtual vtkPVProminentValuesInformation* GetProminentValuesInformation(std::string name,
     int fieldAssoc, int numComponents, double uncertaintyAllowed = 1e-6, double fraction = 1e-3,
     bool force = false);
 
@@ -194,7 +194,12 @@ protected:
   void RemoveConsumer(vtkSMProperty* property, vtkSMProxy* proxy) override;
   void RemoveAllConsumers() override;
 
+  /**
+   * Overridden to initialize vtkPVDataRepresentation, add listeners and
+   * ensure that property information are updated.
+   */
   void CreateVTKObjects() override;
+
   void OnVTKRepresentationUpdated();
   void OnVTKRepresentationUpdateSkipped();
   void OnVTKRepresentationUpdateTimeChanged();

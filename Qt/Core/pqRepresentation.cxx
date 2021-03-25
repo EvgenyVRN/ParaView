@@ -57,7 +57,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqRepresentation::pqRepresentation(const QString& group, const QString& name, vtkSMProxy* repr,
-  pqServer* server, QObject* _parent /*=null*/)
+  pqServer* server, QObject* _parent /*=nullptr*/)
   : pqProxy(group, name, repr, server, _parent)
 {
   this->Internal = new pqRepresentation::pqInternal();
@@ -68,7 +68,7 @@ pqRepresentation::pqRepresentation(const QString& group, const QString& name, vt
   if (repr->GetProperty("Visibility"))
   {
     this->Internal->VTKConnect->Connect(repr->GetProperty("Visibility"), vtkCommand::ModifiedEvent,
-      this, SLOT(onVisibilityChanged()), 0, 0, Qt::QueuedConnection);
+      this, SLOT(onVisibilityChanged()), nullptr, 0, Qt::QueuedConnection);
   }
 }
 
@@ -82,7 +82,7 @@ pqRepresentation::~pqRepresentation()
 void pqRepresentation::setView(pqView* view)
 {
   this->Internal->View = view;
-  emit this->visibilityChanged(false);
+  Q_EMIT this->visibilityChanged(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -94,7 +94,7 @@ pqView* pqRepresentation::getView() const
 //-----------------------------------------------------------------------------
 vtkSMViewProxy* pqRepresentation::getViewProxy() const
 {
-  return (this->Internal->View ? this->Internal->View->getViewProxy() : NULL);
+  return (this->Internal->View ? this->Internal->View->getViewProxy() : nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -116,7 +116,7 @@ void pqRepresentation::renderView(bool force)
 //-----------------------------------------------------------------------------
 void pqRepresentation::onVisibilityChanged()
 {
-  emit this->visibilityChanged(this->isVisible());
+  Q_EMIT this->visibilityChanged(this->isVisible());
 }
 
 //-----------------------------------------------------------------------------

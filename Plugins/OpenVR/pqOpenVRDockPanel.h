@@ -17,7 +17,7 @@
  *
  * This class exists as part of the desktop GUI for ParaView and exposes
  * OpenVR settings and controls.
-*/
+ */
 
 #include <QDockWidget>
 
@@ -33,12 +33,12 @@ class pqOpenVRDockPanel : public QDockWidget
   typedef QDockWidget Superclass;
 
 public:
-  pqOpenVRDockPanel(const QString& t, QWidget* p = 0, Qt::WindowFlags f = 0)
+  pqOpenVRDockPanel(const QString& t, QWidget* p = nullptr, Qt::WindowFlags f = Qt::WindowFlags{})
     : Superclass(t, p, f)
   {
     this->constructor();
   }
-  pqOpenVRDockPanel(QWidget* p = 0, Qt::WindowFlags f = 0)
+  pqOpenVRDockPanel(QWidget* p = nullptr, Qt::WindowFlags f = Qt::WindowFlags{})
     : Superclass(p, f)
   {
     this->constructor();
@@ -49,14 +49,15 @@ public:
 protected:
   vtkPVOpenVRHelper* Helper;
   pqOpenVRControls* OpenVRControls;
-
-protected slots:
+  void attachToCurrentView();
   void sendToOpenVR();
+  void showVRView();
+
+protected Q_SLOTS:
 
   void exportLocationsAsSkyboxes();
   void exportLocationsAsView();
 
-  void multiSampleChanged(int state);
   void defaultCropThicknessChanged(const QString& text);
 
   void setActiveView(pqView*);
@@ -75,6 +76,9 @@ protected slots:
 
   void collaborationConnect();
   void collaborationCallback(std::string const& data, void* cd);
+
+  void editableFieldChanged(const QString& text);
+  void fieldValuesChanged(const QString& text);
 
 private:
   void constructor();

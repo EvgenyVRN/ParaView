@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 pqFileChooserWidget::pqFileChooserWidget(QWidget* p)
   : QWidget(p)
-  , Server(NULL)
+  , Server(nullptr)
 {
   this->ForceSingleFile = false;
   this->UseDirectoryMode = false;
@@ -68,9 +68,7 @@ pqFileChooserWidget::pqFileChooserWidget(QWidget* p)
     SLOT(handleFileLineEditChanged(const QString&)));
 }
 
-pqFileChooserWidget::~pqFileChooserWidget()
-{
-}
+pqFileChooserWidget::~pqFileChooserWidget() = default;
 
 QStringList pqFileChooserWidget::filenames() const
 {
@@ -157,19 +155,22 @@ void pqFileChooserWidget::chooseFile()
   QString filters = this->Extension;
   filters += ";;All files (*)";
 
-  QString title;
+  QString title = this->Title;
 
-  if (this->UseDirectoryMode)
+  if (title.isEmpty())
   {
-    title = tr("Open Directory:");
-  }
-  else if (this->AcceptAnyFile)
-  {
-    title = tr("Save File:");
-  }
-  else
-  {
-    title = tr("Open File:");
+    if (this->UseDirectoryMode)
+    {
+      title = tr("Open Directory:");
+    }
+    else if (this->AcceptAnyFile)
+    {
+      title = tr("Save File:");
+    }
+    else
+    {
+      title = tr("Open File:");
+    }
   }
 
   pqFileDialog dialog(this->Server, this, title, QString(), filters);
@@ -221,13 +222,13 @@ void pqFileChooserWidget::handleFileLineEditChanged(const QString& fileString)
 
 void pqFileChooserWidget::emitFilenamesChanged(const QStringList& fileList)
 {
-  emit this->filenamesChanged(fileList);
+  Q_EMIT this->filenamesChanged(fileList);
   if (!fileList.empty())
   {
-    emit this->filenameChanged(fileList[0]);
+    Q_EMIT this->filenameChanged(fileList[0]);
   }
   else
   {
-    emit this->filenameChanged("");
+    Q_EMIT this->filenameChanged("");
   }
 }

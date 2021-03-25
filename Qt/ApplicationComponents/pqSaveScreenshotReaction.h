@@ -54,7 +54,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqSaveScreenshotReaction : public pqReactio
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqSaveScreenshotReaction(QAction* parent, bool clipboardMode = false);
 
@@ -93,7 +93,7 @@ public:
   static QString promptFileName(
     vtkSMSaveScreenshotProxy* saveProxy, const QString& defaultExtension);
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

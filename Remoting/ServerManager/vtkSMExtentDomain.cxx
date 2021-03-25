@@ -21,17 +21,15 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSourceProxy.h"
 
+#include <cmath>
+
 vtkStandardNewMacro(vtkSMExtentDomain);
 
 //---------------------------------------------------------------------------
-vtkSMExtentDomain::vtkSMExtentDomain()
-{
-}
+vtkSMExtentDomain::vtkSMExtentDomain() = default;
 
 //---------------------------------------------------------------------------
-vtkSMExtentDomain::~vtkSMExtentDomain()
-{
-}
+vtkSMExtentDomain::~vtkSMExtentDomain() = default;
 
 //---------------------------------------------------------------------------
 void vtkSMExtentDomain::Update(vtkSMProperty*)

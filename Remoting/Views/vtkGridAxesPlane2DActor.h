@@ -82,6 +82,22 @@ public:
   vtkGetMacro(Face, int);
   //@}
 
+  /**
+   * For some exporters and other other operations we must be
+   * able to collect all the actors or volumes. These methods
+   * are used in that process.
+   * In case the viewport is not a consumer of this prop:
+   * call UpdateGeometry() first for updated viewport-specific
+   * billboard geometry.
+   */
+  void GetActors(vtkPropCollection*) override;
+
+  /**
+   * Updates the billboard geometry without performing any rendering,
+   * to assist GetActors().
+   */
+  void UpdateGeometry(vtkViewport* vp);
+
   //@{
   /**
    * Get/Set whether to generate lines for the plane's grid. Default is true.
@@ -131,7 +147,7 @@ public:
    * Set the tick positions for each of the coordinate axis. Which tick
    * positions get used depended on the face being rendered e.g. if Face is
    * MIN_XY, then the tick positions for Z-axis i.e. axis=2 will not be used
-   * and hence need not be specified. Pass NULL for data will clear the ticks
+   * and hence need not be specified. Pass nullptr for data will clear the ticks
    * positions for that axis.
    * Note: This creates a deep-copy of the values in \c data and stores that.
    */
@@ -171,7 +187,7 @@ public:
   void ReleaseGraphicsResources(vtkWindow*) override;
 
 protected:
-  vtkGridAxesPlane2DActor(vtkGridAxesHelper* helper = NULL);
+  vtkGridAxesPlane2DActor(vtkGridAxesHelper* helper = nullptr);
   ~vtkGridAxesPlane2DActor() override;
 
   //@{

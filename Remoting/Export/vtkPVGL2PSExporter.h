@@ -25,7 +25,6 @@
 
 #include "vtkOpenGLGL2PSExporter.h"
 #include "vtkRemotingExportModule.h" // needed for export macro
-#include "vtkStdString.h"            // for vtkStdString
 
 class VTKREMOTINGEXPORT_EXPORT vtkPVGL2PSExporter : public vtkOpenGLGL2PSExporter
 {
@@ -46,17 +45,18 @@ public:
    * If Write3DPropsAsRasterImage is true, add all instances of
    * vtkCubeAxesActors to the RenderExclusions.
    */
-  vtkSetMacro(ExcludeCubeAxesActorsFromRasterization, int)
-    vtkGetMacro(ExcludeCubeAxesActorsFromRasterization, int)
-      vtkBooleanMacro(ExcludeCubeAxesActorsFromRasterization, int)
-    //@}
+  vtkSetMacro(ExcludeCubeAxesActorsFromRasterization, int);
+  vtkGetMacro(ExcludeCubeAxesActorsFromRasterization, int);
+  vtkBooleanMacro(ExcludeCubeAxesActorsFromRasterization, int);
+  //@}
 
-    protected : vtkPVGL2PSExporter();
+protected:
+  vtkPVGL2PSExporter();
   ~vtkPVGL2PSExporter() override;
 
   void WriteData() override;
 
-  vtkStdString FileName;
+  std::string FileName;
   int ExcludeCubeAxesActorsFromRasterization;
 
 private:

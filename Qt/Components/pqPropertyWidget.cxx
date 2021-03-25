@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 pqPropertyWidget::pqPropertyWidget(vtkSMProxy* smProxy, QWidget* parentObject)
   : QWidget(parentObject)
   , Proxy(smProxy)
-  , Property(0)
+  , Property(nullptr)
   , ChangeAvailableAsChangeFinished(true)
   , Selected(false)
   , Timer(new pqTimer())
@@ -81,7 +81,7 @@ void pqPropertyWidget::onChangeAvailable()
 {
   if (this->ChangeAvailableAsChangeFinished)
   {
-    emit this->changeFinished();
+    Q_EMIT this->changeFinished();
   }
 }
 
@@ -95,7 +95,7 @@ pqView* pqPropertyWidget::view() const
 void pqPropertyWidget::setView(pqView* pqview)
 {
   this->View = pqview;
-  emit this->viewChanged(pqview);
+  Q_EMIT this->viewChanged(pqview);
 }
 
 //-----------------------------------------------------------------------------
@@ -233,4 +233,9 @@ int pqPropertyWidget::hintsWidgetHeightNumberOfRows(vtkPVXMLElement* hints, int 
     }
   }
   return defaultValue;
+}
+
+bool pqPropertyWidget::isSingleRowItem() const
+{
+  return false;
 }

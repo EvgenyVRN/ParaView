@@ -50,7 +50,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqPersistentMainWindowStateBehavior : publi
 
 public:
   /**
-  * Parent cannot be NULL.
+  * Parent cannot be nullptr.
   */
   pqPersistentMainWindowStateBehavior(QMainWindow* parent);
   ~pqPersistentMainWindowStateBehavior() override;
@@ -58,7 +58,7 @@ public:
   static void restoreState(QMainWindow*);
   static void saveState(QMainWindow*);
 
-protected slots:
+protected Q_SLOTS:
   void saveState();
   void restoreState();
 

@@ -18,6 +18,7 @@
 #include "vtkCellData.h"
 #include "vtkCommand.h"
 #include "vtkDataArray.h"
+#include "vtkDataTabulator.h"
 #include "vtkEdgeListIterator.h"
 #include "vtkEventForwarderCommand.h"
 #include "vtkExtractSelection.h"
@@ -26,10 +27,10 @@
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
+#include "vtkPartitionedDataSet.h"
+#include "vtkPartitionedDataSetCollection.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
-#include "vtkSelection.h"
-#include "vtkSelectionNode.h"
 #include "vtkSignedCharArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkStringArray.h"
@@ -48,6 +49,7 @@
 #include "vtkUnsignedIntArray.h"
 
 #include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -61,8 +63,8 @@ using std::ostringstream;
 class vtkSortedTableStreamer::InternalsBase
 {
 public:
-  InternalsBase() {}
-  virtual ~InternalsBase() {}
+  InternalsBase() = default;
+  virtual ~InternalsBase() = default;
 
   virtual void SetSelectedComponent(int newValue) = 0;
   virtual void InvalidateCache() = 0;
@@ -90,8 +92,8 @@ public:
     vtkIdType processId, vtkTable* otherTable, vtkTable* mergedTable, vtkIdType minSize)
   {
     // Loop on all column of the table
-    vtkAbstractArray* otherArray = 0;
-    vtkAbstractArray* dstArray = 0;
+    vtkAbstractArray* otherArray = nullptr;
+    vtkAbstractArray* dstArray = nullptr;
     bool needNewArray = false;
     for (vtkIdType colIdx = 0; colIdx < otherTable->GetNumberOfColumns(); ++colIdx)
     {
@@ -137,21 +139,6 @@ public:
       }
     }
   }
-
-  // --------------------------------------------------------------------------
-  static vtkIdType CountTableRows(vtkCompositeDataIterator* iter)
-  {
-    vtkIdType numRows = 0;
-    for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
-    {
-      if (vtkTable::SafeDownCast(iter->GetCurrentDataObject()))
-      {
-        vtkTable* table = vtkTable::SafeDownCast(iter->GetCurrentDataObject());
-        numRows += table->GetNumberOfRows();
-      }
-    }
-    return numRows;
-  }
 };
 //----------------------------------------------------------------------------
 template <class T>
@@ -175,7 +162,7 @@ public:
       this->Size = 0;
       this->Min = 0;
       this->Delta = 1;
-      this->Values = 0;
+      this->Values = nullptr;
     }
 
     Histogram(int size)
@@ -197,7 +184,7 @@ public:
       if (this->Values)
       {
         delete[] this->Values;
-        this->Values = 0;
+        this->Values = nullptr;
       }
     }
 
@@ -348,7 +335,7 @@ public:
       if (other.Values)
       {
         delete[] other.Values;
-        other.Values = 0;
+        other.Values = nullptr;
       }
       other.Values = new vtkIdType[this->Size];
       for (int i = 0; i < this->Size; i++)
@@ -439,8 +426,8 @@ public:
 
     ArraySorter()
     {
-      this->Array = 0;
-      this->Histo = 0;
+      this->Array = nullptr;
+      this->Histo = nullptr;
     }
 
     ~ArraySorter() { this->Clear(); }
@@ -450,12 +437,12 @@ public:
       if (this->Array)
       {
         delete[] this->Array;
-        this->Array = 0;
+        this->Array = nullptr;
       }
       if (this->Histo)
       {
         delete this->Histo;
-        this->Histo = 0;
+        this->Histo = nullptr;
       }
     }
     void FillArray(vtkIdType numTuples)
@@ -567,8 +554,8 @@ public:
   Internals()
   {
     // Only used for testing
-    this->LocalSorter = 0;
-    this->GlobalHistogram = 0;
+    this->LocalSorter = nullptr;
+    this->GlobalHistogram = nullptr;
     this->Debug = false;
   }
 
@@ -581,7 +568,7 @@ public:
 
     this->InputMTime = input->GetMTime();
 
-    if (dataToSort) // Might be NULL
+    if (dataToSort) // Might be nullptr
     {
       this->DataMTime = dataToSort->GetMTime();
     }
@@ -609,7 +596,7 @@ public:
   {
     // See if one process is able to sort the table,
     // if not then just say NOT sortable
-    int localCanSort = (this->DataToSort == NULL) ? 0 : 1;
+    int localCanSort = (this->DataToSort == nullptr) ? 0 : 1;
     int globalCanSort;
     this->MPI->AllReduce(&localCanSort, &globalCanSort, 1, vtkCommunicator::MAX_OP);
     if (globalCanSort == 0)
@@ -646,7 +633,7 @@ public:
     {
       localRatio = sqrt(static_cast<double>(this->DataToSort->GetNumberOfComponents()));
     }
-    else if (this->DataToSort == NULL)
+    else if (this->DataToSort == nullptr)
     {
       localRatio = 0;
     }
@@ -742,7 +729,7 @@ public:
 
     // Build empty local table with empty arrays so they stay in the same order
     vtkSmartPointer<vtkTable> localResult;
-    localResult.TakeReference(NewSubsetTable(input, NULL, 0, blockSize));
+    localResult.TakeReference(NewSubsetTable(input, nullptr, 0, blockSize));
 
     // Get the array size of each processes
     vtkIdType* tableSizes = new vtkIdType[this->NumProcs];
@@ -855,7 +842,7 @@ public:
       this->MPI->Send(localResult.GetPointer(), mergePid, VTK_TABLE_EXCHANGE_TAG);
 
       // Add meta data of mergePid
-      this->DecorateTable(input, 0, mergePid);
+      this->DecorateTable(input, nullptr, mergePid);
     }
     return 1;
   }
@@ -982,7 +969,7 @@ public:
     else
     {
       // Ask other processes to provide metadata for table decoration
-      this->DecorateTable(input, NULL, mergePid);
+      this->DecorateTable(input, nullptr, mergePid);
     }
 
     return 1;
@@ -1077,7 +1064,7 @@ public:
       }
 
       vtkIdType max = size + offset;
-      if (sorter != NULL && sorter->Array != NULL)
+      if (sorter != nullptr && sorter->Array != nullptr)
       {
         max = (max > sorter->ArraySize) ? sorter->ArraySize : max;
         for (vtkIdType idx = offset; idx < max; ++idx)
@@ -1346,13 +1333,13 @@ vtkCxxSetObjectMacro(vtkSortedTableStreamer, Controller, vtkMultiProcessControll
 vtkSortedTableStreamer::vtkSortedTableStreamer()
 {
   this->InvertOrder = 0;
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetNumberOfInputPorts(1);
-  this->ColumnToSort = 0;
+  this->ColumnToSort = nullptr;
   this->SetColumnToSort("");
   this->Block = 0;
   this->BlockSize = 1024;
-  this->Internal = 0;
+  this->Internal = nullptr;
   this->SelectedComponent = 0;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
@@ -1360,116 +1347,174 @@ vtkSortedTableStreamer::vtkSortedTableStreamer()
 //----------------------------------------------------------------------------
 vtkSortedTableStreamer::~vtkSortedTableStreamer()
 {
-  this->SetColumnToSort(0);
-  this->SetController(0);
+  this->SetColumnToSort(nullptr);
+  this->SetController(nullptr);
   if (this->Internal)
   {
     delete this->Internal;
-    this->Internal = 0;
+    this->Internal = nullptr;
   }
 }
 
 //----------------------------------------------------------------------------
-int vtkSortedTableStreamer::FillInputPortInformation(int port, vtkInformation* info)
+int vtkSortedTableStreamer::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
-  if (port == 0)
-  {
-    info->Remove(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE());
-    info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
-    info->Append(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkCompositeDataSet");
-    return 1;
-  }
-  return 0;
+  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPartitionedDataSet");
+  return 1;
 }
+
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkTable> vtkSortedTableStreamer::MergeBlocks(vtkPartitionedDataSet* ptd)
+{
+  if (ptd->GetNumberOfPartitions() == 1)
+  {
+    return vtkTable::SafeDownCast(ptd->GetPartitionAsDataObject(0));
+  }
+
+  auto result = vtkSmartPointer<vtkTable>::New();
+  const vtkIdType allocationSize = ptd->GetNumberOfElements(vtkDataObject::ROW);
+  for (unsigned int cc = 0, max = ptd->GetNumberOfPartitions(); cc < max; ++cc)
+  {
+    if (auto partition = vtkTable::SafeDownCast(ptd->GetPartitionAsDataObject(cc)))
+    {
+      InternalsBase::MergeTable(-1, partition, result.GetPointer(), allocationSize);
+    }
+    else if (auto dobj = ptd->GetPartitionAsDataObject(cc))
+    {
+      vtkWarningMacro(
+        "Incompatible data type in the input : " << dobj->GetClassName() << " " << cc);
+    }
+  }
+  return result;
+}
+
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkUnsignedIntArray> vtkSortedTableStreamer::GenerateCompositeIndexArray(
+  vtkPartitionedDataSet* ptd, vtkIdType maxSize)
+{
+  vtkNew<vtkUnsignedIntArray> compositeIndex;
+  compositeIndex->SetName("vtkCompositeIndexArray");
+
+  for (unsigned int cc = 0, max = ptd->GetNumberOfPartitions(); cc < max; ++cc)
+  {
+    auto table = vtkTable::SafeDownCast(ptd->GetPartitionAsDataObject(cc));
+    if (!table)
+    {
+      continue;
+    }
+
+    auto metadata = ptd->GetMetaData(cc);
+    const bool is_amr_info = metadata->Has(vtkDataTabulator::HIERARCHICAL_LEVEL()) &&
+      metadata->Has(vtkDataTabulator::HIERARCHICAL_INDEX());
+    const int num_components = is_amr_info ? 2 : 1;
+    if (compositeIndex->GetNumberOfTuples() == 0)
+    {
+      compositeIndex->SetNumberOfComponents(num_components);
+      compositeIndex->Allocate(num_components * maxSize);
+    }
+    assert(num_components == compositeIndex->GetNumberOfComponents());
+
+    if (is_amr_info)
+    {
+      const unsigned int tuple[2] = { static_cast<unsigned int>(
+                                        metadata->Get(vtkDataTabulator::HIERARCHICAL_LEVEL())),
+        static_cast<unsigned int>(metadata->Get(vtkDataTabulator::HIERARCHICAL_INDEX())) };
+      for (vtkIdType rows = 0, maxRows = table->GetNumberOfRows(); rows < maxRows; ++rows)
+      {
+        compositeIndex->InsertNextTypedTuple(tuple);
+      }
+    }
+    else if (metadata->Has(vtkDataTabulator::COMPOSITE_INDEX()))
+    {
+      const unsigned int composite_index = metadata->Get(vtkDataTabulator::COMPOSITE_INDEX());
+      for (vtkIdType rows = 0, maxRows = table->GetNumberOfRows(); rows < maxRows; ++rows)
+      {
+        compositeIndex->InsertNextTypedTuple(&composite_index);
+      }
+    }
+  }
+  return compositeIndex;
+}
+
+//----------------------------------------------------------------------------
+std::pair<vtkSmartPointer<vtkStringArray>, vtkSmartPointer<vtkIdTypeArray> >
+vtkSortedTableStreamer::GenerateBlockNameArray(vtkPartitionedDataSet* ptd, vtkIdType maxSize)
+{
+  vtkNew<vtkIdTypeArray> nameIndices;
+  nameIndices->Allocate(maxSize);
+  nameIndices->SetName("vtkBlockNameIndices");
+
+  std::map<std::string, vtkIdType> nameMap;
+
+  for (unsigned int cc = 0, max = ptd->GetNumberOfPartitions(); cc < max; ++cc)
+  {
+    std::string name("invalid");
+    if (ptd->HasMetaData(cc) && ptd->GetMetaData(cc)->Has(vtkCompositeDataSet::NAME()))
+    {
+      name = ptd->GetMetaData(cc)->Get(vtkCompositeDataSet::NAME());
+    }
+
+    vtkIdType index = 0;
+    auto iter = nameMap.find(name);
+    if (iter == nameMap.end())
+    {
+      index = static_cast<vtkIdType>(nameMap.size());
+      nameMap[name] = index;
+    }
+    else
+    {
+      index = iter->second;
+    }
+
+    if (auto partition = vtkTable::SafeDownCast(ptd->GetPartitionAsDataObject(cc)))
+    {
+      const auto count = partition->GetNumberOfRows();
+      for (vtkIdType jj = 0; jj < count; ++jj)
+      {
+        nameIndices->InsertNextValue(index);
+      }
+    }
+  }
+
+  assert(nameIndices->GetNumberOfTuples() == maxSize);
+
+  vtkNew<vtkStringArray> names;
+  names->SetName("vtkBlockNames");
+  names->SetNumberOfTuples(static_cast<vtkIdType>(nameMap.size()));
+  for (const auto& pair : nameMap)
+  {
+    names->SetValue(pair.second, pair.first);
+  }
+
+  return std::pair<vtkSmartPointer<vtkStringArray>, vtkSmartPointer<vtkIdTypeArray> >{ names,
+    nameIndices };
+}
+
 //----------------------------------------------------------------------------
 int vtkSortedTableStreamer::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
   // Manage multiblock dataset by merging data into a single vtkTable
-  vtkDataObject* inputDO = vtkDataObject::GetData(inputVector[0], 0);
-  vtkSmartPointer<vtkTable> input = vtkTable::GetData(inputVector[0]);
+  auto inputPTD = vtkPartitionedDataSet::GetData(inputVector[0], 0);
 
-  bool orderInverted = this->InvertOrder > 0;
-
-  // Convert a composite dataset into a vtkTable input.
-  if (!input)
+  vtkSmartPointer<vtkTable> input = this->MergeBlocks(inputPTD);
+  if (vtkDataTabulator::HasInputCompositeIds(inputPTD))
   {
-    vtkSmartPointer<vtkCompositeDataSet> inputCompositeDS =
-      vtkCompositeDataSet::SafeDownCast(inputDO);
-    if (!inputCompositeDS)
+    if (input->GetColumnByName("vtkCompositeIndexArray") == nullptr)
     {
-      vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::New();
-      mb->SetBlock(0, inputDO);
-      inputCompositeDS = mb;
-      mb->Delete();
+      auto array = this->GenerateCompositeIndexArray(inputPTD, input->GetNumberOfRows());
+      input->GetRowData()->AddArray(array);
     }
-
-    // No vtkTable as input, just need to create it
-    input = vtkSmartPointer<vtkTable>::New();
-
-    // Iterate over the input to build a single vtkTable to process
-    vtkCompositeDataIterator* iter = inputCompositeDS->NewIterator();
-    iter->SkipEmptyNodesOff();
-    int blockIdx = 0;
-    vtkIdType allocationSize = InternalsBase::CountTableRows(iter);
-    for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); blockIdx++, iter->GoToNextItem())
+    if (input->GetColumnByName("vtkBlockNameIndices") == nullptr)
     {
-      vtkTable* other = 0;
-      if ((other = vtkTable::SafeDownCast(iter->GetCurrentDataObject())))
+      // add name array.
+      auto array_pair = this->GenerateBlockNameArray(inputPTD, input->GetNumberOfRows());
+      if (array_pair.first && array_pair.second)
       {
-        InternalsBase::MergeTable(-1, other, input.GetPointer(), allocationSize);
-
-        // Add metadata to the merged table
-        vtkSmartPointer<vtkUnsignedIntArray> compositeIndex =
-          vtkUnsignedIntArray::SafeDownCast(input->GetColumnByName("vtkCompositeIndexArray"));
-        if (!compositeIndex)
-        {
-          compositeIndex = vtkSmartPointer<vtkUnsignedIntArray>::New();
-          compositeIndex->SetName("vtkCompositeIndexArray");
-
-          if (iter->GetCurrentMetaData()->Has(vtkSelectionNode::HIERARCHICAL_LEVEL()) &&
-            iter->GetCurrentMetaData()->Has(vtkSelectionNode::HIERARCHICAL_INDEX()))
-          {
-            compositeIndex->Allocate(allocationSize * 2);
-            compositeIndex->SetNumberOfComponents(2);
-          }
-          else if (iter->GetCurrentMetaData()->Has(vtkSelectionNode::COMPOSITE_INDEX()))
-          {
-            compositeIndex->Allocate(allocationSize);
-            compositeIndex->SetNumberOfComponents(1);
-          }
-
-          input->GetRowData()->AddArray(compositeIndex.GetPointer());
-        }
-
-        if (iter->GetCurrentMetaData()->Has(vtkSelectionNode::HIERARCHICAL_LEVEL()) &&
-          iter->GetCurrentMetaData()->Has(vtkSelectionNode::HIERARCHICAL_INDEX()))
-        {
-          for (int i = 0; i < other->GetNumberOfRows(); i++)
-          {
-            compositeIndex->InsertNextTuple2(
-              static_cast<unsigned int>(
-                iter->GetCurrentMetaData()->Get(vtkSelectionNode::HIERARCHICAL_LEVEL())),
-              static_cast<unsigned int>(
-                iter->GetCurrentMetaData()->Get(vtkSelectionNode::HIERARCHICAL_INDEX())));
-          }
-        }
-        else if (iter->GetCurrentMetaData()->Has(vtkSelectionNode::COMPOSITE_INDEX()))
-        {
-          for (int i = 0; i < other->GetNumberOfRows(); i++)
-          {
-            compositeIndex->InsertNextTuple1(static_cast<unsigned int>(
-              iter->GetCurrentMetaData()->Get(vtkSelectionNode::COMPOSITE_INDEX())));
-          }
-        }
-      }
-      else if (iter->GetCurrentDataObject())
-      {
-        vtkWarningMacro("Incompatible data type in the multiblock: "
-          << iter->GetCurrentDataObject()->GetClassName() << " " << blockIdx);
+        input->GetRowData()->AddArray(array_pair.second);
+        input->GetFieldData()->AddArray(array_pair.first);
       }
     }
-    iter->Delete();
   }
 
   // Get input data
@@ -1478,9 +1523,11 @@ int vtkSortedTableStreamer::RequestData(vtkInformation* vtkNotUsed(request),
 
   vtkDataArray* arrayToProcess = this->GetDataArrayToProcess(input);
 
+  const bool orderInverted = this->InvertOrder > 0;
+
   // --------------------------------------------------------------------------
   // Caution: Because this filter can be used behind a cell/point extractor
-  // based on a selection, the input can be empty and arrayToProcess can be NULL.
+  // based on a selection, the input can be empty and arrayToProcess can be nullptr.
   // And this can happen on all processes if the selection do not select a
   // single point/cell.
   // --------------------------------------------------------------------------
@@ -1489,7 +1536,7 @@ int vtkSortedTableStreamer::RequestData(vtkInformation* vtkNotUsed(request),
   if (this->Internal && this->Internal->IsInvalid(input, arrayToProcess))
   {
     delete this->Internal;
-    this->Internal = 0;
+    this->Internal = nullptr;
   }
 
   // Make sure that an internal object is available
@@ -1509,6 +1556,10 @@ int vtkSortedTableStreamer::RequestData(vtkInformation* vtkNotUsed(request),
     this->Internal->Compute(input, output, this->Block, this->BlockSize, orderInverted);
   }
 
+  if (auto names = input->GetFieldData()->GetAbstractArray("vtkBlockNames"))
+  {
+    output->GetFieldData()->AddArray(names);
+  }
   return 1;
 }
 
@@ -1534,7 +1585,7 @@ void vtkSortedTableStreamer::SetColumnNameToSort(const char* columnName)
     if (this->Internal)
     {
       delete this->Internal;
-      this->Internal = 0;
+      this->Internal = nullptr;
     }
   }
 }
@@ -1547,7 +1598,7 @@ void vtkSortedTableStreamer::SetInvertOrder(int newValue)
   if (removeInternal && this->Internal)
   {
     delete this->Internal;
-    this->Internal = 0;
+    this->Internal = nullptr;
   }
 
   if (changed)
@@ -1560,7 +1611,7 @@ void vtkSortedTableStreamer::SetInvertOrder(int newValue)
 vtkDataArray* vtkSortedTableStreamer::GetDataArrayToProcess(vtkTable* input)
 {
   // Get a default array to sort just in case
-  vtkDataArray* requestedArray = 0;
+  vtkDataArray* requestedArray = nullptr;
 
   if (this->GetColumnToSort())
   {
@@ -1587,7 +1638,7 @@ void vtkSortedTableStreamer::CreateInternalIfNeeded(vtkTable* input, vtkDataArra
     else
     {
       // Provide an empty data
-      this->Internal = new Internals<double>(input, 0, this->GetController());
+      this->Internal = new Internals<double>(input, nullptr, this->GetController());
     }
   }
 }

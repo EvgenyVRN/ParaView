@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QtDebug>
 
+#include <cmath>
+
 //-----------------------------------------------------------------------------
 pqGlyphScaleFactorPropertyWidget::pqGlyphScaleFactorPropertyWidget(
   vtkSMProxy* smproxy, vtkSMProperty* smproperty, QWidget* parentObject)
@@ -55,9 +57,7 @@ pqGlyphScaleFactorPropertyWidget::pqGlyphScaleFactorPropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqGlyphScaleFactorPropertyWidget::~pqGlyphScaleFactorPropertyWidget()
-{
-}
+pqGlyphScaleFactorPropertyWidget::~pqGlyphScaleFactorPropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqGlyphScaleFactorPropertyWidget::resetButtonClicked()
@@ -126,9 +126,9 @@ void pqGlyphScaleFactorPropertyWidget::resetButtonClicked()
   if (helper.GetAsDouble() != scalefactor)
   {
     vtkSMUncheckedPropertyHelper(smproperty).Set(scalefactor);
-    emit this->changeAvailable();
-    emit this->changeFinished();
+    Q_EMIT this->changeAvailable();
+    Q_EMIT this->changeFinished();
   }
 
-  emit this->clearHighlight();
+  Q_EMIT this->clearHighlight();
 }

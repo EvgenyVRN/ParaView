@@ -45,7 +45,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqSaveStateReaction : public pqReaction
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqSaveStateReaction(QAction* parent);
   ~pqSaveStateReaction() override {}
@@ -73,7 +73,7 @@ public:
   */
   static bool savePythonState(const QString& filename);
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

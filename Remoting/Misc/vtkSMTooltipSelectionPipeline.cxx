@@ -25,7 +25,6 @@
 #include "vtkInformation.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
-#include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVExtractSelection.h"
 #include "vtkPVRenderView.h"
@@ -52,7 +51,7 @@ vtkStandardNewMacro(vtkSMTooltipSelectionPipeline);
 
 //----------------------------------------------------------------------------
 vtkSMTooltipSelectionPipeline::vtkSMTooltipSelectionPipeline()
-  : MoveSelectionToClient(NULL)
+  : MoveSelectionToClient(nullptr)
 {
   this->PreviousSelectionId = 0;
   this->SelectionFound = false;
@@ -71,7 +70,7 @@ void vtkSMTooltipSelectionPipeline::ClearCache()
   if (this->MoveSelectionToClient)
   {
     this->MoveSelectionToClient->Delete();
-    this->MoveSelectionToClient = NULL;
+    this->MoveSelectionToClient = nullptr;
   }
   this->Superclass::ClearCache();
 }
@@ -151,9 +150,7 @@ vtkDataObject* vtkSMTooltipSelectionPipeline::ConnectPVMoveSelectionToClient(
   inputProperty->AddInputConnection(source, sourceOutputPort);
   // set postGatherHelperName
   std::string postGatherHelperName;
-  if (source->GetDataInformation(sourceOutputPort)
-        ->GetCompositeDataInformation()
-        ->GetDataIsComposite())
+  if (source->GetDataInformation(sourceOutputPort)->IsCompositeDataSet())
   {
     postGatherHelperName = "vtkMultiBlockDataGroupFilter";
   }
@@ -203,9 +200,20 @@ vtkDataObject* vtkSMTooltipSelectionPipeline::ConnectPVMoveSelectionToClient(
     ->GetOutputDataObject(0);
 }
 
+#ifndef VTK_LEGACY_REMOVE
 //----------------------------------------------------------------------------
 bool vtkSMTooltipSelectionPipeline::GetTooltipInfo(
-  int association, double tooltipPos[2], std::string& tooltipText)
+  int association, double pos[2], std::string& tooltipText)
+{
+  VTK_LEGACY_BODY("vtkSMTooltipSelectionPipeline::GetTooltipInfo", "ParaView 5.9");
+  pos[0] = 0.0;
+  pos[1] = 0.0;
+  return this->GetTooltipInfo(association, tooltipText);
+}
+#endif
+
+//----------------------------------------------------------------------------
+bool vtkSMTooltipSelectionPipeline::GetTooltipInfo(int association, std::string& tooltipText)
 {
   vtkSMSourceProxy* extractSource = this->ExtractInteractiveSelection;
   unsigned int extractOutputPort = extractSource->GetOutputPort((unsigned int)0)->GetPortIndex();
@@ -274,16 +282,6 @@ bool vtkSMTooltipSelectionPipeline::GetTooltipInfo(
       tooltipTextStream << "\nType: "
                         << vtkSMCoreUtilities::GetStringForCellType(cell->GetCellType());
     }
-
-    // needed to position the tooltip
-    if (ds->GetNumberOfPoints() > 0)
-    {
-      ds->GetPoint(0, point);
-    }
-    else
-    {
-      point[0] = point[1] = point[2] = 0.0;
-    }
   }
 
   if (fieldData)
@@ -320,18 +318,6 @@ bool vtkSMTooltipSelectionPipeline::GetTooltipInfo(
 
   tooltipTextStream << "</p>";
 
-  // tooltip position
-  double pos[3] = { point[0], point[1], point[2] };
-  vtkNew<vtkCoordinate> coordinate;
-  coordinate->SetCoordinateSystemToWorld();
-  coordinate->SetValue(point[0], point[1], point[2]);
-  int* dispPos = coordinate->GetComputedDisplayValue(this->PreviousView->GetRenderer());
-  pos[0] = dispPos[0];
-  pos[1] = dispPos[1];
-
-  // output parameters
-  tooltipPos[0] = pos[0];
-  tooltipPos[1] = pos[1];
   tooltipText = tooltipTextStream.str();
 
   this->TooltipEnabled = false;
@@ -366,7 +352,7 @@ bool vtkSMTooltipSelectionPipeline::CanDisplayTooltip(bool& showTooltip)
 vtkSMTooltipSelectionPipeline* vtkSMTooltipSelectionPipeline::GetInstance()
 {
   static vtkSmartPointer<vtkSMTooltipSelectionPipeline> Instance;
-  if (Instance.GetPointer() == NULL)
+  if (Instance.GetPointer() == nullptr)
   {
     vtkSMTooltipSelectionPipeline* pipeline = vtkSMTooltipSelectionPipeline::New();
     Instance = pipeline;
@@ -418,7 +404,7 @@ vtkDataSet* vtkSMTooltipSelectionPipeline::FindDataSet(
     it->Delete();
     if (!compositeFound)
     {
-      return NULL;
+      return nullptr;
     }
   }
   return ds;

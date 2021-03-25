@@ -14,11 +14,19 @@
 =========================================================================*/
 #include "vtkCompositeRepresentation.h"
 
+#include "vtkAlgorithmOutput.h"
+#include "vtkGeometryRepresentation.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMemberFunctionCommand.h"
+#include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
+#include "vtkPVSelectionSource.h"
 #include "vtkPVView.h"
+#include "vtkProcessModule.h"
+#include "vtkSMSession.h"
+#include "vtkSelection.h"
+#include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
 #include "vtkStringArray.h"
 #include "vtkWeakPointer.h"
@@ -54,9 +62,9 @@ vtkCompositeRepresentation::vtkCompositeRepresentation()
 vtkCompositeRepresentation::~vtkCompositeRepresentation()
 {
   delete this->Internals;
-  this->Internals = 0;
+  this->Internals = nullptr;
   this->Observer->Delete();
-  this->Observer = 0;
+  this->Observer = nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -87,7 +95,7 @@ void vtkCompositeRepresentation::SetVisibility(bool visible)
 //----------------------------------------------------------------------------
 void vtkCompositeRepresentation::AddRepresentation(const char* key, vtkPVDataRepresentation* repr)
 {
-  assert(repr != NULL && key != NULL);
+  assert(repr != nullptr && key != nullptr);
 
   // Make sure the representation that we register is already initialized
   repr->Initialize(1, 0); // Should abort if no initialized as 1 > 0
@@ -106,7 +114,7 @@ void vtkCompositeRepresentation::AddRepresentation(const char* key, vtkPVDataRep
 //----------------------------------------------------------------------------
 void vtkCompositeRepresentation::RemoveRepresentation(const char* key)
 {
-  assert(key != NULL);
+  assert(key != nullptr);
 
   vtkInternals::RepresentationMap::iterator iter = this->Internals->Representations.find(key);
   if (iter != this->Internals->Representations.end())
@@ -158,7 +166,7 @@ const char* vtkCompositeRepresentation::GetActiveRepresentationKey()
     return this->Internals->ActiveRepresentationKey.c_str();
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -170,7 +178,7 @@ vtkPVDataRepresentation* vtkCompositeRepresentation::GetActiveRepresentation()
   {
     return iter->second;
   }
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -244,6 +252,74 @@ void vtkCompositeRepresentation::RemoveInputConnection(int port, int idx)
        iter != this->Internals->Representations.end(); iter++)
   {
     iter->second.GetPointer()->RemoveInputConnection(port, idx);
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkCompositeRepresentation::SetSelectionConnection(vtkAlgorithmOutput* input)
+{
+  if (!input)
+  {
+    return;
+  }
+
+  vtkMultiProcessController* controller = vtkMultiProcessController::GetGlobalController();
+  int nbPiece = controller->GetNumberOfProcesses();
+  int pieceNum = controller->GetLocalProcessId();
+  input->GetProducer()->UpdatePiece(pieceNum, nbPiece, 0);
+
+  vtkSmartPointer<vtkSelection> sel;
+  int actualNbPieces = nbPiece;
+
+  vtkSMSession* session =
+    vtkSMSession::SafeDownCast(vtkProcessModule::GetProcessModule()->GetSession());
+  if (session)
+  {
+    actualNbPieces = session->GetNumberOfProcesses(vtkPVSession::DATA_SERVER);
+  }
+
+  // in order to handle the case where we are connected to a parallel server using
+  // local rendering, we have to compare the number of processes here
+  if (nbPiece < actualNbPieces && pieceNum == 0)
+  {
+    vtkSelection* localSel =
+      vtkSelection::SafeDownCast(input->GetProducer()->GetOutputDataObject(0));
+    sel = vtkSmartPointer<vtkSelection>::New();
+    sel->ShallowCopy(localSel);
+
+    for (int i = 1; i < actualNbPieces; i++)
+    {
+      input->GetProducer()->UpdatePiece(i, actualNbPieces, 0);
+      localSel = vtkSelection::SafeDownCast(input->GetProducer()->GetOutputDataObject(0));
+      if (localSel->GetNumberOfNodes() > 1)
+      {
+        vtkWarningMacro("Only the first node of a selection will be considered.");
+      }
+      vtkSelectionNode* node = localSel->GetNode(0);
+      node->GetProperties()->Set(vtkSelectionNode::PROCESS_ID(), i);
+      sel->AddNode(localSel->GetNode(0));
+    }
+  }
+  else
+  {
+    sel = vtkSelection::SafeDownCast(input->GetProducer()->GetOutputDataObject(0));
+    if (sel->GetNumberOfNodes() > 1)
+    {
+      vtkWarningMacro("Only the first node of a selection will be considered.");
+    }
+    sel->GetNode(0)->GetProperties()->Set(vtkSelectionNode::PROCESS_ID(), pieceNum);
+  }
+
+  vtkInternals::RepresentationMap::iterator iter;
+  for (iter = this->Internals->Representations.begin();
+       iter != this->Internals->Representations.end(); iter++)
+  {
+    vtkGeometryRepresentation* surface =
+      vtkGeometryRepresentation::SafeDownCast(iter->second.GetPointer());
+    if (surface)
+    {
+      surface->SetSelection(sel);
+    }
   }
 }
 
@@ -346,7 +422,7 @@ void vtkCompositeRepresentation::TriggerUpdateDataEvent()
 //----------------------------------------------------------------------------
 void vtkCompositeRepresentation::SetActiveRepresentation(const char* key)
 {
-  assert(key != NULL);
+  assert(key != nullptr);
 
   vtkPVDataRepresentation* curActive = this->GetActiveRepresentation();
   this->Internals->ActiveRepresentationKey = key;

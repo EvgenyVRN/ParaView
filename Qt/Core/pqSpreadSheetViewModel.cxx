@@ -40,8 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkPVArrayInformation.h"
-#include "vtkPVCompositeDataInformation.h"
-#include "vtkPVCompositeDataInformationIterator.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSMCoreUtilities.h"
@@ -55,7 +53,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkSelectionNode.h"
 #include "vtkSmartPointer.h"
 #include "vtkSpreadSheetView.h"
-#include "vtkStdString.h"
 #include "vtkTable.h"
 #include "vtkUnsignedIntArray.h"
 #include "vtkVariant.h"
@@ -92,7 +89,7 @@ public:
     this->DecimalPrecision = 6;
     this->FixedRepresentation = false;
     this->ActiveRegion[0] = this->ActiveRegion[1] = -1;
-    this->VTKView = NULL;
+    this->VTKView = nullptr;
 
     this->LastColumnCount = 0;
     this->LastRowCount = 0;
@@ -118,7 +115,7 @@ public:
 pqSpreadSheetViewModel::pqSpreadSheetViewModel(vtkSMProxy* view, QObject* parentObject)
   : Superclass(parentObject)
 {
-  assert(view != NULL);
+  assert(view != nullptr);
   this->ViewProxy = view;
   this->Internal = new pqInternal(this);
   this->Internal->VTKView = vtkSpreadSheetView::SafeDownCast(view->GetClientSideObject());
@@ -232,8 +229,8 @@ void pqSpreadSheetViewModel::forceUpdate()
     if (rows && columns)
     {
       // we always invalidate header data, just to be on a safe side.
-      emit this->headerDataChanged(Qt::Horizontal, 0, columns - 1);
-      emit this->dataChanged(this->index(0, 0), this->index(rows - 1, columns - 1));
+      Q_EMIT this->headerDataChanged(Qt::Horizontal, 0, columns - 1);
+      Q_EMIT this->dataChanged(this->index(0, 0), this->index(rows - 1, columns - 1));
     }
   }
   // this ensures that we update the selected based on the current state.
@@ -252,7 +249,7 @@ void pqSpreadSheetViewModel::delayedUpdate()
 //-----------------------------------------------------------------------------
 void pqSpreadSheetViewModel::triggerSelectionChanged()
 {
-  emit this->selectionChanged(this->Internal->SelectionModel.selection());
+  Q_EMIT this->selectionChanged(this->Internal->SelectionModel.selection());
 }
 
 //-----------------------------------------------------------------------------
@@ -369,8 +366,8 @@ QVariant pqSpreadSheetViewModel::data(const QModelIndex& idx, int role /*=Qt::Di
 
   if (!this->isDataValid(idx))
   {
-    // If displaying field data, check to make sure that the data is valid
-    // since its arrays can be of different lengths
+    // a cell may not have valid entry for partial arrays for field data
+    // arrays with variable lengths.
     return QVariant("");
   }
 
@@ -545,74 +542,14 @@ QSet<pqSpreadSheetViewModel::vtkIndex> pqSpreadSheetViewModel::getVTKIndices(
 //-----------------------------------------------------------------------------
 bool pqSpreadSheetViewModel::isDataValid(const QModelIndex& idx) const
 {
-  if (this->getFieldType() != vtkDataObject::FIELD_ASSOCIATION_NONE)
-  {
-    return true;
-  }
-
   // First make sure the index itself is valid
-  pqDataRepresentation* repr = this->activeRepresentation();
-  if (!idx.isValid() || repr == NULL)
+  if (!idx.isValid() || this->activeRepresentationProxy() == nullptr)
   {
     return false;
   }
 
   vtkSpreadSheetView* view = this->GetView();
   return view->IsDataValid(idx.row(), idx.column());
-}
-
-//-----------------------------------------------------------------------------
-void pqSpreadSheetViewModel::resetCompositeDataSetIndex()
-{
-  if (!this->activeRepresentation())
-  {
-    return;
-  }
-
-  vtkSMProxy* reprProxy = this->activeRepresentation()->getProxy();
-  int cur_index = vtkSMPropertyHelper(reprProxy, "CompositeDataSetIndex").GetAsInt();
-
-  pqOutputPort* input_port = this->activeRepresentation()->getOutputPortFromInput();
-  vtkSMSourceProxy* inputProxy =
-    vtkSMSourceProxy::SafeDownCast(input_port->getSource()->getProxy());
-  vtkSMSourceProxy* extractSelection = inputProxy->GetSelectionOutput(input_port->getPortNumber());
-  if (!extractSelection)
-  {
-    return;
-  }
-
-  vtkPVDataInformation* mbInfo = extractSelection->GetDataInformation();
-  if (!mbInfo || !mbInfo->GetCompositeDataClassName())
-  {
-    return;
-  }
-
-  vtkPVDataInformation* blockInfo = mbInfo->GetDataInformationForCompositeIndex(cur_index);
-  if (blockInfo && blockInfo->GetNumberOfPoints() > 0)
-  {
-    return;
-  }
-
-  // find first index with non-empty points.
-  vtkPVCompositeDataInformationIterator* iter = vtkPVCompositeDataInformationIterator::New();
-  iter->SetDataInformation(mbInfo);
-  for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
-  {
-    vtkPVDataInformation* curInfo = iter->GetCurrentDataInformation();
-    if (!curInfo || curInfo->GetCompositeDataClassName() != 0)
-    {
-      continue;
-    }
-    if (curInfo->GetDataSetType() != -1 && curInfo->GetNumberOfPoints() > 0)
-    {
-      cur_index = static_cast<int>(iter->GetCurrentFlatIndex());
-      break;
-    }
-  }
-  iter->Delete();
-
-  vtkSMPropertyHelper(reprProxy, "CompositeDataSetIndex").Set(cur_index);
-  reprProxy->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -664,6 +601,6 @@ void pqSpreadSheetViewModel::hiddenColumnsChanged()
   const int numCols = this->columnCount();
   if (numCols > 0)
   {
-    emit this->headerDataChanged(Qt::Horizontal, 0, this->columnCount() - 1);
+    Q_EMIT this->headerDataChanged(Qt::Horizontal, 0, this->columnCount() - 1);
   }
 }

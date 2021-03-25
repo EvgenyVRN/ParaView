@@ -20,24 +20,23 @@
  * the data object is a data set, then the set is passed through a vtkDataSetTriangleFilter
  * before being output as a vtkUnstructuredGrid.  If the data object is a multiblock
  * dataset with at least one unstructured grid leaf node, then the unstructured grid
- * is extracted using vtkExtractBlock before being passed to the vtkDataSetTriangleFilter.
- * If the multiblock dataset contains more than one unstructured grid, the ExtractedBlockIndex
- * property may by set to indicate which unstructured grid to volume render.  The TetrahedraOnly
+ * is extracted using vtkExtractBlockUsingDataAssembly and vtkMergeBlocks.  The TetrahedraOnly
  * property may be set and it will be passed to the vtkDataSetTriangleFilter.
  *
  * @sa
- * vtkExtractBlock vtkTriangleFilter
+ * vtkExtractBlockUsingDataAssembly vtkTriangleFilter
 */
 
 #ifndef vtkVolumeRepresentationPreprocessor_h
 #define vtkVolumeRepresentationPreprocessor_h
 
+#include "vtkNew.h"                                   // for vtkNew
 #include "vtkPVVTKExtensionsFiltersRenderingModule.h" // needed for export macro
+#include "vtkSmartPointer.h"                          // for vtkSmartPointer
 #include "vtkUnstructuredGridAlgorithm.h"
 
-class vtkMultiBlockDataSet;
-class vtkDataSetTriangleFilter;
-class vtkExtractBlock;
+class vtkCompositeDataSet;
+class vtkExtractBlockUsingDataAssembly;
 
 class VTKPVVTKEXTENSIONSFILTERSRENDERING_EXPORT vtkVolumeRepresentationPreprocessor
   : public vtkUnstructuredGridAlgorithm
@@ -52,38 +51,38 @@ public:
    * When On, the internal triangle filter will cull all 1D and 2D cells from the output.
    * The default is Off.
    */
-  void SetTetrahedraOnly(int);
+  vtkSetMacro(TetrahedraOnly, int);
   vtkGetMacro(TetrahedraOnly, int);
   //@}
 
   //@{
   /**
-   * Sets which block will be extracted for volume rendering.
-   * Ignored if input is not multiblock.  Default is 0.
+   * Forwarded to internal vtkExtractBlockUsingDataAssembly to subset the input
+   * composite dataset. This has no effect if input is not a composite dataset.
    */
-  void SetExtractedBlockIndex(unsigned int);
-  vtkGetMacro(ExtractedBlockIndex, unsigned int);
+  bool AddSelector(const char* selector);
+  void SetSelector(const char* selector);
+  void ClearSelectors();
+  void SetAssemblyName(const char*);
   //@}
 
 protected:
   vtkVolumeRepresentationPreprocessor();
   ~vtkVolumeRepresentationPreprocessor() override;
 
-  vtkUnstructuredGrid* TriangulateDataSet(vtkDataSet*);
-  vtkDataSet* MultiBlockToDataSet(vtkMultiBlockDataSet*);
+  vtkSmartPointer<vtkUnstructuredGrid> Tetrahedralize(vtkDataObject*);
+  vtkSmartPointer<vtkDataSet> ExtractDataSet(vtkCompositeDataSet*);
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
 
   int TetrahedraOnly;
-  unsigned int ExtractedBlockIndex;
-
-  vtkDataSetTriangleFilter* DataSetTriangleFilter;
-  vtkExtractBlock* ExtractBlockFilter;
 
 private:
   vtkVolumeRepresentationPreprocessor(const vtkVolumeRepresentationPreprocessor&) = delete;
   void operator=(const vtkVolumeRepresentationPreprocessor&) = delete;
+
+  vtkNew<vtkExtractBlockUsingDataAssembly> Extractor;
 };
 
 #endif

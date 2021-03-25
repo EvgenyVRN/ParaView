@@ -117,7 +117,6 @@ There are four ways for loading plugins:
   <Plugin name="PrismPlugin" auto_load="0"/>
   <Plugin name="PointSprite_Plugin" auto_load="0"/>
   <Plugin name="pvblot" auto_load="0"/>
-  <Plugin name="SierraPlotTools" auto_load="0"/>
   <Plugin name="H5PartReader" auto_load="1"/>
 </Plugins>
 ```
@@ -167,13 +166,18 @@ following code:
 ```cmake
 # ParaView requires CMake 3.8 in order to be used.
 cmake_minimum_required(VERSION 3.8)
-project(myplugin)
+project(myplugin C CXX)
 
 find_package(ParaView REQUIRED)
 ```
 
 Where CMake will ask for the `ParaView_DIR` which you point to the ParaView
 build or install tree you would to build your with.
+
+Note that the `C` and `CXX` languages are required in general because ParaView
+may need to find other packages which are written with only C in mind (MPI is
+the usual culprit here) and need to know about the C compiler that is
+available.
 
 ## Exposing an Existing Filter
 
@@ -207,6 +211,23 @@ tasks:
     the new filter to a specific category in the *Filters* menu, or add a new
     category. For readers and writers, this is required since ParaView GUI
     needs to know what extensions your reader/writer supports etc.
+
+## Plugin Resources
+
+Plugins may access resources relative to themselves by using the
+`paraview_plugin_add_location` interface to get the location of the plugin at
+runtime. Note that this only works when built as a shared plugin. For static
+plugins, the path will come in as a `nullptr`. If a plugin with resources
+intends to support resources, it is recommended to use a `.qrc` file to embed
+the resources into the plugin.
+
+For installation of resources, the `_paraview_build_plugin_directory` variable
+contains the location of the plugin under the build and install prefixes. Build
+resources may be placed under
+`"${CMAKE_BINARY_DIR}/${_paraview_build_plugin_directory}"` and installed with
+`DESTINATION "${_paraview_build_plugin_directory}"`. The plugin itself belongs
+to the `${_paraview_build_PLUGINS_COMPONENT}` component, so resources should
+generally use a component with a related name.
 
 ## Examples
 
@@ -995,6 +1016,32 @@ If you give the name of an existing menu, then the commands will be added to
 that menu rather than create a new one.  So, for example, if the `GROUP_NAME`
 is `MenuBar/File`, the commands will be added to the bottom of the *File* menu.
 
+#### Adding a Context Menu
+
+Context menus are popup menus created when a user right-clicks inside a view
+(typically a render-view, but possible with any view). You can register a plugin
+that will create a context menu with items specific to the object underneath the
+cursor at the time the user right-clicks. The first instance of
+`pqContextMenuInterface` that returns a non-null menu is used; returning a
+null menu indicates the object(s) selected when the user right clicks are not
+relevant to your interface. For this reason, your subclass should avoid creating
+menus unrelated to a specific application or object type.
+
+To add a `pqContextMenuInterface` subclass to ParaView, simply pass your class
+name to the `UI_INTERFACES` argument of `paraview_add_plugin()` and the source,
+as usual, to the `SOURCES` argument:
+
+```cmake
+paraview_add_plugin(FancyMenu
+  ...
+  UI_INTERFACES FancyMenu
+  SOURCES FancyMenu.h FancyMenu.cxx
+  ...
+)
+```
+
+See the `Examples/Plugins/ContextMenu` directory for a simple example.
+
 #### Autostart Plugins
 
 This refers to a plugin which needs to be notified when ParaView starts up or
@@ -1038,6 +1085,39 @@ paraview_add_plugin(Autostart
   VERSION "1.0"
   UI_INTERFACES ${interfaces}
   SOURCES pqMyApplicationStarter.cxx ${interfaces})
+```
+
+#### Getting the Location of a Dynamically-Loaded Plugin
+
+Some dynamically-loaded plugins include data or text files in the same
+directory as the plugin binary object (DLL or shared object). To locate
+these files at runtime, plugins can register a callback that is notified
+with the file system location of the plugin when it is loaded. To do this,
+we need to provide a `QObject` subclass (`pqMyLocationPlugin`) with a
+method to store the plugin location.
+
+```cpp
+class pqMyPluginLocation : public QObject
+{
+Q_OBJECT
+public:
+  // Callback when plugin is loaded.
+  void StoreLocation(const char* location);
+};
+```
+
+The `CMakeLists.txt` looks as follows:
+
+```cmake
+# Macro for adding the location callback. We specify the class name and the
+# method to call with the filesystem location as `CLASS_NAME` and `STORE`
+# arguments. It returns the interface and sources created in the variables
+# passed to the `INTERFACES` and `SOURCES` arguments.
+paraview_plugin_add_location(
+  CLASS_NAME pqMyPluginLocation  # the class name for our class
+  STORE  StoreLocation           # the method to call when the plugin is loaded
+  INTERFACES interfaces
+  SOURCES sources)
 ```
 
 #### Adding new Representations for 3D View using Plugins
@@ -1373,7 +1453,7 @@ configuration type, which may look something like
 `C:\Users\MyUser\ParaView-v4.2.0-build\lib\Release\vtkPVAnimation-pv4.2.lib`.
 
 [ParaView Guide]: http://www.kitware.com/products/books/paraview.html
-[core readers]: https://gitlab.kitware.com/paraview/paraview/blob/87babdbeab6abe20aac6f8b2692788abc6bb20ac/ParaViewCore/ServerManager/SMApplication/Resources/readers.xml#L158-179
+[core readers]: https://gitlab.kitware.com/paraview/paraview/-/blob/87babdbeab6abe20aac6f8b2692788abc6bb20ac/ParaViewCore/ServerManager/SMApplication/Resources/readers.xml#L158-179
 [pqPropertyWidget]: https://kitware.github.io/paraview-docs/nightly/cxx/classpqPropertyWidget.html
 [pqPropertyWidgetDecorator]: https://kitware.github.io/paraview-docs/nightly/cxx/classpqPropertyWidgetDecorator.html
 [QActionGroup]: https://doc.qt.io/qt-5/qactiongroup.html

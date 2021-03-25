@@ -15,109 +15,46 @@
 #include "vtkSMDataTypeDomain.h"
 
 #include "vtkClientServerStreamInstantiator.h"
-#include "vtkDataObject.h"
+#include "vtkDataObjectTypes.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVXMLElement.h"
-#include "vtkProcessModule.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkSmartPointer.h"
-#include "vtkStdString.h"
 
-#include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
 //*****************************************************************************
 // Internal classes
 //*****************************************************************************
+struct vtkSMDataTypeDomainAllowedType
+{
+  int Type = -1;
+  std::vector<int> ChildTypes;
+  bool ChildMatchAny = false;
+};
+
 struct vtkSMDataTypeDomainInternals
 {
-  std::vector<vtkStdString> DataTypes;
+  std::vector<vtkSMDataTypeDomainAllowedType> DataTypes;
 };
-//*****************************************************************************
-namespace vtkSMDataTypeDomainCache
-{
-static std::map<std::string, vtkSmartPointer<vtkDataObject> > DataObjectMap;
-
-// Only instantiate classes once and use cache after...
-static vtkDataObject* GetDataObjectOfType(const char* classname)
-{
-  if (classname == NULL)
-  {
-    return 0;
-  }
-
-  // Since we can not instantiate these classes, we'll replace
-  // them with a subclass
-  if (strcmp(classname, "vtkDataSet") == 0)
-  {
-    classname = "vtkImageData";
-  }
-  else if (strcmp(classname, "vtkPointSet") == 0)
-  {
-    classname = "vtkPolyData";
-  }
-  else if (strcmp(classname, "vtkCompositeDataSet") == 0)
-  {
-    classname = "vtkHierarchicalDataSet";
-  }
-  else if (strcmp(classname, "vtkUnstructuredGridBase") == 0)
-  {
-    classname = "vtkUnstructuredGrid";
-  }
-
-  std::map<std::string, vtkSmartPointer<vtkDataObject> >::iterator it;
-  it = DataObjectMap.find(classname);
-  if (it != DataObjectMap.end())
-  {
-    return it->second.GetPointer();
-  }
-
-  auto object = vtkClientServerStreamInstantiator::CreateInstance(classname);
-  vtkDataObject* dobj = vtkDataObject::SafeDownCast(object);
-  if (!dobj)
-  {
-    if (object)
-    {
-      object->Delete();
-    }
-    return 0;
-  }
-
-  DataObjectMap[classname] = dobj;
-  dobj->Delete();
-  return dobj;
-}
-}
 
 //*****************************************************************************
 vtkStandardNewMacro(vtkSMDataTypeDomain);
 //---------------------------------------------------------------------------
 vtkSMDataTypeDomain::vtkSMDataTypeDomain()
+  : CompositeDataSupported(true)
+  , CompositeDataRequired(false)
+  , DTInternals(new vtkSMDataTypeDomainInternals())
 {
-  this->DTInternals = new vtkSMDataTypeDomainInternals;
-  this->CompositeDataSupported = 1;
-  this->CompositeDataRequired = 0;
 }
 
 //---------------------------------------------------------------------------
 vtkSMDataTypeDomain::~vtkSMDataTypeDomain()
 {
   delete this->DTInternals;
-}
-
-//---------------------------------------------------------------------------
-unsigned int vtkSMDataTypeDomain::GetNumberOfDataTypes()
-{
-  return static_cast<unsigned int>(this->DTInternals->DataTypes.size());
-}
-
-//---------------------------------------------------------------------------
-const char* vtkSMDataTypeDomain::GetDataType(unsigned int idx)
-{
-  return this->DTInternals->DataTypes[idx].c_str();
 }
 
 //---------------------------------------------------------------------------
@@ -161,8 +98,7 @@ int vtkSMDataTypeDomain::IsInDomain(vtkSMSourceProxy* proxy, int outputport /*=0
     return 0;
   }
 
-  unsigned int numTypes = this->GetNumberOfDataTypes();
-  if (numTypes == 0)
+  if (this->DTInternals->DataTypes.size() == 0)
   {
     return 1;
   }
@@ -171,110 +107,101 @@ int vtkSMDataTypeDomain::IsInDomain(vtkSMSourceProxy* proxy, int outputport /*=0
   proxy->CreateOutputPorts();
 
   vtkPVDataInformation* info = proxy->GetDataInformation(outputport);
-  if (!info)
+  if (!info || info->IsNull())
   {
     return 0;
   }
 
-  if (info->GetCompositeDataClassName() && !this->CompositeDataSupported)
+  if (info->IsCompositeDataSet() && !this->CompositeDataSupported)
   {
     return 0;
   }
-  if (!info->GetCompositeDataClassName() && this->CompositeDataRequired)
+  if (!info->IsCompositeDataSet() && this->CompositeDataRequired)
   {
     return 0;
   }
 
-  // Get an actual instance of the same type as the data represented
-  // by the information object. This is later used to check match
-  // with IsA.
-  vtkDataObject* dobj = vtkSMDataTypeDomainCache::GetDataObjectOfType(info->GetDataClassName());
-  if (!dobj)
+  for (auto& dtype : this->DTInternals->DataTypes)
   {
-    const char* classname = info->GetDataClassName();
-    if (classname && classname[0] != '\0')
+    if (info->DataSetTypeIsA(dtype.Type))
     {
-      vtkWarningMacro("Unable to create instance of class '" << classname << "'.");
-    }
-    return 0;
-  }
-
-  // hypertree grid's dataset API is somewhat broken.
-  // prevent it from going into filters that have not been
-  // whitelisted.
-  if (strcmp(info->GetDataClassName(), "vtkHyperTreeGrid") == 0)
-  {
-    for (unsigned int i = 0; i < numTypes; i++)
-    {
-      if (strcmp(this->GetDataType(i), "vtkHyperTreeGrid") == 0 ||
-        strcmp(this->GetDataType(i), "vtkMultiBlockDataSet") == 0)
+      if (dtype.ChildTypes.size() == 0)
       {
         return 1;
       }
-    }
-    return 0;
-  }
 
-  for (unsigned int i = 0; i < numTypes; i++)
-  {
-    // Unfortunately, vtkDataSet, vtkPointSet, and vtkUnstructuredGridBase have
-    // to be handled specially. These classes are abstract and can not be
-    // instantiated.
-    if (strcmp(info->GetDataClassName(), "vtkDataSet") == 0)
-    {
-      if (strcmp(this->GetDataType(i), "vtkDataSet") == 0)
+      size_t match_count = 0;
+      for (auto& childType : dtype.ChildTypes)
       {
-        return 1;
+        match_count += info->HasDataSetType(childType) ? 1 : 0;
       }
-      else
-      {
-        continue;
-      }
-    }
-    if (strcmp(info->GetDataClassName(), "vtkPointSet") == 0)
-    {
-      if ((strcmp(this->GetDataType(i), "vtkPointSet") == 0) ||
-        (strcmp(this->GetDataType(i), "vtkDataSet") == 0))
-      {
-        return 1;
-      }
-      else
-      {
-        continue;
-      }
-    }
-    if (strcmp(info->GetDataClassName(), "vtkUnstructuredGridBase") == 0)
-    {
-      if ((strcmp(this->GetDataType(i), "vtkPointSet") == 0) ||
-        (strcmp(this->GetDataType(i), "vtkDataSet") == 0) ||
-        (strcmp(this->GetDataType(i), "vtkUnstructuredGridBase") == 0))
-      {
-        return 1;
-      }
-      else
-      {
-        continue;
-      }
-    }
-    if (dobj->IsA(this->GetDataType(i)))
-    {
-      return 1;
-    }
-  }
 
-  if (info->GetCompositeDataClassName())
-  {
-    vtkDataObject* cDobj =
-      vtkSMDataTypeDomainCache::GetDataObjectOfType(info->GetCompositeDataClassName());
-    for (unsigned int i = 0; i < numTypes; i++)
-    {
-      if (cDobj->IsA(this->GetDataType(i)))
+      if (dtype.ChildMatchAny && match_count > 0)
+      {
+        return 1;
+      }
+      else if (!dtype.ChildMatchAny && match_count == dtype.ChildTypes.size())
       {
         return 1;
       }
     }
   }
+
   return 0;
+}
+
+//---------------------------------------------------------------------------
+std::string vtkSMDataTypeDomain::GetDomainDescription() const
+{
+  auto& types = this->DTInternals->DataTypes;
+  if (types.size() == 0)
+  {
+    return std::string{};
+  }
+
+  std::vector<std::string> phrases;
+  for (auto& typeInfo : types)
+  {
+    if (typeInfo.ChildTypes.size() == 0)
+    {
+      phrases.push_back(vtkDataObjectTypes::GetClassNameFromTypeId(typeInfo.Type));
+    }
+    else
+    {
+      std::ostringstream subPhrase;
+      subPhrase << vtkDataObjectTypes::GetClassNameFromTypeId(typeInfo.Type);
+      subPhrase << " containing";
+      for (size_t cc = 0; cc < typeInfo.ChildTypes.size(); ++cc)
+      {
+        if (cc > 0)
+        {
+          subPhrase << ",";
+          if (cc + 1 == typeInfo.ChildTypes.size())
+          {
+            subPhrase << (typeInfo.ChildMatchAny ? " or" : " and");
+          }
+        }
+        subPhrase << " " << vtkDataObjectTypes::GetClassNameFromTypeId(typeInfo.ChildTypes[cc]);
+      }
+      phrases.push_back(subPhrase.str());
+    }
+  }
+
+  std::ostringstream stream;
+  stream << "Input must be ";
+  for (size_t cc = 0; cc < phrases.size(); ++cc)
+  {
+    if (cc > 0)
+    {
+      stream << ", ";
+      if (cc + 1 == phrases.size())
+      {
+        stream << "or ";
+      }
+    }
+    stream << phrases[cc].c_str();
+  }
+  return stream.str();
 }
 
 //---------------------------------------------------------------------------
@@ -285,18 +212,17 @@ int vtkSMDataTypeDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement*
   int compositeDataSupported;
   if (element->GetScalarAttribute("composite_data_supported", &compositeDataSupported))
   {
-    this->SetCompositeDataSupported(compositeDataSupported);
+    this->CompositeDataSupported = (compositeDataSupported == 1);
   }
 
   int compositeDataRequired;
   if (element->GetScalarAttribute("composite_data_required", &compositeDataRequired))
   {
-    this->SetCompositeDataRequired(compositeDataRequired);
+    this->CompositeDataRequired = (compositeDataRequired == 1);
   }
 
   // Loop over the top-level elements.
-  unsigned int i;
-  for (i = 0; i < element->GetNumberOfNestedElements(); ++i)
+  for (unsigned int i = 0; i < element->GetNumberOfNestedElements(); ++i)
   {
     vtkPVXMLElement* selement = element->GetNestedElement(i);
     if (strcmp("DataType", selement->GetName()) != 0)
@@ -306,12 +232,52 @@ int vtkSMDataTypeDomain::ReadXMLAttributes(vtkSMProperty* prop, vtkPVXMLElement*
     const char* value = selement->GetAttribute("value");
     if (!value)
     {
-      vtkErrorMacro(<< "Can not find required attribute: value. "
-                    << "Can not parse domain xml.");
+      vtkErrorMacro(<< "Can not find required attribute 'value'");
       return 0;
     }
 
-    this->DTInternals->DataTypes.push_back(value);
+    const int typeId = vtkDataObjectTypes::GetTypeIdFromClassName(value);
+    if (typeId == -1)
+    {
+      vtkErrorMacro("'" << value << "' not a known data object type!");
+      return 0;
+    }
+
+    vtkSMDataTypeDomainAllowedType typeInfo;
+    typeInfo.Type = typeId;
+
+    const char* childMatch = selement->GetAttributeOrDefault("child_match", "any");
+    if (strcmp(childMatch, "any") != 0 && strcmp(childMatch, "all") != 0)
+    {
+      vtkErrorMacro("'child_match' can only be 'any' or 'all', got '" << childMatch << "'.");
+      return 0;
+    }
+    typeInfo.ChildMatchAny = (strcmp(childMatch, "any") == 0);
+    for (unsigned int cc = 0; cc < selement->GetNumberOfNestedElements(); ++cc)
+    {
+      vtkPVXMLElement* childElement = selement->GetNestedElement(cc);
+      if (strcmp("DataType", childElement->GetName()) != 0)
+      {
+        continue;
+      }
+      const char* childValue = childElement->GetAttribute("value");
+      if (!childValue)
+      {
+        vtkErrorMacro("Missing required attribute 'value'. ");
+        return 0;
+      }
+
+      const auto childTypeId = vtkDataObjectTypes::GetTypeIdFromClassName(childValue);
+      if (childTypeId == -1)
+      {
+        vtkErrorMacro("'" << childValue << "' not a known data object type!");
+        return 0;
+      }
+
+      typeInfo.ChildTypes.push_back(childTypeId);
+    }
+
+    this->DTInternals->DataTypes.push_back(typeInfo);
   }
   return 1;
 }

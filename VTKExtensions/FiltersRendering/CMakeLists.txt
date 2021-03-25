@@ -35,18 +35,14 @@ set(classes
   vtkBlockDeliveryPreprocessor
   vtkClientServerMoveData
   vtkCSVExporter
+  vtkDataTabulator
   vtkImageCompressor
   vtkImageTransparencyFilter
-  vtkKdTreeGenerator
-  vtkKdTreeManager
   vtkLZ4Compressor
   vtkMarkSelectedRows
   vtkMPIMoveData
   vtkNetworkImageSource
   vtkOrderedCompositeDistributor
-  vtkPartitionOrdering
-  vtkPartitionOrderingInterface
-  vtkPExtentTranslator
   vtkPVGeometryFilter
   vtkPVRecoverGeometryWireframe
   vtkRedistributePolyData

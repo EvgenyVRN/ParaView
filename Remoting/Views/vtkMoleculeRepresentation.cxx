@@ -28,10 +28,10 @@
 #include "vtkView.h"
 
 //------------------------------------------------------------------------------
-vtkStandardNewMacro(vtkMoleculeRepresentation)
+vtkStandardNewMacro(vtkMoleculeRepresentation);
 
-  //------------------------------------------------------------------------------
-  vtkMoleculeRepresentation::vtkMoleculeRepresentation()
+//------------------------------------------------------------------------------
+vtkMoleculeRepresentation::vtkMoleculeRepresentation()
   : MoleculeRenderMode(0)
   , UseCustomRadii(false)
 {
@@ -99,7 +99,7 @@ vtkDataObject* vtkMoleculeRepresentation::GetRenderedDataObject(int)
   {
     return this->Molecule;
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -299,6 +299,8 @@ void vtkMoleculeRepresentation::UpdateColoringParameters()
   }
 
 vtkForwardPropertyCallMacro(SetOpacity, value, double);
+vtkForwardPropertyCallMacro(SetSpecular, value, double);
+vtkForwardPropertyCallMacro(SetSpecularPower, value, double);
 
 void vtkMoleculeRepresentation::SetMapScalars(bool map)
 {

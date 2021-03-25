@@ -33,9 +33,7 @@ vtkSMSubsetInclusionLatticeDomain::vtkSMSubsetInclusionLatticeDomain()
 }
 
 //----------------------------------------------------------------------------
-vtkSMSubsetInclusionLatticeDomain::~vtkSMSubsetInclusionLatticeDomain()
-{
-}
+vtkSMSubsetInclusionLatticeDomain::~vtkSMSubsetInclusionLatticeDomain() = default;
 
 //----------------------------------------------------------------------------
 void vtkSMSubsetInclusionLatticeDomain::PrintSelf(ostream& os, vtkIndent indent)
@@ -56,7 +54,7 @@ void vtkSMSubsetInclusionLatticeDomain::Update(vtkSMProperty*)
       tsProperty->GetParent()->GatherInformation(info.Get());
       this->SIL->DeepCopy(info->GetSubsetInclusionLattice());
 
-      std::vector<vtkStdString> strings;
+      std::vector<std::string> strings;
       auto selmap = this->SIL->GetSelection();
       for (auto iter : selmap)
       {

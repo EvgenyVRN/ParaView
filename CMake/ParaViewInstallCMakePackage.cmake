@@ -28,8 +28,6 @@ configure_file(
   COPYONLY)
 
 set(paraview_cmake_module_files
-  FindCGNS.cmake
-
   # Compatibility
   paraview-use-file-compat.cmake
   paraview-use-file-deprecated.cmake
@@ -57,6 +55,8 @@ set(paraview_cmake_module_files
   pqDockWindowImplementation.h.in
   pqGraphLayoutStrategyImplementation.cxx.in
   pqGraphLayoutStrategyImplementation.h.in
+  pqPluginLocationImplementation.cxx.in
+  pqPluginLocationImplementation.h.in
   pqPropertyWidgetInterface.cxx.in
   pqPropertyWidgetInterface.h.in
   pqServerManagerModelImplementation.cxx.in
@@ -65,8 +65,6 @@ set(paraview_cmake_module_files
   pqToolBarImplementation.h.in
   pqTreeLayoutStrategyImplementation.cxx.in
   pqTreeLayoutStrategyImplementation.h.in
-  pqViewFrameActionGroupImplementation.cxx.in
-  pqViewFrameActionGroupImplementation.h.in
 
   # ServerManager API
   ParaViewServerManager.cmake
@@ -92,6 +90,7 @@ if (PARAVIEW_ENABLE_VISITBRIDGE)
     FindBoxlib.cmake
     FindGFortran.cmake
     FindMili.cmake
+    FindRapidJSON.cmake
     FindSILO.cmake)
   foreach (paraview_cmake_module_file IN LISTS paraview_visitbridge_cmake_module_files)
     configure_file(

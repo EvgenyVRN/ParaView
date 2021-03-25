@@ -48,7 +48,7 @@ public:
   /**
   * constructor
   */
-  pqDisplayPanel(pqRepresentation* Representation, QWidget* p = NULL);
+  pqDisplayPanel(pqRepresentation* Representation, QWidget* p = nullptr);
   /**
   * destructor
   */
@@ -59,7 +59,7 @@ public:
   */
   pqRepresentation* getRepresentation();
 
-public slots:
+public Q_SLOTS:
   /**
   * TODO: get rid of this function once the server manager can
   * inform us of Representation property changes

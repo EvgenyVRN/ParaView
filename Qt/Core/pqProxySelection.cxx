@@ -33,17 +33,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "pqApplicationCore.h"
 #include "pqOutputPort.h"
+#include "pqPipelineSource.h"
 #include "pqProxy.h"
 #include "pqServerManagerModel.h"
 #include "vtkSMOutputPort.h"
 #include "vtkSMProxySelectionModel.h"
 
+#include <QSet>
 #include <cassert>
 
 //-----------------------------------------------------------------------------
 bool pqProxySelectionUtilities::copy(vtkSMProxySelectionModel* source, pqProxySelection& dest)
 {
-  assert(source != NULL);
+  assert(source != nullptr);
 
   pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
 
@@ -72,7 +74,7 @@ bool pqProxySelectionUtilities::copy(vtkSMProxySelectionModel* source, pqProxySe
 //-----------------------------------------------------------------------------
 bool pqProxySelectionUtilities::copy(const pqProxySelection& source, vtkSMProxySelectionModel* dest)
 {
-  assert(dest != NULL);
+  assert(dest != nullptr);
 
   vtkSMProxySelectionModel::SelectionType selection;
   foreach (pqServerManagerModelItem* item, source)
@@ -94,4 +96,23 @@ bool pqProxySelectionUtilities::copy(const pqProxySelection& source, vtkSMProxyS
     return true;
   }
   return false;
+}
+
+//-----------------------------------------------------------------------------
+pqProxySelection pqProxySelectionUtilities::getPipelineProxies(const pqProxySelection& sel)
+{
+  QSet<pqServerManagerModelItem*> proxies;
+  for (auto& item : sel)
+  {
+    if (auto port = qobject_cast<pqOutputPort*>(item))
+    {
+      proxies.insert(port->getSource());
+    }
+    else if (auto proxy = qobject_cast<pqProxy*>(item))
+    {
+      proxies.insert(proxy);
+    }
+  }
+
+  return proxies.values();
 }

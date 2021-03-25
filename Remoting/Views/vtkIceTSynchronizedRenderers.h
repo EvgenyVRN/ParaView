@@ -36,6 +36,7 @@
 
 class vtkCameraPass;
 class vtkImageProcessingPass;
+class vtkOrderedCompositingHelper;
 
 class VTKREMOTINGVIEWS_EXPORT vtkIceTSynchronizedRenderers : public vtkSynchronizedRenderers
 {
@@ -75,12 +76,12 @@ public:
   }
 
   /**
-   * partition ordering that gives processes ordering. Initial value is a NULL pointer.
+   * partition ordering that gives processes ordering. Initial value is a nullptr pointer.
    * This is used only when UseOrderedCompositing is true.
    */
-  void SetPartitionOrdering(vtkPartitionOrderingInterface* partitionOrdering)
+  void SetOrderedCompositingHelper(vtkOrderedCompositingHelper* helper)
   {
-    this->IceTCompositePass->SetPartitionOrdering(partitionOrdering);
+    this->IceTCompositePass->SetOrderedCompositingHelper(helper);
   }
 
   /**

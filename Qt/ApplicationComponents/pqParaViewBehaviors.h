@@ -57,8 +57,8 @@ class QMainWindow;
 * client is merely a branded version of ParaView, then you may want to simply
 * use this behavior. You can also enable/disable behaviors created by
 * pqParaViewBehaviors before instantiating the pqParaViewBehaviors instance by
-* using static methods of the form pqParaViewBehaviors::set<behavior name>(bool)
-* e.g. pqParaViewBehaviors::setStandardPropertyWidgets(false).
+* using static methods of the form pqParaViewBehaviors::setEnable<behavior name>(bool)
+* e.g. pqParaViewBehaviors::setEnableStandardPropertyWidgets(false).
 *
 * Since ParaView 5.1, ObjectPickingBehavior is disabled by default in
 * ParaView.
@@ -111,6 +111,15 @@ public:
 
   //@{
   /**
+   * Controls whether `pqUsageLoggingBehavior` is created. Disabled by default
+   * (except in the ParaView application itself).
+   * @sa pqUsageLoggingBehavior.
+   */
+  PQ_BEHAVIOR_DEFINE_METHODS(UsageLoggingBehavior);
+  //@}
+
+  //@{
+  /**
    * Controls whether `pqLiveSourceBehavior` is created.
    * @sa pqLiveSourceBehavior
    */
@@ -129,7 +138,7 @@ public:
   PQ_BEHAVIOR_DEFINE_METHODS(WheelNeedsFocusBehavior);
   //@}
 
-  pqParaViewBehaviors(QMainWindow* window, QObject* parent = NULL);
+  pqParaViewBehaviors(QMainWindow* window, QObject* parent = nullptr);
   ~pqParaViewBehaviors() override;
 
 private:
@@ -164,6 +173,7 @@ private:
   PQ_BEHAVIOR_DECLARE_FLAG(LiveSourceBehavior);
   PQ_BEHAVIOR_DECLARE_FLAG(CustomShortcutBehavior);
   PQ_BEHAVIOR_DECLARE_FLAG(MainWindowEventBehavior);
+  PQ_BEHAVIOR_DECLARE_FLAG(UsageLoggingBehavior);
 };
 
 #undef PQ_BEHAVIOR_DECLARE_FLAG

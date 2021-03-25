@@ -96,13 +96,25 @@ public:
   virtual char* panelVisibility() const;
   virtual void setPanelVisibility(const char* vis);
 
+  /**
+  * Determines if the PropertyWidget must be constructed using a single row.
+  *
+  * Originally intended for PropertyWidgets which are a group of other
+  * Propertywidgets, such as pqCheckableProperty. This mandates that when the
+  * widget is rendered, its label to be placed in the same row as the
+  * widget group.
+  *
+  * @see pqProxyWidgetItem::newGroupItem
+  */
+  virtual bool isSingleRowItem() const;
+
   bool showLabel() const;
 
   /**
   * Description:
   * This static utility method returns the XML name for an object as
   * a QString. This allows for code to get the XML name of an object
-  * without having to explicitly check for a possibly NULL char* pointer.
+  * without having to explicitly check for a possibly nullptr char* pointer.
   *
   * This is templated so that it will work with a variety of objects such
   * as vtkSMProperty's and vtkSMDomain's. It can be called with anything
@@ -139,7 +151,7 @@ public:
    */
   static int hintsWidgetHeightNumberOfRows(vtkPVXMLElement* hints, int defaultValue = 10);
 
-signals:
+Q_SIGNALS:
   /**
   * This signal is emitted when the current view changes.
   */
@@ -163,7 +175,7 @@ signals:
   */
   void restartRequired();
 
-public slots:
+public Q_SLOTS:
   /**
   * called to set the active view. This will fire the viewChanged() signal.
   */
@@ -218,7 +230,7 @@ private:
   friend class pqPropertyWidgetDecorator;
   friend class pqProxyWidget;
 
-private slots:
+private Q_SLOTS:
   /**
   * check if changeFinished() must be fired as well.
   */

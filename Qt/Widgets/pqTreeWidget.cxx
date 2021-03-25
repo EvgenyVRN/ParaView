@@ -300,7 +300,7 @@ QSize pqTreeWidget::sizeHint() const
   // for no items, let's give a space of X pixels
   int minItemHeight = 20;
 
-  int num = this->itemCount(NULL) + 1; /* extra room for scroll bar */
+  int num = this->itemCount(nullptr) + 1; /* extra room for scroll bar */
   num = qMin(num, maxItemHint);
 
   int pix = minItemHeight;
@@ -310,9 +310,8 @@ QSize pqTreeWidget::sizeHint() const
     pix = qMax(pix, this->sizeHintForRow(0) * num);
   }
 
-  int margin[4];
-  this->getContentsMargins(margin, margin + 1, margin + 2, margin + 3);
-  int h = pix + margin[1] + margin[3] + this->header()->frameSize().height();
+  QMargins margin = this->contentsMargins();
+  int h = pix + margin.top() + margin.bottom() + this->header()->frameSize().height();
   return QSize(156, h);
 }
 
@@ -396,7 +395,7 @@ QModelIndex pqTreeWidget::moveCursor(CursorAction cursorAction, Qt::KeyboardModi
     {
       // User is at last row, we need to add a new row before moving to that
       // row.
-      emit this->navigatedPastEnd();
+      Q_EMIT this->navigatedPastEnd();
       // if the table grows, the index may change.
       suggestedIndex = this->Superclass::moveCursor(cursorAction, modifiers);
     }

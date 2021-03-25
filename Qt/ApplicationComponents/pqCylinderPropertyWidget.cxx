@@ -157,9 +157,7 @@ pqCylinderPropertyWidget::pqCylinderPropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqCylinderPropertyWidget::~pqCylinderPropertyWidget()
-{
-}
+pqCylinderPropertyWidget::~pqCylinderPropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqCylinderPropertyWidget::placeWidget()
@@ -207,7 +205,7 @@ void pqCylinderPropertyWidget::resetBounds()
     vtkSMPropertyHelper(wdgProxy, "WidgetBounds").Set(bnds, 6);
     wdgProxy->UpdateProperty("WidgetBounds", true);
 
-    emit this->changeAvailable();
+    Q_EMIT this->changeAvailable();
     this->render();
   }
 }
@@ -233,7 +231,7 @@ void pqCylinderPropertyWidget::resetCameraToAxis()
 void pqCylinderPropertyWidget::useCameraAxis()
 {
   vtkSMRenderViewProxy* viewProxy =
-    this->view() ? vtkSMRenderViewProxy::SafeDownCast(this->view()->getProxy()) : NULL;
+    this->view() ? vtkSMRenderViewProxy::SafeDownCast(this->view()->getProxy()) : nullptr;
   if (viewProxy)
   {
     vtkCamera* camera = viewProxy->GetActiveCamera();
@@ -254,7 +252,7 @@ void pqCylinderPropertyWidget::setAxis(double wx, double wy, double wz)
   double axis[3] = { wx, wy, wz };
   vtkSMPropertyHelper(wdgProxy, "Axis").Set(axis, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 

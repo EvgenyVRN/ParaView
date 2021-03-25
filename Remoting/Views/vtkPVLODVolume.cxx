@@ -20,6 +20,7 @@
 #include "vtkLODProp3D.h"
 #include "vtkMapper.h"
 #include "vtkMath.h"
+#include "vtkMultiBlockVolumeMapper.h"
 #include "vtkObjectFactory.h"
 #include "vtkProperty.h"
 #include "vtkTransform.h"
@@ -87,16 +88,20 @@ bool vtkPVLODVolume::CanRender()
   if (lodid >= 0)
   {
     vtkAbstractMapper3D* mapper = this->LODProp->GetLODMapper(lodid);
+    if (vtkMultiBlockVolumeMapper::SafeDownCast(mapper))
+    {
+      return true;
+    }
     if (vtkVolumeMapper* imageVolumeMapper = vtkVolumeMapper::SafeDownCast(mapper))
     {
       int unused = 0;
       vtkDataSet* input = imageVolumeMapper->GetInput();
-      vtkDataArray* scalars = input == NULL
-        ? NULL
+      vtkDataArray* scalars = input == nullptr
+        ? nullptr
         : vtkAbstractMapper::GetScalars(input, imageVolumeMapper->GetScalarMode(),
             imageVolumeMapper->GetArrayAccessMode(), imageVolumeMapper->GetArrayId(),
             imageVolumeMapper->GetArrayName(), unused);
-      return scalars != NULL;
+      return scalars != nullptr;
     }
     else if (vtkUnstructuredGridVolumeMapper* ugMapper =
                vtkUnstructuredGridVolumeMapper::SafeDownCast(mapper))
@@ -104,10 +109,10 @@ bool vtkPVLODVolume::CanRender()
       int unused = 0;
       vtkDataSet* input = ugMapper->GetInput();
       vtkDataArray* scalars =
-        input == NULL ? NULL : vtkAbstractMapper::GetScalars(input, ugMapper->GetScalarMode(),
-                                 ugMapper->GetArrayAccessMode(), ugMapper->GetArrayId(),
-                                 ugMapper->GetArrayName(), unused);
-      return scalars != NULL;
+        input == nullptr ? nullptr : vtkAbstractMapper::GetScalars(input, ugMapper->GetScalarMode(),
+                                       ugMapper->GetArrayAccessMode(), ugMapper->GetArrayId(),
+                                       ugMapper->GetArrayName(), unused);
+      return scalars != nullptr;
     }
   }
   return true;
@@ -292,7 +297,7 @@ int vtkPVLODVolume::HasTranslucentPolygonalGeometry()
 void vtkPVLODVolume::ShallowCopy(vtkProp* prop)
 {
   vtkPVLODVolume* a = vtkPVLODVolume::SafeDownCast(prop);
-  if (a != NULL)
+  if (a != nullptr)
   {
     this->LODProp->ShallowCopy(a->LODProp);
   }

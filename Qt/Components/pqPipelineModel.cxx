@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqPipelineModel.h"
 
 #include "pqBoxChartView.h"
+#include "pqExtractor.h"
 #include "pqLiveInsituManager.h"
 #include "pqLiveInsituVisualizationManager.h"
 #include "pqOutputPort.h"
@@ -103,7 +104,8 @@ static const QString INSITU_EXTRACT_GRAY = "INSITU_EXTRACT_GRAY";
 static const QString INSITU_SERVER_RUNNING = "INSITU_SERVER_RUNNING";
 static const QString INSITU_SERVER_PAUSED = "INSITU_SERVER_PAUSED";
 static const QString INSITU_BREAKPOINT = "INSITU_BREAKPOINT";
-static const QString INSITU_WRITER_PARAMETERS = "INSITU_WRITER_PARAMETERS";
+static const QString DATA_EXTRACTOR = "DATA_EXTRACTOR";
+static const QString IMAGE_EXTRACTOR = "IMAGE_EXTRACTOR";
 static const QString CINEMA_MARK = "CINEMA_MARK";
 static const QString LAST = "LAST";
 }
@@ -248,6 +250,15 @@ public:
       case pqPipelineModel::Link:
         return PipelineModelIconType::LINK;
 
+      case pqPipelineModel::Extractor:
+        // TODO: respect `PipelineIcon` hint, if available.
+        if (auto eg = qobject_cast<pqExtractor*>(this->Object))
+        {
+          return eg->isImageExtractor() ? PipelineModelIconType::IMAGE_EXTRACTOR
+                                        : PipelineModelIconType::DATA_EXTRACTOR;
+        }
+        return PipelineModelIconType::DATA_EXTRACTOR;
+
       case pqPipelineModel::Invalid:
         return PipelineModelIconType::INDETERMINATE;
     }
@@ -309,6 +320,13 @@ public:
                                                                : PipelineModelIconType::LAST);
       }
       break;
+
+      case pqPipelineModel::Extractor:
+        if (auto extractor = qobject_cast<pqExtractor*>(this->Object))
+        {
+          newIcon = this->getVisibilityIcon(extractor, view);
+        }
+        break;
 
       default:
         break;
@@ -390,6 +408,24 @@ private:
       : PipelineModelIconType::LAST;
   }
 
+  QString getVisibilityIcon(pqExtractor* extractor, pqView* view) const
+  {
+    if (!extractor)
+    {
+      return PipelineModelIconType::LAST;
+    }
+    auto producer = extractor->producer();
+    if (extractor->isImageExtractor() && view != producer)
+    {
+      // show no-icon.
+      return PipelineModelIconType::LAST;
+    }
+
+    // show icon based on enabled state.
+    return extractor->isEnabled() ? PipelineModelIconType::EYEBALL
+                                  : PipelineModelIconType::EYEBALL_GRAY;
+  }
+
   QString getIconType(pqOutputPort* port) const
   {
     if (port->getSource()->property("INSITU_EXTRACT").toBool())
@@ -402,7 +438,7 @@ private:
     }
     else if (pqLiveInsituManager::isWriterParametersProxy(port->getSourceProxy()))
     {
-      return PipelineModelIconType::INSITU_WRITER_PARAMETERS;
+      return PipelineModelIconType::DATA_EXTRACTOR;
     }
 
     QString iconType =
@@ -475,8 +511,9 @@ void pqPipelineModel::constructor()
     ":/pqWidgets/Icons/pqInsituServerPaused16.png");
   this->PixmapMap[PipelineModelIconType::INSITU_BREAKPOINT].load(
     ":/pqWidgets/Icons/pqInsituBreakpoint16.png");
-  this->PixmapMap[PipelineModelIconType::INSITU_WRITER_PARAMETERS].load(
-    ":/pqWidgets/Icons/pqSave.svg");
+  this->PixmapMap[PipelineModelIconType::DATA_EXTRACTOR].load(":/pqWidgets/Icons/pqSave.svg");
+  this->PixmapMap[PipelineModelIconType::IMAGE_EXTRACTOR].load(
+    ":/pqWidgets/Icons/pqCaptureScreenshot.svg");
   this->PixmapMap[PipelineModelIconType::CINEMA_MARK].load(":/pqWidgets/Icons/pqCinemaScience.svg");
 }
 
@@ -712,7 +749,7 @@ QModelIndex pqPipelineModel::index(int row, int column, const QModelIndex& paren
     return QModelIndex();
   }
 
-  pqPipelineModelDataItem* parentItem = 0;
+  pqPipelineModelDataItem* parentItem = nullptr;
   if (parentIndex.isValid())
   {
     parentItem = reinterpret_cast<pqPipelineModelDataItem*>(parentIndex.internalPointer());
@@ -752,14 +789,14 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
   pqPipelineModelDataItem* item = reinterpret_cast<pqPipelineModelDataItem*>(idx.internalPointer());
 
   pqServer* server = qobject_cast<pqServer*>(item->Object);
-  pqPipelineSource* source = qobject_cast<pqPipelineSource*>(item->Object);
   pqOutputPort* port = qobject_cast<pqOutputPort*>(item->Object);
+  pqProxy* proxy = port ? port->getSource() : qobject_cast<pqProxy*>(item->Object);
   switch (role)
   {
     case Qt::ToolTipRole:
-      if (source && source->getProxy()->HasAnnotation("tooltip"))
+      if (proxy && proxy->getProxy()->HasAnnotation("tooltip"))
       {
-        return QVariant(source->getProxy()->GetAnnotation("tooltip"));
+        return QVariant(proxy->getProxy()->GetAnnotation("tooltip"));
       }
       VTK_FALLTHROUGH;
     case Qt::DisplayRole:
@@ -785,13 +822,13 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
             ? QString("%1 %3").arg(name).arg(timeLeft)
             : QString("%1 (%2)%3").arg(name).arg(resource.configuration().URI()).arg(timeLeft);
         }
-        else if (source)
-        {
-          return QVariant(source->getSMName());
-        }
         else if (port)
         {
           return port->getPortName();
+        }
+        else if (proxy)
+        {
+          return QVariant(proxy->getSMName());
         }
         else
         {
@@ -800,12 +837,12 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
       }
       break;
 
-    case Qt::TextColorRole:
+    case Qt::ForegroundRole:
     {
       if (idx.column() == 0 && server && server->getRemainingLifeTime() > -1 &&
         server->getRemainingLifeTime() <= 5)
       {
-        return qVariantFromValue<QColor>(QColor(Qt::red));
+        return QVariant::fromValue<QColor>(QColor(Qt::red));
       }
       break;
     }
@@ -824,16 +861,16 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
     {
       if (idx.column() == 0 && item->isModified())
       {
-        return qVariantFromValue<QFont>(this->Internal->ModifiedFont);
+        return QVariant::fromValue<QFont>(this->Internal->ModifiedFont);
       }
       break;
     }
     case pqPipelineModel::AnnotationFilterRole:
     {
-      if (!this->FilterRoleAnnotationKey.isEmpty() && source)
+      if (!this->FilterRoleAnnotationKey.isEmpty() && proxy)
       {
         bool hasAnnotation =
-          source->getProxy()->HasAnnotation(this->FilterRoleAnnotationKey.toLocal8Bit().data());
+          proxy->getProxy()->HasAnnotation(this->FilterRoleAnnotationKey.toLocal8Bit().data());
         return (this->FilterAnnotationMatching ? hasAnnotation : !hasAnnotation);
       }
       return QVariant(true);
@@ -855,21 +892,21 @@ QVariant pqPipelineModel::data(const QModelIndex& idx, int role) const
 //-----------------------------------------------------------------------------
 bool pqPipelineModel::setData(const QModelIndex& idx, const QVariant& value, int)
 {
-  if (value.toString().isEmpty())
+  const QString name = value.toString();
+  if (name.isEmpty())
   {
     return false;
   }
-
-  QString name = value.toString();
-  pqPipelineSource* source = qobject_cast<pqPipelineSource*>(this->getItemFor(idx));
-  if (source && source->getSMName() != name)
+  auto proxy = qobject_cast<pqProxy*>(this->getItemFor(idx));
+  if (proxy && proxy->getSMName() != name)
   {
-    BEGIN_UNDO_SET(QString("Rename %1 to %2").arg(source->getSMName()).arg(name));
-    source->rename(name);
+    BEGIN_UNDO_SET(QString("Rename %1 to %2").arg(proxy->getSMName()).arg(name));
+    proxy->rename(name);
     END_UNDO_SET();
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -886,7 +923,8 @@ Qt::ItemFlags pqPipelineModel::flags(const QModelIndex& idx) const
       _flags |= Qt::ItemIsSelectable;
     }
 
-    if (this->Editable && item->Type == pqPipelineModel::Proxy)
+    if (this->Editable &&
+      (item->Type == pqPipelineModel::Proxy || item->Type == pqPipelineModel::Extractor))
     {
       _flags |= Qt::ItemIsEditable;
     }
@@ -924,18 +962,18 @@ QModelIndex pqPipelineModel::getIndexFor(pqServerManagerModelItem* item) const
 
 //-----------------------------------------------------------------------------
 pqPipelineModelDataItem* pqPipelineModel::getDataItem(
-  pqServerManagerModelItem* item, pqPipelineModelDataItem* _parent = 0,
+  pqServerManagerModelItem* item, pqPipelineModelDataItem* _parent = nullptr,
   pqPipelineModel::ItemType type /*= pqPipelineModel::Invalid*/
   ) const
 {
-  if (_parent == 0)
+  if (_parent == nullptr)
   {
     _parent = &this->Internal->Root;
   }
 
   if (!item)
   {
-    return 0;
+    return nullptr;
   }
 
   if (_parent->Object == item && (type == pqPipelineModel::Invalid || type == _parent->Type))
@@ -951,7 +989,7 @@ pqPipelineModelDataItem* pqPipelineModel::getDataItem(
       return retVal;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -994,7 +1032,7 @@ void pqPipelineModel::addChild(pqPipelineModelDataItem* _parent, pqPipelineModel
 
   if (row == 0)
   {
-    emit this->firstChildAdded(parentIndex);
+    Q_EMIT this->firstChildAdded(parentIndex);
   }
 }
 
@@ -1033,7 +1071,7 @@ void pqPipelineModel::serverDataChanged()
   {
     QModelIndex minIndex = this->getIndex(this->Internal->Root.Children[0]);
     QModelIndex maxIndex = this->getIndex(this->Internal->Root.Children[max]);
-    emit this->dataChanged(minIndex, maxIndex);
+    Q_EMIT this->dataChanged(minIndex, maxIndex);
   }
 }
 
@@ -1041,7 +1079,7 @@ void pqPipelineModel::serverDataChanged()
 void pqPipelineModel::itemDataChanged(pqPipelineModelDataItem* item)
 {
   QModelIndex idx = this->getIndex(item);
-  emit this->dataChanged(idx, idx);
+  Q_EMIT this->dataChanged(idx, idx);
 }
 
 //-----------------------------------------------------------------------------
@@ -1322,6 +1360,115 @@ void pqPipelineModel::removeConnection(
     this->removeChildFromParent(sinkItem);
 
     this->addChild(parentItem, sinkItem);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::addExtractor(pqExtractor* egenerator)
+{
+  pqServer* server = egenerator->getServer();
+  pqPipelineModelDataItem* parentItem =
+    this->getDataItem(server, &this->Internal->Root, pqPipelineModel::Server);
+  if (!parentItem)
+  {
+    qDebug() << "Could not locate server on which the extract-generator is being added.";
+    return;
+  }
+
+  auto item = new pqPipelineModelDataItem(this, egenerator, pqPipelineModel::Extractor, this);
+
+  // add to the 'server'.
+  this->addChild(parentItem, item);
+
+  // monitor common signals.
+  this->connect(egenerator, SIGNAL(nameChanged(pqServerManagerModelItem*)),
+    SLOT(updateData(pqServerManagerModelItem*)));
+  this->connect(egenerator, SIGNAL(modifiedStateChanged(pqServerManagerModelItem*)),
+    SLOT(updateData(pqServerManagerModelItem*)));
+
+  // ensure the "enabled" icon is updated when enabled-state changes.
+  QPointer<pqPipelineModelDataItem> itemPtr = item;
+  QPointer<pqPipelineModel> self = this;
+  QObject::connect(egenerator, &pqExtractor::enabledStateChanged, [itemPtr, self]() {
+    if (itemPtr && self)
+    {
+      itemPtr->updateVisibilityIcon(self->View, false);
+    }
+  });
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::removeExtractor(pqExtractor* egenerator)
+{
+  if (auto item = this->getDataItem(egenerator, &this->Internal->Root, pqPipelineModel::Extractor))
+  {
+    this->removeChildFromParent(item);
+    delete item;
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::addConnection(pqServerManagerModelItem* source, pqExtractor* sink)
+{
+  if (source == nullptr || sink == nullptr)
+  {
+    return;
+  }
+
+  if (sink->isImageExtractor())
+  {
+    return;
+  }
+
+  auto pqsource = qobject_cast<pqPipelineSource*>(source);
+  auto port = qobject_cast<pqOutputPort*>(source);
+  if (port)
+  {
+    pqsource = port->getSource();
+  }
+  if (!pqsource)
+  {
+    return;
+  }
+
+  auto& internals = (*this->Internal);
+  auto srcItem = this->getDataItem(pqsource, &internals.Root, pqPipelineModel::Proxy);
+  auto sinkItem = this->getDataItem(sink, &internals.Root, pqPipelineModel::Extractor);
+  if (!srcItem || !sinkItem)
+  {
+    qDebug("Connection involves unknown items. Ignoring.");
+    return;
+  }
+
+  if (port && pqsource->getNumberOfOutputPorts() > 1)
+  {
+    srcItem = srcItem->Children[port->getPortNumber()];
+  }
+
+  if (sinkItem->Parent != srcItem)
+  {
+    this->removeChildFromParent(sinkItem);
+    this->addChild(srcItem, sinkItem);
+  }
+}
+
+//-----------------------------------------------------------------------------
+void pqPipelineModel::removeConnection(pqServerManagerModelItem*, pqExtractor* sink)
+{
+  if (sink == nullptr || sink->isImageExtractor())
+  {
+    return;
+  }
+
+  auto& internals = (*this->Internal);
+  auto sinkItem = this->getDataItem(sink, &internals.Root, pqPipelineModel::Extractor);
+
+  pqServer* server = sink->getServer();
+  auto serverItem = this->getDataItem(server, &internals.Root, pqPipelineModel::Server);
+  if (serverItem && sinkItem)
+  {
+    this->removeChildFromParent(sinkItem);
+    this->addChild(serverItem, sinkItem);
   }
 }
 

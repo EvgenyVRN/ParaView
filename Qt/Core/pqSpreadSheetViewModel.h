@@ -59,7 +59,7 @@ class PQCORE_EXPORT pqSpreadSheetViewModel : public QAbstractTableModel
   typedef QAbstractTableModel Superclass;
 
 public:
-  pqSpreadSheetViewModel(vtkSMProxy* viewProxy, QObject* parent = NULL);
+  pqSpreadSheetViewModel(vtkSMProxy* viewProxy, QObject* parent = nullptr);
   ~pqSpreadSheetViewModel() override;
 
   class vtkIndex
@@ -138,12 +138,6 @@ public:
   QSet<vtkIndex> getVTKIndices(const QModelIndexList& indexes);
 
   /**
-  * Resets the composite dataset index on the representation to point to the
-  * first non-empty block.
-  */
-  void resetCompositeDataSetIndex();
-
-  /**
   * Set/Get the decimal precision for float and double type data.
   */
   void setDecimalPrecision(int);
@@ -188,7 +182,7 @@ public:
    */
   QString GetRowsAsString() const;
 
-public slots:
+public Q_SLOTS:
   /**
   * resets the model.
   */
@@ -207,13 +201,13 @@ public slots:
   */
   void setActiveRepresentationProxy(vtkSMProxy*);
 
-signals:
+Q_SIGNALS:
   /**
   * Fired whenever the server side selection changes.
   */
   void selectionChanged(const QItemSelection& selection);
 
-private slots:
+private Q_SLOTS:
   /**
   * called to fetch data for all pending blocks.
   */

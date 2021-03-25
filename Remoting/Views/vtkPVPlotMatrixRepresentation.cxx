@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkPlotPoints.h"
 #include "vtkScatterPlotMatrix.h"
 #include "vtkSmartPointer.h"
-#include "vtkStdString.h"
 #include "vtkStringArray.h"
 #include "vtkTable.h"
 
@@ -147,7 +146,7 @@ vtkPVPlotMatrixRepresentation::vtkPVPlotMatrixRepresentation()
 vtkPVPlotMatrixRepresentation::~vtkPVPlotMatrixRepresentation()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -171,7 +170,7 @@ bool vtkPVPlotMatrixRepresentation::RemoveFromView(vtkView* view)
 {
   if (vtkScatterPlotMatrix* plotMatrix = this->GetPlotMatrix())
   {
-    plotMatrix->SetInput(0);
+    plotMatrix->SetInput(nullptr);
     plotMatrix->SetVisible(false);
   }
 
@@ -224,7 +223,7 @@ void vtkPVPlotMatrixRepresentation::PrepareForRendering()
   // vtkPVPlotMatrixRepresentation doesn't support multiblock of tables, so we
   // only consider the first vtkTable.
   vtkTable* table = this->GetLocalOutput();
-  plotMatrix->SetVisible(table != NULL && this->GetVisibility());
+  plotMatrix->SetVisible(table != nullptr && this->GetVisibility());
   if (plotMatrix && table)
   {
     plotMatrix->SetInput(table);
@@ -267,7 +266,7 @@ void vtkPVPlotMatrixRepresentation::SetVisibility(bool visible)
 //----------------------------------------------------------------------------
 void vtkPVPlotMatrixRepresentation::SetSeriesVisibility(const char* series, bool visibility)
 {
-  assert(series != NULL);
+  assert(series != nullptr);
   this->Internals->SeriesVisibilities.push_back(std::pair<std::string, bool>(series, visibility));
   this->Modified();
 }
@@ -414,5 +413,5 @@ vtkScatterPlotMatrix* vtkPVPlotMatrixRepresentation::GetPlotMatrix() const
     return vtkScatterPlotMatrix::SafeDownCast(this->ContextView->GetContextItem());
   }
 
-  return 0;
+  return nullptr;
 }

@@ -87,9 +87,9 @@ public:
   */
   bool animationPlaying() const;
 
-signals:
+Q_SIGNALS:
   /**
-  * emitted when the active scene changes (\c scene may be NULL).
+  * emitted when the active scene changes (\c scene may be nullptr).
   */
   void activeSceneChanged(pqAnimationScene* scene);
 
@@ -130,11 +130,11 @@ signals:
   */
   void endPlay();
 
-public slots:
+public Q_SLOTS:
   // Called when the active server changes.
   void onActiveServerChanged(pqServer*);
 
-protected slots:
+protected Q_SLOTS:
   void onProxyAdded(pqProxy*);
   void onProxyRemoved(pqProxy*);
 

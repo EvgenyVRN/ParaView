@@ -49,15 +49,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqSMAdaptor.h"
 #include "pqUndoStack.h"
 //-----------------------------------------------------------------------------
-pqVCRController::pqVCRController(QObject* _parent /*=null*/)
+pqVCRController::pqVCRController(QObject* _parent /*=nullptr*/)
   : QObject(_parent)
 {
 }
 
 //-----------------------------------------------------------------------------
-pqVCRController::~pqVCRController()
-{
-}
+pqVCRController::~pqVCRController() = default;
 
 //-----------------------------------------------------------------------------
 void pqVCRController::setAnimationScene(pqAnimationScene* scene)
@@ -68,7 +66,7 @@ void pqVCRController::setAnimationScene(pqAnimationScene* scene)
   }
   if (this->Scene)
   {
-    QObject::disconnect(this->Scene, 0, this, 0);
+    QObject::disconnect(this->Scene, nullptr, this, nullptr);
   }
   this->Scene = scene;
   if (this->Scene)
@@ -81,11 +79,11 @@ void pqVCRController::setAnimationScene(pqAnimationScene* scene)
     QObject::connect(this->Scene, SIGNAL(endPlay()), this, SLOT(onEndPlay()));
     bool loop_checked =
       pqSMAdaptor::getElementProperty(scene->getProxy()->GetProperty("Loop")).toBool();
-    emit this->loop(loop_checked);
+    Q_EMIT this->loop(loop_checked);
   }
 
   this->onTimeRangesChanged();
-  emit this->enabled(this->Scene != NULL);
+  Q_EMIT this->enabled(this->Scene != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -94,7 +92,7 @@ void pqVCRController::onTimeRangesChanged()
   if (this->Scene)
   {
     QPair<double, double> range = this->Scene->getClockTimeRange();
-    emit this->timeRanges(range.first, range.second);
+    Q_EMIT this->timeRanges(range.first, range.second);
   }
 }
 
@@ -107,6 +105,7 @@ void pqVCRController::onPlay()
     return;
   }
 
+  CLEAR_UNDO_STACK();
   BEGIN_UNDO_EXCLUDE();
 
   SM_SCOPED_TRACE(CallMethod).arg(this->Scene->getProxy()).arg("Play");
@@ -128,20 +127,21 @@ void pqVCRController::onTick()
 
   // process the events so that the GUI remains responsive.
   QApplication::processEvents();
-  emit this->timestepChanged();
+  Q_EMIT this->timestepChanged();
 }
 
 //-----------------------------------------------------------------------------
 void pqVCRController::onBeginPlay()
 {
-  emit this->playing(true);
+  Q_EMIT this->playing(true);
+  CLEAR_UNDO_STACK();
   BEGIN_UNDO_EXCLUDE();
 }
 
 //-----------------------------------------------------------------------------
 void pqVCRController::onEndPlay()
 {
-  emit this->playing(false);
+  Q_EMIT this->playing(false);
   END_UNDO_EXCLUDE();
 }
 
@@ -150,15 +150,17 @@ void pqVCRController::onLoopPropertyChanged()
 {
   vtkSMProxy* scene = this->Scene->getProxy();
   bool loop_checked = pqSMAdaptor::getElementProperty(scene->GetProperty("Loop")).toBool();
-  emit this->loop(loop_checked);
+  Q_EMIT this->loop(loop_checked);
 }
 
 //-----------------------------------------------------------------------------
 void pqVCRController::onLoop(bool checked)
 {
+  BEGIN_UNDO_EXCLUDE();
   vtkSMProxy* scene = this->Scene->getProxy();
   pqSMAdaptor::setElementProperty(scene->GetProperty("Loop"), checked);
   scene->UpdateProperty("Loop");
+  END_UNDO_EXCLUDE();
 }
 
 //-----------------------------------------------------------------------------

@@ -30,7 +30,6 @@
 #include "vtkPVOptions.h"
 #include "vtkPolyData.h"
 #include "vtkSessionIterator.h"
-#include "vtkStdString.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTCPNetworkAccessManager.h"
 #include "vtkUnstructuredGrid.h"
@@ -69,7 +68,7 @@ bool vtkFindArgument(const char* boolean_arg, int argc, char**& argv)
 {
   for (int cc = 0; cc < argc; cc++)
   {
-    if (argv[cc] != NULL && strcmp(argv[cc], boolean_arg) == 0)
+    if (argv[cc] != nullptr && strcmp(argv[cc], boolean_arg) == 0)
     {
       return true;
     }
@@ -88,8 +87,8 @@ public:
   static vtkPVGenericOutputWindow* New();
 
 private:
-  vtkPVGenericOutputWindow() {}
-  ~vtkPVGenericOutputWindow() override {}
+  vtkPVGenericOutputWindow() = default;
+  ~vtkPVGenericOutputWindow() override = default;
 };
 vtkStandardNewMacro(vtkPVGenericOutputWindow);
 }
@@ -149,7 +148,7 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int& argc, char**& argv)
   {
     // MPICH changes the current working directory after MPI_Init. We fix that
     // by changing the CWD back to the original one after MPI_Init.
-    std::string cwd = vtksys::SystemTools::GetCurrentWorkingDirectory(true);
+    std::string cwd = vtksys::SystemTools::GetCurrentWorkingDirectory();
 
     // This is here to avoid false leak messages from vtkDebugLeaks when
     // using mpich. It appears that the root process which spawns all the
@@ -212,7 +211,7 @@ bool vtkProcessModule::Initialize(ProcessTypes type, int& argc, char**& argv)
       {
         argv[j] = argv[j + 2];
       }
-      argv[argc] = NULL;
+      argv[argc] = nullptr;
       break;
     }
   }
@@ -302,14 +301,14 @@ bool vtkProcessModule::Finalize()
   }
 
   // destroy the process-module.
-  vtkProcessModule::Singleton = NULL;
+  vtkProcessModule::Singleton = nullptr;
 
-  // We don't really need to call SetGlobalController(NULL) since
-  // it's really stored with a weak pointer.  We set it to null anyways
+  // We don't really need to call SetGlobalController(nullptr) since
+  // it's really stored with a weak pointer.  We set it to nullptr anyways
   // in case it gets changed later to reference counting the pointer
-  vtkMultiProcessController::SetGlobalController(NULL);
+  vtkMultiProcessController::SetGlobalController(nullptr);
   vtkProcessModule::GlobalController->Finalize(/*finalizedExternally*/ 1);
-  vtkProcessModule::GlobalController = NULL;
+  vtkProcessModule::GlobalController = nullptr;
 
 #if VTK_MODULE_ENABLE_VTK_ParallelMPI
   if (vtkProcessModule::FinalizeMPI)
@@ -356,7 +355,7 @@ vtkCxxSetObjectMacro(vtkProcessModule, NetworkAccessManager, vtkNetworkAccessMan
 vtkProcessModule::vtkProcessModule()
 {
   this->NetworkAccessManager = vtkTCPNetworkAccessManager::New();
-  this->Options = 0;
+  this->Options = nullptr;
   this->Internals = new vtkProcessModuleInternals();
   this->MaxSessionId = 0;
   this->ReportInterpreterErrors = true;
@@ -368,17 +367,17 @@ vtkProcessModule::vtkProcessModule()
 //----------------------------------------------------------------------------
 vtkProcessModule::~vtkProcessModule()
 {
-  this->SetNetworkAccessManager(NULL);
-  this->SetOptions(NULL);
+  this->SetNetworkAccessManager(nullptr);
+  this->SetOptions(nullptr);
 
   delete this->Internals;
-  this->Internals = 0;
+  this->Internals = nullptr;
 }
 
 //----------------------------------------------------------------------------
 vtkIdType vtkProcessModule::RegisterSession(vtkSession* session)
 {
-  assert(session != NULL);
+  assert(session != nullptr);
   this->MaxSessionId++;
   this->Internals->Sessions[this->MaxSessionId] = session;
   this->EventCallDataSessionId = this->MaxSessionId;
@@ -434,7 +433,7 @@ vtkSession* vtkProcessModule::GetSession(vtkIdType sessionID)
     return iter->second.GetPointer();
   }
 
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -485,7 +484,7 @@ bool vtkProcessModule::IsMPIInitialized()
 //----------------------------------------------------------------------------
 void vtkProcessModule::PushActiveSession(vtkSession* session)
 {
-  assert(session != NULL);
+  assert(session != nullptr);
 
   this->Internals->ActiveSessionStack.push_back(session);
 }
@@ -493,7 +492,7 @@ void vtkProcessModule::PushActiveSession(vtkSession* session)
 //----------------------------------------------------------------------------
 void vtkProcessModule::PopActiveSession(vtkSession* session)
 {
-  assert(session != NULL);
+  assert(session != nullptr);
 
   if (this->Internals->ActiveSessionStack.back() != session)
   {
@@ -508,7 +507,7 @@ vtkSession* vtkProcessModule::GetActiveSession()
 {
   if (this->Internals->ActiveSessionStack.size() == 0)
   {
-    return NULL;
+    return nullptr;
   }
   return this->Internals->ActiveSessionStack.back();
 }
@@ -524,7 +523,7 @@ vtkSession* vtkProcessModule::GetSession()
 
   vtkProcessModuleInternals::MapOfSessions::iterator iter;
   iter = this->Internals->Sessions.begin();
-  return (iter != this->Internals->Sessions.end() ? iter->second.GetPointer() : NULL);
+  return (iter != this->Internals->Sessions.end() ? iter->second.GetPointer() : nullptr);
 }
 
 //----------------------------------------------------------------------------

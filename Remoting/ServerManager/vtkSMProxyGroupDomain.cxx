@@ -26,13 +26,11 @@
 #include <assert.h>
 #include <vector>
 
-#include "vtkStdString.h"
-
 vtkStandardNewMacro(vtkSMProxyGroupDomain);
 
 struct vtkSMProxyGroupDomainInternals
 {
-  std::vector<vtkStdString> Groups;
+  std::vector<std::string> Groups;
 };
 
 //---------------------------------------------------------------------------
@@ -87,7 +85,7 @@ int vtkSMProxyGroupDomain::IsInDomain(vtkSMProxy* proxy)
   vtkSMSessionProxyManager* pxm = this->GetSessionProxyManager();
   if (pxm)
   {
-    std::vector<vtkStdString>::iterator it = this->PGInternals->Groups.begin();
+    std::vector<std::string>::iterator it = this->PGInternals->Groups.begin();
     for (; it != this->PGInternals->Groups.end(); it++)
     {
       if (pxm->IsProxyInGroup(proxy, it->c_str()))
@@ -125,7 +123,7 @@ unsigned int vtkSMProxyGroupDomain::GetNumberOfProxies()
   vtkSMSessionProxyManager* pm = this->GetSessionProxyManager();
   if (pm)
   {
-    std::vector<vtkStdString>::iterator it = this->PGInternals->Groups.begin();
+    std::vector<std::string>::iterator it = this->PGInternals->Groups.begin();
     for (; it != this->PGInternals->Groups.end(); it++)
     {
       numProxies += pm->GetNumberOfProxies(it->c_str());
@@ -137,7 +135,7 @@ unsigned int vtkSMProxyGroupDomain::GetNumberOfProxies()
 //---------------------------------------------------------------------------
 const char* vtkSMProxyGroupDomain::GetProxyName(unsigned int idx)
 {
-  const char* proxyName = 0;
+  const char* proxyName = nullptr;
   unsigned int proxyCount = 0;
   unsigned int prevProxyCount = 0;
 
@@ -145,7 +143,7 @@ const char* vtkSMProxyGroupDomain::GetProxyName(unsigned int idx)
   vtkSMSessionProxyManager* pm = this->GetSessionProxyManager();
   if (pm)
   {
-    std::vector<vtkStdString>::iterator it = this->PGInternals->Groups.begin();
+    std::vector<std::string>::iterator it = this->PGInternals->Groups.begin();
     for (; it != this->PGInternals->Groups.end(); it++)
     {
       prevProxyCount = proxyCount;
@@ -169,13 +167,13 @@ vtkSMProxy* vtkSMProxyGroupDomain::GetProxy(unsigned int idx)
 //---------------------------------------------------------------------------
 const char* vtkSMProxyGroupDomain::GetProxyName(vtkSMProxy* proxy)
 {
-  const char* proxyName = 0;
+  const char* proxyName = nullptr;
 
   assert("Session should be set by now" && this->Session);
   vtkSMSessionProxyManager* pm = this->GetSessionProxyManager();
   if (pm)
   {
-    std::vector<vtkStdString>::iterator it = this->PGInternals->Groups.begin();
+    std::vector<std::string>::iterator it = this->PGInternals->Groups.begin();
     for (; it != this->PGInternals->Groups.end(); it++)
     {
       proxyName = pm->GetProxyName(it->c_str(), proxy);
@@ -195,7 +193,7 @@ vtkSMProxy* vtkSMProxyGroupDomain::GetProxy(const char* name)
   vtkSMSessionProxyManager* pm = this->GetSessionProxyManager();
   if (pm)
   {
-    std::vector<vtkStdString>::iterator it = this->PGInternals->Groups.begin();
+    std::vector<std::string>::iterator it = this->PGInternals->Groups.begin();
     for (; it != this->PGInternals->Groups.end(); it++)
     {
       vtkSMProxy* proxy = pm->GetProxy(it->c_str(), name);
@@ -205,7 +203,7 @@ vtkSMProxy* vtkSMProxyGroupDomain::GetProxy(const char* name)
       }
     }
   }
-  return 0;
+  return nullptr;
 }
 
 //---------------------------------------------------------------------------

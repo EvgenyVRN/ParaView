@@ -85,7 +85,7 @@ void MainWindow::processTest()
   if (pqOptions* const options = pqApplicationCore::instance()->getOptions())
   {
     // make sure the widget had enough time to become valid
-    pqQVTKWidgetBase* qwdg = qobject_cast<pqQVTKWidgetBase*>(this->RenderView->widget());
+    pqQVTKWidget* qwdg = qobject_cast<pqQVTKWidget*>(this->RenderView->widget());
     if (qwdg != nullptr && !qwdg->isValid())
     {
       QTimer::singleShot(100, this, SLOT(processTest()));
@@ -93,7 +93,7 @@ void MainWindow::processTest()
     }
 
     bool comparison_succeeded = true;
-    if ((options->GetNumberOfTestScripts() > 0) && (options->GetTestBaseline(0) != NULL))
+    if ((options->GetNumberOfTestScripts() > 0) && (options->GetTestBaseline(0) != nullptr))
     {
       comparison_succeeded = this->compareView(options->GetTestBaseline(0),
         options->GetTestImageThreshold(0), cout, options->GetTestDirectory());

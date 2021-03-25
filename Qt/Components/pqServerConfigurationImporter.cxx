@@ -131,7 +131,7 @@ pqServerConfigurationImporter::pqServerConfigurationImporter(QObject* parentObje
 pqServerConfigurationImporter::~pqServerConfigurationImporter()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -202,7 +202,7 @@ void pqServerConfigurationImporter::fetchConfigurations()
   // Unblock test events
   pqEventDispatcher::deferEventsIfBlocked(false);
 
-  emit this->configurationsUpdated();
+  Q_EMIT this->configurationsUpdated();
 }
 
 //-----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ bool pqServerConfigurationImporter::fetch(const QUrl& url)
   QVariant redirectionTarget = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
   if (reply->error() != QNetworkReply::NoError)
   {
-    emit this->message(QString("Request failed: %1").arg(reply->errorString()));
+    Q_EMIT this->message(QString("Request failed: %1").arg(reply->errorString()));
   }
   else if (!redirectionTarget.isNull())
   {
@@ -247,9 +247,9 @@ bool pqServerConfigurationImporter::fetch(const QUrl& url)
     return_value = this->processDownloadedContents();
   }
 
-  // this will set ActiveReply to NULL automatically.
+  // this will set ActiveReply to nullptr automatically.
   delete reply;
-  reply = NULL;
+  reply = nullptr;
   return return_value;
 }
 
@@ -260,13 +260,13 @@ void pqServerConfigurationImporter::abortFetch()
   {
     this->Internals->AbortFetch = true;
     this->Internals->ActiveReply->abort();
-    emit this->abortFetchTriggered();
+    Q_EMIT this->abortFetchTriggered();
   }
 }
 //-----------------------------------------------------------------------------
 void pqServerConfigurationImporter::readCurrentData()
 {
-  assert(this->Internals->ActiveReply != NULL);
+  assert(this->Internals->ActiveReply != nullptr);
   this->Internals->ActiveFetchedData.append(this->Internals->ActiveReply->readAll());
 }
 
@@ -304,7 +304,7 @@ bool pqServerConfigurationImporter::processDownloadedContents()
 
   if (appended)
   {
-    emit this->incrementalUpdate();
+    Q_EMIT this->incrementalUpdate();
   }
   return true;
 }

@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    $RCSfile$
+   Module:  pqTabbedMultiViewWidget.cxx
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vtkCommand.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
+#include "vtkNew.h"
+#include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyManager.h"
@@ -57,9 +59,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QGridLayout>
 #include <QInputDialog>
 #include <QLabel>
+#include <QMap>
 #include <QMenu>
 #include <QMouseEvent>
-#include <QMultiMap>
 #include <QPointer>
 #include <QShortcut>
 #include <QStyle>
@@ -81,9 +83,7 @@ pqTabbedMultiViewWidget::pqTabWidget::pqTabWidget(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqTabbedMultiViewWidget::pqTabWidget::~pqTabWidget()
-{
-}
+pqTabbedMultiViewWidget::pqTabWidget::~pqTabWidget() = default;
 
 //-----------------------------------------------------------------------------
 int pqTabbedMultiViewWidget::pqTabWidget::tabButtonIndex(
@@ -111,18 +111,16 @@ int pqTabbedMultiViewWidget::pqTabWidget::addAsTab(
   pqMultiViewWidget* wdg, pqTabbedMultiViewWidget* self)
 {
   int tab_count = this->count();
+  if (this->ReadOnly)
+  {
+    // Add one for the missing '+' button which is not present in ReadOnly mode.
+    // The logic later on assumes an additional tab.
+    tab_count++;
+  }
   vtkSMViewLayoutProxy* proxy = wdg->layoutManager();
   pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
   pqProxy* item = smmodel->findItem<pqProxy*>(proxy);
-  QString name = QString("Layout #%1").arg(tab_count);
-  if (item->getSMName().startsWith("ViewLayout"))
-  {
-    item->rename(name);
-  }
   int tab_index = this->insertTab(tab_count - 1, wdg, item->getSMName());
-
-  SM_SCOPED_TRACE(CallFunction).arg("CreateLayout").arg(name.toUtf8().data());
-
   this->connect(item, SIGNAL(nameChanged(pqServerManagerModelItem*)), self,
     SLOT(onLayoutNameChanged(pqServerManagerModelItem*)));
 
@@ -204,9 +202,15 @@ class pqTabbedMultiViewWidget::pqInternals
 {
   bool DecorationsVisibility = true;
 
+  // keeps tracks of pqMultiViewWidget instances.
+  QMap<pqServer*, QList<QPointer<pqMultiViewWidget> > > TabWidgets;
+
+  QString FilterAnnotationKey;
+  bool FilterAnnotationMatching = true;
+
 public:
   QPointer<pqTabWidget> TabWidget;
-  QMultiMap<pqServer*, QPointer<pqMultiViewWidget> > TabWidgets;
+
   QPointer<QWidget> FullScreenWindow;
   QPointer<QWidget> NewTabWidget;
 
@@ -256,25 +260,23 @@ public:
     QObject::connect(widget, &pqMultiViewWidget::frameActivated,
       [this, widget]() { this->TabWidget->setCurrentWidget(widget); });
 
-    int tab_index = this->TabWidget->addAsTab(widget, self);
     auto server =
       pqApplicationCore::instance()->getServerManagerModel()->findServer(vlayout->GetSession());
-    this->TabWidgets.insert(server, widget);
+
+    this->TabWidgets[server].push_back(widget);
+
+    const int tab_index = this->isVisible(vlayout) ? this->TabWidget->addAsTab(widget, self) : -1;
     return tab_index;
   }
 
-  int tabIndex(vtkSMProxy* vlayout)
+  /**
+   * this will return -1 if vlayout is hidden.
+   */
+  int tabIndex(vtkSMProxy* vlayout) const
   {
-    const int count = this->TabWidget->count();
-    for (int cc = 0; cc < count; ++cc)
+    if (auto widget = this->findWidget(vlayout))
     {
-      if (auto mvwidget = qobject_cast<pqMultiViewWidget*>(this->TabWidget->widget(cc)))
-      {
-        if (mvwidget->layoutManager() == vlayout)
-        {
-          return cc;
-        }
-      }
+      return this->TabWidget->indexOf(widget);
     }
     return -1;
   }
@@ -284,6 +286,163 @@ public:
     if (index >= 0 && index < this->TabWidget->count())
     {
       this->TabWidget->setCurrentIndex(index);
+    }
+  }
+
+  /**
+   * Returns pqMultiViewWidget instance given a vlayout, if any. Else
+   * nullptr.
+   */
+  pqMultiViewWidget* findWidget(vtkSMProxy* vlayout) const
+  {
+    for (auto pqmvwidget : this->widgets())
+    {
+      if (pqmvwidget && pqmvwidget->layoutManager() == vlayout)
+      {
+        return pqmvwidget;
+      }
+    }
+    return nullptr;
+  }
+
+  void removeTab(vtkSMProxy* vlayout)
+  {
+    auto widget = this->findWidget(vlayout);
+    if (widget == nullptr)
+    {
+      return;
+    }
+
+    const auto index = this->TabWidget->indexOf(widget);
+    if (index != -1)
+    {
+      if (index == this->TabWidget->currentIndex())
+      {
+        this->TabWidget->setCurrentIndex((index - 1) > 0 ? (index - 1) : 0);
+      }
+      this->TabWidget->removeTab(index);
+    }
+
+    auto server =
+      pqApplicationCore::instance()->getServerManagerModel()->findServer(vlayout->GetSession());
+    this->TabWidgets[server].removeOne(widget);
+    delete widget;
+  }
+
+  // removes all tabs associated with a server.
+  void removeTabs(pqServer* server)
+  {
+    auto wdgs = this->TabWidgets[server];
+    for (auto widget : wdgs)
+    {
+      if (widget)
+      {
+        this->removeTab(widget->layoutManager());
+      }
+    }
+    this->TabWidgets.remove(server);
+  }
+
+  QList<QPointer<pqMultiViewWidget> > widgets() const
+  {
+    QList<QPointer<pqMultiViewWidget> > wgs;
+    for (auto& list : this->TabWidgets)
+    {
+      wgs += list;
+    }
+    return wgs;
+  }
+
+  bool isVisible(vtkSMViewLayoutProxy* vlayout) const
+  {
+    Q_ASSERT(vlayout != nullptr);
+    if (this->FilterAnnotationKey.isEmpty())
+    {
+      return true;
+    }
+    else
+    {
+      const bool hasAnnotation = vlayout->HasAnnotation(qUtf8Printable(this->FilterAnnotationKey));
+      return this->FilterAnnotationMatching ? hasAnnotation : !hasAnnotation;
+    }
+  }
+
+  void updateVisibleTabs()
+  {
+    // build a list of visible tabs and if they are different,
+    // that what's shown update the view.
+    QList<QWidget*> visibleWidgets;
+    for (auto widget : this->widgets())
+    {
+      if (widget && this->isVisible(widget->layoutManager()))
+      {
+        visibleWidgets.push_back(widget);
+      }
+    }
+
+    if (this->NewTabWidget)
+    {
+      visibleWidgets.push_back(this->NewTabWidget);
+    }
+
+    QList<QWidget*> tabs;
+    for (int cc = 0, max = this->TabWidget->count(); cc < max; ++cc)
+    {
+      tabs.push_back(this->TabWidget->widget(cc));
+    }
+
+    if (tabs != visibleWidgets)
+    {
+      this->TabWidget->clear();
+      for (auto wdg : visibleWidgets)
+      {
+        this->TabWidget->addTab(wdg, this->tabLabel(wdg));
+      }
+    }
+  }
+
+  QString tabLabel(QWidget* wdg) const
+  {
+    if (wdg == this->NewTabWidget)
+    {
+      return "+";
+    }
+    else if (auto mvwidget = qobject_cast<pqMultiViewWidget*>(wdg))
+    {
+      auto vlayout = mvwidget->layoutManager();
+      auto pxm = vlayout->GetSessionProxyManager();
+      return pxm->GetProxyName("layouts", vlayout);
+    }
+    return "?";
+  }
+
+  void enableAnnotationFilter(const QString& annotationKey)
+  {
+    if (this->FilterAnnotationKey != annotationKey)
+    {
+      this->FilterAnnotationKey = annotationKey;
+      this->updateVisibleTabs();
+    }
+  }
+
+  void disableAnnotationFilter()
+  {
+    if (!this->FilterAnnotationKey.isEmpty())
+    {
+      this->FilterAnnotationKey.clear();
+      this->updateVisibleTabs();
+    }
+  }
+
+  void setAnnotationFilterMatching(bool matching)
+  {
+    if (this->FilterAnnotationMatching != matching)
+    {
+      this->FilterAnnotationMatching = matching;
+      if (!this->FilterAnnotationKey.isEmpty())
+      {
+        this->updateVisibleTabs();
+      }
     }
   }
 };
@@ -414,26 +573,10 @@ void pqTabbedMultiViewWidget::proxyAdded(pqProxy* proxy)
 //-----------------------------------------------------------------------------
 void pqTabbedMultiViewWidget::proxyRemoved(pqProxy* proxy)
 {
+  auto& internals = (*this->Internals);
   if (proxy->getSMGroup() == "layouts" && proxy->getProxy()->IsA("vtkSMViewLayoutProxy"))
   {
-    vtkSMProxy* smproxy = proxy->getProxy();
-
-    QList<QPointer<pqMultiViewWidget> > widgets = this->Internals->TabWidgets.values();
-    foreach (QPointer<pqMultiViewWidget> widget, widgets)
-    {
-      if (widget && widget->layoutManager() == smproxy)
-      {
-        this->Internals->TabWidgets.remove(proxy->getServer(), widget);
-        int index = this->Internals->TabWidget->indexOf(widget);
-        if (this->Internals->TabWidget->currentWidget() == widget)
-        {
-          this->Internals->TabWidget->setCurrentIndex(((index - 1) > 0) ? (index - 1) : 0);
-        }
-        this->Internals->TabWidget->removeTab(index);
-        delete widget;
-        break;
-      }
-    }
+    internals.removeTab(proxy->getProxy());
   }
 }
 
@@ -441,18 +584,8 @@ void pqTabbedMultiViewWidget::proxyRemoved(pqProxy* proxy)
 void pqTabbedMultiViewWidget::serverRemoved(pqServer* server)
 {
   // remove all tabs corresponding to the closed session.
-  QList<QPointer<pqMultiViewWidget> > widgets = this->Internals->TabWidgets.values(server);
-  foreach (pqMultiViewWidget* widget, widgets)
-  {
-    int cur_index = this->Internals->TabWidget->indexOf(widget);
-    if (cur_index != -1)
-    {
-      this->Internals->TabWidget->removeTab(cur_index);
-    }
-    delete widget;
-  }
-
-  this->Internals->TabWidgets.remove(server);
+  auto& internals = (*this->Internals);
+  internals.removeTabs(server);
 }
 
 //-----------------------------------------------------------------------------
@@ -477,7 +610,7 @@ void pqTabbedMultiViewWidget::closeTab(int index)
 {
   pqMultiViewWidget* widget =
     qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->widget(index));
-  vtkSMProxy* vlayout = widget ? widget->layoutManager() : NULL;
+  vtkSMProxy* vlayout = widget ? widget->layoutManager() : nullptr;
   if (vlayout)
   {
     pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
@@ -493,7 +626,9 @@ void pqTabbedMultiViewWidget::closeTab(int index)
     END_UNDO_SET();
   }
 
-  if (this->Internals->TabWidget->count() == 1)
+  // The '+' tab is missing if in readOnly mode. Account for that here.
+  int minimumNumberOfTabs = this->readOnly() ? 0 : 1;
+  if (this->Internals->TabWidget->count() == minimumNumberOfTabs)
   {
     this->Internals->setCurrentTab(this->createTab());
   }
@@ -512,13 +647,17 @@ int pqTabbedMultiViewWidget::createTab(pqServer* server)
   if (server)
   {
     BEGIN_UNDO_SET("Add View Tab");
-    vtkSMProxy* vlayout = pqApplicationCore::instance()->getObjectBuilder()->createProxy(
-      "misc", "ViewLayout", server, "layouts");
-    assert(vlayout != NULL);
+    auto pxm = server->proxyManager();
+    auto vlayout = pxm->NewProxy("misc", "ViewLayout");
+    Q_ASSERT(vlayout != nullptr);
+
+    vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+    controller->InitializeProxy(vlayout);
+    controller->RegisterLayoutProxy(vlayout);
+    vlayout->FastDelete();
     END_UNDO_SET();
 
-    auto& internals = (*this->Internals);
-    return internals.tabIndex(vlayout);
+    return this->Internals->tabIndex(vlayout);
   }
   return -1;
 }
@@ -528,6 +667,12 @@ int pqTabbedMultiViewWidget::createTab(vtkSMViewLayoutProxy* vlayout)
 {
   auto& internals = (*this->Internals);
   return internals.addTab(vlayout, this);
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::setCurrentTab(int index)
+{
+  this->Internals->setCurrentTab(index);
 }
 
 //-----------------------------------------------------------------------------
@@ -611,7 +756,7 @@ QSize pqTabbedMultiViewWidget::clientSize() const
 //-----------------------------------------------------------------------------
 void pqTabbedMultiViewWidget::lockViewSize(const QSize& viewSize)
 {
-  QList<QPointer<pqMultiViewWidget> > widgets = this->Internals->TabWidgets.values();
+  QList<QPointer<pqMultiViewWidget> > widgets = this->Internals->widgets();
   foreach (QPointer<pqMultiViewWidget> widget, widgets)
   {
     if (widget)
@@ -620,7 +765,7 @@ void pqTabbedMultiViewWidget::lockViewSize(const QSize& viewSize)
     }
   }
 
-  emit this->viewSizeLocked(!viewSize.isEmpty());
+  Q_EMIT this->viewSizeLocked(!viewSize.isEmpty());
 }
 
 //-----------------------------------------------------------------------------
@@ -682,7 +827,7 @@ void pqTabbedMultiViewWidget::contextMenuRequested(const QPoint& point)
   int tabIndex = this->Internals->TabWidget->tabBar()->tabAt(point);
   pqMultiViewWidget* widget =
     qobject_cast<pqMultiViewWidget*>(this->Internals->TabWidget->widget(tabIndex));
-  vtkSMProxy* vlayout = widget ? widget->layoutManager() : NULL;
+  vtkSMProxy* vlayout = widget ? widget->layoutManager() : nullptr;
   if (!vlayout)
   {
     return;
@@ -748,16 +893,47 @@ vtkSMViewLayoutProxy* pqTabbedMultiViewWidget::layoutProxy() const
 //-----------------------------------------------------------------------------
 pqMultiViewWidget* pqTabbedMultiViewWidget::findTab(vtkSMViewLayoutProxy* layoutManager) const
 {
-  auto tabWidget = this->Internals->TabWidget;
+  const auto& internals = (*this->Internals);
+  return internals.findWidget(layoutManager);
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::enableAnnotationFilter(const QString& annotationKey)
+{
+  auto& internals = (*this->Internals);
+  internals.enableAnnotationFilter(annotationKey);
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::disableAnnotationFilter()
+{
+  auto& internals = (*this->Internals);
+  internals.disableAnnotationFilter();
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::setAnnotationFilterMatching(bool matching)
+{
+  auto& internals = (*this->Internals);
+  internals.setAnnotationFilterMatching(matching);
+}
+
+//-----------------------------------------------------------------------------
+void pqTabbedMultiViewWidget::updateVisibleTabs()
+{
+  auto& internals = (*this->Internals);
+  internals.updateVisibleTabs();
+}
+
+//-----------------------------------------------------------------------------
+QList<QString> pqTabbedMultiViewWidget::visibleTabLabels() const
+{
+  QList<QString> result;
+  auto& internals = (*this->Internals);
+  auto tabWidget = internals.TabWidget;
   for (int cc = 0, max = tabWidget->count(); cc < max; ++cc)
   {
-    if (auto mvwidget = qobject_cast<pqMultiViewWidget*>(tabWidget->widget(cc)))
-    {
-      if (mvwidget->layoutManager() == layoutManager)
-      {
-        return mvwidget;
-      }
-    }
+    result.push_back(tabWidget->tabText(cc));
   }
-  return nullptr;
+  return result;
 }

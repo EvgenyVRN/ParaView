@@ -40,8 +40,8 @@ vtkCxxSetObjectMacro(vtkPVRayCastPickingHelper, Selection, vtkAlgorithm);
 //----------------------------------------------------------------------------
 vtkPVRayCastPickingHelper::vtkPVRayCastPickingHelper()
 {
-  this->Selection = NULL;
-  this->Input = NULL;
+  this->Selection = nullptr;
+  this->Input = nullptr;
   this->SnapOnMeshPoint = false;
   this->PointA[0] = this->PointA[1] = this->PointA[2] = 0.0;
   this->PointB[0] = this->PointB[1] = this->PointB[2] = 0.0;
@@ -50,8 +50,8 @@ vtkPVRayCastPickingHelper::vtkPVRayCastPickingHelper()
 //----------------------------------------------------------------------------
 vtkPVRayCastPickingHelper::~vtkPVRayCastPickingHelper()
 {
-  this->SetSelection(NULL);
-  this->SetInput(NULL);
+  this->SetSelection(nullptr);
+  this->SetInput(nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -73,8 +73,16 @@ void vtkPVRayCastPickingHelper::PrintSelf(ostream& os, vtkIndent indent)
 //----------------------------------------------------------------------------
 void vtkPVRayCastPickingHelper::ComputeIntersection()
 {
-  assert("Need valid input" && this->Input && this->Selection);
-  assert("Need valid ray" && vtkMath::Distance2BetweenPoints(this->PointA, this->PointB));
+  // Need valid input.
+  if (!this->Input || !this->Selection)
+  {
+    return;
+  }
+  // Need valid ray.
+  if (!vtkMath::Distance2BetweenPoints(this->PointA, this->PointB))
+  {
+    return;
+  }
 
   // Reset the intersection value
   this->Intersection[0] = this->Intersection[1] = this->Intersection[2] = 0.0;

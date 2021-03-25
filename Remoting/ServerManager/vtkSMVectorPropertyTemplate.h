@@ -72,8 +72,8 @@ B vtkSMVPConvertFromString(const std::string& string_representation)
 }
 
 template <>
-vtkMaybeUnused("not used in non-string specializations")
-  vtkStdString vtkSMVPConvertFromString<vtkStdString>(const std::string& string_representation)
+vtkMaybeUnused("not used in non-string specializations") std::string
+  vtkSMVPConvertFromString<std::string>(const std::string& string_representation)
 {
   return string_representation;
 }
@@ -165,12 +165,12 @@ public:
   }
 
   //---------------------------------------------------------------------------
-  T* GetElements() { return (this->Values.size() > 0) ? &this->Values[0] : NULL; }
+  T* GetElements() { return (this->Values.size() > 0) ? &this->Values[0] : nullptr; }
 
   //---------------------------------------------------------------------------
   T* GetUncheckedElements()
   {
-    return (this->UncheckedValues.size() > 0) ? &this->UncheckedValues[0] : NULL;
+    return (this->UncheckedValues.size() > 0) ? &this->UncheckedValues[0] : nullptr;
   }
   //---------------------------------------------------------------------------
   T& GetUncheckedElement(unsigned int idx)
@@ -293,6 +293,26 @@ public:
       this->Property->Modified();
       this->ClearUncheckedElements();
     }
+    return 1;
+  }
+
+  //---------------------------------------------------------------------------
+  int AppendUncheckedElements(const T* values, unsigned int numValues)
+  {
+    this->UncheckedValues.insert(std::end(this->UncheckedValues), values, values + numValues);
+    this->Property->InvokeEvent(vtkCommand::UncheckedPropertyModifiedEvent);
+
+    return 1;
+  }
+
+  //---------------------------------------------------------------------------
+  int AppendElements(const T* values, unsigned int numValues)
+  {
+    this->Values.insert(std::end(this->Values), values, values + numValues);
+    this->Initialized = true;
+    this->Property->Modified();
+    this->ClearUncheckedElements();
+
     return 1;
   }
 

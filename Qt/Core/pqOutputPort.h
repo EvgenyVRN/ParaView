@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqOutputPort_h
 
 #include "pqCoreModule.h"
-#include "pqServerManagerModelItem.h"
+#include "pqProxy.h"
 
 class pqDataRepresentation;
 class pqPipelineSource;
@@ -54,10 +54,10 @@ class vtkSMSourceProxy;
 * Once the outputs can be named, we will change this class to use output port
 * names instead of numbers.
 */
-class PQCORE_EXPORT pqOutputPort : public pqServerManagerModelItem
+class PQCORE_EXPORT pqOutputPort : public pqProxy
 {
   Q_OBJECT
-  typedef pqServerManagerModelItem Superclass;
+  typedef pqProxy Superclass;
 
 public:
   pqOutputPort(pqPipelineSource* source, int portno);
@@ -110,13 +110,13 @@ public:
 
   /**
   * Returns a list of representations for this output port in the given view.
-  * If view == NULL, returns all representations of this port.
+  * If view == nullptr, returns all representations of this port.
   */
   QList<pqDataRepresentation*> getRepresentations(pqView* view) const;
 
   /**
   * Returns the first representation for this output port in the given view.
-  * If view is NULL, returns 0.
+  * If view is nullptr, returns 0.
   */
   pqDataRepresentation* getRepresentation(pqView* view) const;
 
@@ -171,7 +171,12 @@ public:
   */
   void setSelectionInput(vtkSMSourceProxy* src, int port);
 
-public slots:
+  /**
+   * Returns a user friendly name for this port.
+   */
+  QString prettyName() const;
+
+public Q_SLOTS:
   /**
   * This method updates all render modules to which all
   * representations for this source belong, if force is true, it for an
@@ -179,7 +184,7 @@ public slots:
   */
   void renderAllViews(bool force = false);
 
-signals:
+Q_SIGNALS:
   /**
   * Fired when a connection is added between this output port and a consumer.
   */
@@ -209,7 +214,7 @@ signals:
   */
   void visibilityChanged(pqOutputPort* source, pqDataRepresentation* repr);
 
-protected slots:
+protected Q_SLOTS:
   void onRepresentationVisibilityChanged();
 
 protected:

@@ -101,7 +101,7 @@ public:
     });
   }
 
-  ~pqPresetDialogTableModel() override {}
+  ~pqPresetDialogTableModel() override = default;
 
   void importPresets(const QString& filename)
   {
@@ -178,7 +178,7 @@ public:
         case Qt::FontRole:
           QFont font;
           // Find the column in this model for the default group.
-          auto column = this->GroupManager->groupNames().indexOf("default") + 1;
+          auto column = this->GroupManager->groupNames().indexOf("Default") + 1;
           // if this is a default preset, bold and underline the name
           if (column != 0 && this->data(this->index(idx.row(), column), Qt::DisplayRole) != -1)
           {
@@ -197,7 +197,7 @@ public:
           auto name = this->Presets->GetPresetName(idx.row());
           auto applicationGroupIndex =
             this->GroupManager->presetRankInGroup(name.c_str(), groupName);
-          if (groupName != "default")
+          if (groupName != "Default")
           {
             return applicationGroupIndex;
           }
@@ -232,7 +232,7 @@ public:
       settings.setValue("pqSettingdDialog/userChosenPresets", userChosenPresets);
       auto changedIndexStart = this->index(idx.row(), 0);
       auto changedIndexEnd = this->index(idx.row(), this->columnCount(idx) - 1);
-      emit this->dataChanged(changedIndexStart, changedIndexEnd);
+      Q_EMIT this->dataChanged(changedIndexStart, changedIndexEnd);
     }
   }
 
@@ -252,7 +252,7 @@ public:
       settings.setValue("pqSettingdDialog/userChosenPresets", userChosenPresets);
       auto changedIndexStart = this->index(idx.row(), 0);
       auto changedIndexEnd = this->index(idx.row(), this->columnCount(idx) - 1);
-      emit this->dataChanged(changedIndexStart, changedIndexEnd);
+      Q_EMIT this->dataChanged(changedIndexStart, changedIndexEnd);
     }
   }
 
@@ -266,7 +266,7 @@ public:
 
     if (this->Presets->RenamePreset(idx.row(), value.toString().toStdString().c_str()))
     {
-      emit this->dataChanged(idx, idx);
+      Q_EMIT this->dataChanged(idx, idx);
       return true;
     }
     return true;
@@ -309,13 +309,13 @@ class pqPresetDialogProxyModel : public QSortFilterProxyModel
   int CurrentGroupColumn;
 
 public:
-  pqPresetDialogProxyModel(pqPresetDialog::Modes m, QObject* parentObject = NULL)
+  pqPresetDialogProxyModel(pqPresetDialog::Modes m, QObject* parentObject = nullptr)
     : Superclass(parentObject)
     , Mode(m)
     , CurrentGroupColumn(0)
   {
   }
-  ~pqPresetDialogProxyModel() override {}
+  ~pqPresetDialogProxyModel() override = default;
 
   pqPresetDialog::Modes mode() { return this->Mode; }
   void setMode(pqPresetDialog::Modes m)
@@ -379,7 +379,7 @@ public:
     , NumColumns(cols)
   {
   }
-  ~pqPresetDialogReflowModel() override {}
+  ~pqPresetDialogReflowModel() override = default;
 
   QModelIndex mapFromSource(const QModelIndex& sourceIndex) const override
   {
@@ -472,7 +472,7 @@ public:
     {
       return false;
     }
-    while (obj != NULL)
+    while (obj != nullptr)
     {
       if (obj == this->Self)
       {
@@ -570,8 +570,7 @@ public:
 
   void updateRegexpWidgets()
   {
-    this->Ui.useRegexp->setEnabled(
-      this->Ui.annotations->isChecked() && this->Ui.annotations->isEnabled());
+    this->Ui.useRegexp->setEnabled(this->Ui.annotations->isEnabled());
     this->Ui.regexpLine->setEnabled(
       this->Ui.useRegexp->isEnabled() && this->Ui.useRegexp->isChecked());
   }
@@ -590,7 +589,7 @@ public:
     else
     {
       auto groupMgr = this->Model->GroupManager;
-      auto defaultColumn = groupMgr->groupNames().indexOf("default") + 1;
+      auto defaultColumn = groupMgr->groupNames().indexOf("Default") + 1;
       this->Ui.groupChooser->setCurrentIndex(defaultColumn);
       this->CurrentGroupColumn = defaultColumn;
     }
@@ -647,9 +646,7 @@ pqPresetDialog::pqPresetDialog(QWidget* parentObject, pqPresetDialog::Modes mode
 }
 
 //-----------------------------------------------------------------------------
-pqPresetDialog::~pqPresetDialog()
-{
-}
+pqPresetDialog::~pqPresetDialog() = default;
 
 //-----------------------------------------------------------------------------
 void pqPresetDialog::showEvent(QShowEvent* e)
@@ -680,7 +677,7 @@ void pqPresetDialog::updateGroups()
   }
   else
   {
-    auto defaultColumn = groupMgr->groupNames().indexOf("default") + 1;
+    auto defaultColumn = groupMgr->groupNames().indexOf("Default") + 1;
     this->Internals->Ui.groupChooser->setCurrentIndex(defaultColumn);
     this->Internals->CurrentGroupColumn = defaultColumn;
   }
@@ -809,11 +806,11 @@ void pqPresetDialog::updateForSelectedIndex(const QModelIndex& proxyIndex)
   idx = internals.ProxyModel->mapToSource(idx);
   const Json::Value& preset = internals.Model->Presets->GetPreset(idx.row());
   assert(preset.empty() == false);
-  auto column = internals.Model->GroupManager->groupNames().indexOf("default") + 1;
+  auto column = internals.Model->GroupManager->groupNames().indexOf("Default") + 1;
   QModelIndex defaultColumnIndex = internals.Model->index(idx.row(), column);
 
   int defaultPosition = internals.Model->data(defaultColumnIndex, Qt::DisplayRole).toInt();
-  int numDefaultPresets = internals.Model->GroupManager->numberOfPresetsInGroup("default");
+  int numDefaultPresets = internals.Model->GroupManager->numberOfPresetsInGroup("Default");
 
   const Ui::pqPresetDialog& ui = internals.Ui;
 
@@ -842,7 +839,7 @@ void pqPresetDialog::triggerApply(const QModelIndex& _proxyIndex)
   const Json::Value& preset = internals.Model->Presets->GetPreset(idx.row());
   if (preset.empty() == false)
   {
-    emit this->applyPreset(preset);
+    Q_EMIT this->applyPreset(preset);
   }
 }
 
@@ -919,7 +916,7 @@ bool pqPresetDialog::usePresetRange() const
 //-----------------------------------------------------------------------------
 void pqPresetDialog::importPresets()
 {
-  pqFileDialog dialog(NULL, this, tr("Import Presets"), QString(),
+  pqFileDialog dialog(nullptr, this, tr("Import Presets"), QString(),
     "Supported Presets/Color Map Files (*.json *.xml);;"
     "ParaView Color/Opacity Presets (*.json);;Legacy Color Maps (*.xml);;All Files (*)");
   dialog.setObjectName("ImportPresets");
@@ -955,7 +952,7 @@ void pqPresetDialog::importPresets()
 //-----------------------------------------------------------------------------
 void pqPresetDialog::exportPresets()
 {
-  pqFileDialog dialog(NULL, this, tr("Export Preset(s)"), QString(),
+  pqFileDialog dialog(nullptr, this, tr("Export Preset(s)"), QString(),
     "ParaView Color/Opacity Presets (*.json);;All Files (*)");
   dialog.setObjectName("ExportPresets");
   dialog.setFileMode(pqFileDialog::AnyFile);
@@ -1007,7 +1004,7 @@ void pqPresetDialog::setPresetIsAdvanced(int newState)
   idx = internals.ReflowModel->mapToSource(idx);
   idx = internals.ProxyModel->mapToSource(idx);
 
-  auto column = internals.Model->GroupManager->groupNames().indexOf("default") + 1;
+  auto column = internals.Model->GroupManager->groupNames().indexOf("Default") + 1;
   QModelIndex defaultColumnIndex = internals.Model->index(idx.row(), column);
 
   int defaultPosition = internals.Model->data(defaultColumnIndex, Qt::DisplayRole).toInt();
@@ -1029,7 +1026,8 @@ QRegularExpression pqPresetDialog::regularExpression()
 {
   if (!this->Internals->Ui.useRegexp->isChecked())
   {
-    return QRegularExpression();
+    // create a simple invalid regex
+    return QRegularExpression("[");
   }
 
   auto regexp = QRegularExpression(this->Internals->Ui.regexpLine->text());

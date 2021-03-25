@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:  pqCinemaTrackSelection.cxx
+   Module:  pqAbstractItemSelectionModel.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -44,7 +44,7 @@ class pqAbstractItemSelectionModel : public QAbstractItemModel
   Q_OBJECT
 
 protected:
-  pqAbstractItemSelectionModel(QObject* parent_ = NULL);
+  pqAbstractItemSelectionModel(QObject* parent_ = nullptr);
   ~pqAbstractItemSelectionModel() override;
 
   /**

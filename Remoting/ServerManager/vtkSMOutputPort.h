@@ -24,7 +24,7 @@
  * sits as a datastructure to manage ports specific things like
  * data-information. However for backwards compatibility, to keep the impact
  * minimal, we leave this as a sub-class of a Proxy with GlobalID=0 and
- * Session=NULL.
+ * Session=nullptr.
 */
 
 #ifndef vtkSMOutputPort_h
@@ -32,10 +32,14 @@
 
 #include "vtkRemotingServerManagerModule.h" //needed for exports
 #include "vtkSMProxy.h"
-#include "vtkWeakPointer.h" // needed by SourceProxy pointer
+#include "vtkSmartPointer.h" // needed for vtkSmartPointer
+#include "vtkWeakPointer.h"  // needed for vtkWeakPointer
+
+#include <map> // needed for std::map
 
 class vtkCollection;
 class vtkPVClassNameInformation;
+class vtkPVDataAssemblyInformation;
 class vtkPVDataInformation;
 class vtkPVTemporalDataInformation;
 class vtkSMCompoundSourceProxy;
@@ -55,6 +59,28 @@ public:
    * vtkCommand::UpdateInformationEvent event.
    */
   virtual vtkPVDataInformation* GetDataInformation();
+
+  //@{
+  /**
+   * For composite datasets, `GetDataInformation` returns summary data information for
+   * all blocks combined. However, applications may require information about
+   * specific subset of blocks. In that case, one can use this API. Internally,
+   * the data information is cached per selector / assembly-name pair. That way,
+   * if the data information is not re-gathered unless changed.
+   *
+   * @arg \c selector the selector expression
+   * @arg \c assemblyName name of the assembly to use to apply the selector
+   *         to to determine the subset. If none specified, hierarchy is assumed.
+   */
+  vtkPVDataInformation* GetSubsetDataInformation(
+    const char* selector, const char* assemblyName = nullptr);
+  //@}
+
+  /**
+   * A `GetSubsetDataInformation` overload that uses composite index. It is only
+   * supported for multiblock datasets.
+   */
+  vtkPVDataInformation* GetSubsetDataInformation(unsigned int compositeIndex);
 
   /**
    * Returns data information collected over all timesteps provided by the
@@ -90,6 +116,12 @@ public:
    */
   vtkSMSourceProxy* GetSourceProxy();
 
+  //@{
+  /** Overridden to forward to the source proxy.
+   */
+  vtkSMSession* GetSession() override;
+  vtkSMSessionProxyManager* GetSessionProxyManager() override;
+  //@}
 protected:
   vtkSMOutputPort();
   ~vtkSMOutputPort() override;
@@ -112,7 +144,7 @@ protected:
 
   void SetSourceProxy(vtkSMSourceProxy* src);
 
-  // When set to non-null, GetSourceProxy() returns this rather than the real
+  // When set to non-nullptr, GetSourceProxy() returns this rather than the real
   // source-proxy set using SetSourceProxy(). This provides a mechanism for
   // vtkSMCompoundSourceProxy to take ownership of ports that don't really
   // belong to it.
@@ -132,11 +164,15 @@ protected:
 
   vtkPVClassNameInformation* ClassNameInformation;
   int ClassNameInformationValid;
+
   vtkPVDataInformation* DataInformation;
   bool DataInformationValid;
 
   vtkPVTemporalDataInformation* TemporalDataInformation;
   bool TemporalDataInformationValid;
+
+  std::map<std::string, std::map<int, vtkSmartPointer<vtkPVDataInformation> > >
+    SubsetDataInformations;
 
 private:
   vtkSMOutputPort(const vtkSMOutputPort&) = delete;

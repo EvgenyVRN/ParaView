@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 #include "pqExpandableTableView.h"
+#include "pqQtDeprecated.h"
 
 #include <QAbstractItemDelegate>
 #include <QApplication>
@@ -47,9 +48,7 @@ pqExpandableTableView::pqExpandableTableView(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqExpandableTableView::~pqExpandableTableView()
-{
-}
+pqExpandableTableView::~pqExpandableTableView() = default;
 
 //-----------------------------------------------------------------------------
 QModelIndex pqExpandableTableView::moveCursor(
@@ -96,7 +95,7 @@ void pqExpandableTableView::closeEditor(QWidget* editor, QAbstractItemDelegate::
     if (idx.isValid() && idx.row() == (curModel->rowCount() - 1) &&
       idx.column() == (curModel->columnCount() - 1) && hint == QAbstractItemDelegate::EditNextItem)
     {
-      emit this->editPastLastRow();
+      Q_EMIT this->editPastLastRow();
     }
 
     this->MoveToNextEditableItem = true;
@@ -126,7 +125,7 @@ void pqExpandableTableView::keyPressEvent(QKeyEvent* e)
     {
       // Split the lines in the text
       QString text = mimeData->text();
-      QStringList lines = text.split("\n", QString::SkipEmptyParts);
+      QStringList lines = text.split("\n", PV_QT_SKIP_EMPTY_PARTS);
       for (int row = 0; row < std::min(lines.size(), numModelRows); ++row)
       {
         // Split within each line

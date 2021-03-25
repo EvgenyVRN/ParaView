@@ -34,12 +34,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
 #include "pqCoreUtilities.h"
+#include "pqEventDispatcher.h"
 #include "pqFileDialog.h"
 #include "pqImageUtil.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqServer.h"
 #include "pqSettings.h"
 #include "pqTabbedMultiViewWidget.h"
+#include "pqUndoStack.h"
 #include "pqView.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
@@ -108,8 +110,8 @@ QString pqSaveScreenshotReaction::promptFileName(
     return QString();
   }
 
-  pqFileDialog file_dialog(
-    NULL, pqCoreUtilities::mainWidget(), tr(prototype->GetXMLLabel()), QString(), filters.c_str());
+  pqFileDialog file_dialog(nullptr, pqCoreUtilities::mainWidget(), tr(prototype->GetXMLLabel()),
+    QString(), filters.c_str());
   file_dialog.setRecentlyUsedExtension(lastUsedExt);
   file_dialog.setObjectName(QString("%1FileDialog").arg(prototype->GetXMLName()));
   file_dialog.setFileMode(pqFileDialog::AnyFile);
@@ -127,6 +129,7 @@ QString pqSaveScreenshotReaction::promptFileName(
 //-----------------------------------------------------------------------------
 void pqSaveScreenshotReaction::saveScreenshot(bool clipboardMode)
 {
+  SCOPED_UNDO_EXCLUDE();
   pqView* view = pqActiveObjects::instance().activeView();
   if (!view)
   {
@@ -178,10 +181,6 @@ void pqSaveScreenshotReaction::saveScreenshot(bool clipboardMode)
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   controller->PreInitializeProxy(shProxy);
-  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
-  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
-  shProxy->UpdateDefaultsAndVisibilities(filename.toLocal8Bit().data());
-  controller->PostInitializeProxy(shProxy);
 
   if (layout)
   {
@@ -194,6 +193,8 @@ void pqSaveScreenshotReaction::saveScreenshot(bool clipboardMode)
       vtkVector2i layoutSize = layout->GetSize();
       previewHelper.Set(layoutSize.GetData(), 2);
       restorePreviewMode = true;
+      // essential to give the UI a change to update after the preview change.
+      pqEventDispatcher::processEvents();
     }
     else
     {
@@ -201,6 +202,11 @@ void pqSaveScreenshotReaction::saveScreenshot(bool clipboardMode)
       vtkSMPropertyHelper(shProxy, "SaveAllViews").Set(1);
     }
   }
+
+  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
+  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
+  shProxy->UpdateDefaultsAndVisibilities(filename.toLocal8Bit().data());
+  controller->PostInitializeProxy(shProxy);
 
   pqProxyWidgetDialog dialog(shProxy, pqCoreUtilities::mainWidget());
   dialog.setObjectName("SaveScreenshotDialog");

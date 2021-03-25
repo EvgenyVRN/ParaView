@@ -43,7 +43,7 @@ pqSignalAdaptorTreeWidget::pqSignalAdaptorTreeWidget(QTreeWidget* treeWidget, bo
   this->TreeWidget = treeWidget;
   this->Sortable = this->TreeWidget->isSortingEnabled();
   this->Editable = editable;
-  this->ItemCreatorFunctionPtr = 0;
+  this->ItemCreatorFunctionPtr = nullptr;
 
   // by default none nothing is sorted until the user clicks on one of the
   // headers.
@@ -71,9 +71,7 @@ pqSignalAdaptorTreeWidget::pqSignalAdaptorTreeWidget(QTreeWidget* treeWidget, bo
 }
 
 //-----------------------------------------------------------------------------
-pqSignalAdaptorTreeWidget::~pqSignalAdaptorTreeWidget()
-{
-}
+pqSignalAdaptorTreeWidget::~pqSignalAdaptorTreeWidget() = default;
 
 //-----------------------------------------------------------------------------
 QList<QVariant> pqSignalAdaptorTreeWidget::values() const
@@ -100,9 +98,9 @@ QList<QVariant> pqSignalAdaptorTreeWidget::values() const
 void pqSignalAdaptorTreeWidget::appendItem(QTreeWidgetItem* item)
 {
   this->TreeWidget->addTopLevelItem(item);
-  // no need to emit valuesChanged() since this->TreeWidget->model() fires
+  // no need to Q_EMIT valuesChanged() since this->TreeWidget->model() fires
   // rowsInserted() which results in valuesChanged() being fired.
-  // emit this->valuesChanged();
+  // Q_EMIT this->valuesChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -112,13 +110,13 @@ QTreeWidgetItem* pqSignalAdaptorTreeWidget::newItem(const QStringList& columnVal
   if (columnValues.size() != column_count)
   {
     qDebug() << "Number of values does not match those required in one item.";
-    return 0;
+    return nullptr;
   }
 
-  QTreeWidgetItem* item = NULL;
+  QTreeWidgetItem* item = nullptr;
   if (this->ItemCreatorFunctionPtr)
   {
-    item = (*this->ItemCreatorFunctionPtr)(NULL, columnValues);
+    item = (*this->ItemCreatorFunctionPtr)(nullptr, columnValues);
   }
 
   if (!item)
@@ -186,7 +184,7 @@ void pqSignalAdaptorTreeWidget::setValues(const QList<QVariant>& new_values)
   }
   this->TreeWidget->addTopLevelItems(items);
   this->blockSignals(false);
-  emit this->valuesChanged();
+  Q_EMIT this->valuesChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -200,7 +198,7 @@ void pqSignalAdaptorTreeWidget::updateSortingLinks()
   }
   else
   {
-    QObject::disconnect(this->TreeWidget->header(), 0, this, 0);
+    QObject::disconnect(this->TreeWidget->header(), nullptr, this, nullptr);
   }
 }
 
@@ -248,13 +246,13 @@ QTreeWidgetItem* pqSignalAdaptorTreeWidget::growTable()
   this->blockSignals(prev);
 
   // Give the listeners a chance to change item default values.
-  emit this->tableGrown(item);
+  Q_EMIT this->tableGrown(item);
 
   // This ensures that when the user is finished editing the value, it suddenly
   // doesn't move about due to sorting. The user can sort columns again once
   // he's done filling values by clicking on the header.
   this->updateSortingLinks();
-  emit this->valuesChanged();
+  Q_EMIT this->valuesChanged();
 
   return item;
 }

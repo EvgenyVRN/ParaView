@@ -68,7 +68,7 @@ public:
   // \c server:- server on which the proxy is created.
   // \c parent:- QObject parent.
   pqPipelineRepresentation(const QString& group, const QString& name, vtkSMProxy* repr,
-    pqServer* server, QObject* parent = NULL);
+    pqServer* server, QObject* parent = nullptr);
   ~pqPipelineRepresentation() override;
 
   // Get the internal display proxy.
@@ -78,7 +78,7 @@ protected:
   // Overridden to set up some additional Qt connections
   void setView(pqView* view) override;
 
-public slots:
+public Q_SLOTS:
   // If lookuptable is set up and is used for coloring,
   // then calling this method resets the table ranges to match the current
   // range of the selected array.

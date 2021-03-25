@@ -37,7 +37,6 @@
 class vtkAlgorithmOutput;
 class vtkCamera;
 class vtkCuller;
-class vtkEquirectangularToCubeMapTexture;
 class vtkExtentTranslator;
 class vtkFloatArray;
 class vtkFXAAOptions;
@@ -50,7 +49,7 @@ class vtkInteractorStyleRubberBandZoom;
 class vtkLight;
 class vtkLightKit;
 class vtkMatrix4x4;
-class vtkPartitionOrderingInterface;
+class vtkOrderedCompositingHelper;
 class vtkProp;
 class vtkPVAxesWidget;
 class vtkPVCameraCollection;
@@ -174,6 +173,8 @@ public:
    */
   void ResetCamera();
   void ResetCamera(double bounds[6]);
+  void ResetCameraScreenSpace();
+  void ResetCameraScreenSpace(double bounds[6]);
   //@}
 
   /**
@@ -445,13 +446,13 @@ public:
     vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
   static vtkAlgorithmOutput* GetPieceProducerLOD(
     vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
-  static void MarkAsRedistributable(
-    vtkInformation* info, vtkPVDataRepresentation* repr, bool value = true, int port = 0);
   static void SetRedistributionMode(
     vtkInformation* info, vtkPVDataRepresentation* repr, int mode, int port = 0);
   static void SetRedistributionModeToSplitBoundaryCells(
     vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
   static void SetRedistributionModeToDuplicateBoundaryCells(
+    vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
+  static void SetRedistributionModeToUniquelyAssignBoundaryCells(
     vtkInformation* info, vtkPVDataRepresentation* repr, int port = 0);
   static void SetGeometryBounds(vtkInformation* info, vtkPVDataRepresentation* repr,
     const double bounds[6], vtkMatrix4x4* transform = nullptr, int port = 0);
@@ -460,6 +461,62 @@ public:
     vtkInformation* info, vtkPVDataRepresentation* repr, vtkDataObject* piece);
   static vtkDataObject* GetCurrentStreamedPiece(
     vtkInformation* info, vtkPVDataRepresentation* repr);
+  //@}
+
+  //@{
+  /**
+   * As of ParaView 5.9, these methods are replaced by
+   * `SetOrderedCompositingConfiguration` which provides a new mechanisms for
+   * indicating to the view how this representation participates in
+   * data-redistribution needed when ordered-compositing is being used.
+   *
+   * @deprecated ParaView 5.9.
+   */
+  VTK_LEGACY(static void MarkAsRedistributable(
+    vtkInformation* info, vtkPVDataRepresentation* repr, bool value = true, int port = 0));
+  VTK_LEGACY(static void SetOrderedCompositingInformation(vtkInformation* info,
+    vtkPVDataRepresentation* repr, vtkExtentTranslator* translator, const int whole_extents[6],
+    const double origin[3], const double spacing[3]));
+  VTK_LEGACY(
+    static void SetOrderedCompositingInformation(vtkInformation* info, const double bounds[6]));
+  //@}
+
+  //@{
+  /**
+   * `OrderedCompositingConfiguration` lets representations indicate to the view
+   * how the representation participates in data-redistribution necessary when
+   * ordered-compositing is being used. These flags are meant to be combined
+   * together using bit-wise-OR.
+   *
+   * If not specified, default is 0 i.e. the representation data will be left
+   * untouched. Except for trivial representations or representations that have
+   * their full rendering geometry available on all rendering ranks, this is not
+   * recommended.
+   *
+   * `DATA_IS_REDISTRIBUTABLE` indicates that the view may redistribute the
+   * rendering data from this representation as needed. This is typical for
+   * representation rendering poly-data or unstructured grids.
+   *
+   * `USE_DATA_FOR_LOAD_BALANCING` indicates that when building a sortable
+   * distribution for the data, it should use this representation data. If not
+   * set, the representation will not contribute to the algorithm that builds
+   * the kd-tree used to split data across rendering ranks.
+   *
+   * `USE_BOUNDS_FOR_REDISTRIBUTION` may be used when the data is too heavy to move (i.e
+   * DATA_IS_REDISTRIBUTABLE is not true) and is already split across ranks in a
+   * sortable fashion. In that case, this indicates the view must use the
+   * spatial partitioning of this representation's data and move other data
+   * accordingly. This flag cannot be combined with DATA_IS_REDISTRIBUTABLE or
+   * USE_BOUNDS_FOR_REDISTRIBUTION.
+   */
+  enum
+  {
+    USE_BOUNDS_FOR_REDISTRIBUTION = 0x01,
+    DATA_IS_REDISTRIBUTABLE = 0x02,
+    USE_DATA_FOR_LOAD_BALANCING = 0x40,
+  };
+  static void SetOrderedCompositingConfiguration(vtkInformation* info,
+    vtkPVDataRepresentation* repr, int config, const double* bounds = nullptr, int port = 0);
   //@}
 
   /**
@@ -497,17 +554,6 @@ public:
   static void SetDeliverToClientAndRenderingProcesses(vtkInformation* info,
     vtkPVDataRepresentation* repr, bool deliver_to_client, bool gather_before_delivery,
     int port = 0);
-
-  //@{
-  /**
-   * Pass the structured-meta-data for determining rendering order for ordered
-   * compositing.
-   */
-  static void SetOrderedCompositingInformation(vtkInformation* info, vtkPVDataRepresentation* repr,
-    vtkExtentTranslator* translator, const int whole_extents[6], const double origin[3],
-    const double spacing[3]);
-  static void SetOrderedCompositingInformation(vtkInformation* info, const double bounds[6]);
-  //@}
 
   //@{
   /**
@@ -766,6 +812,46 @@ public:
   //@}
 
   /**
+   * Defines tone mapping generic filmic presets.
+   */
+  enum GenericFilmicPresets
+  {
+    Custom = 0,
+    Default = 1,
+    Uncharted2 = 2
+  };
+
+  //@{
+  /**
+   * Tone Mapping options.
+   */
+  void SetUseToneMapping(bool v);
+  vtkGetMacro(UseToneMapping, bool);
+  void SetToneMappingType(int);
+  void SetExposure(double);
+  void SetContrast(double);
+  void SetShoulder(double);
+  void SetMidIn(double);
+  void SetMidOut(double);
+  void SetHdrMax(double);
+  void SetUseACES(bool);
+  void SetGenericFilmicPresets(int t);
+  //@}
+
+  //@{
+  /**
+   * SSAO options.
+   */
+  vtkSetMacro(UseSSAO, bool);
+  vtkGetMacro(UseSSAO, bool);
+  vtkSetMacro(UseSSAODefaultPresets, bool);
+  vtkSetMacro(Radius, double);
+  vtkSetMacro(KernelSize, int);
+  vtkSetMacro(Bias, double);
+  vtkSetMacro(Blur, bool);
+  //@}
+
+  /**
    * Copy internal fields that are used for rendering decision such as
    * remote/local rendering, composite and so on. This method was introduced
    * for the quad view so internal views could use the decision that were made
@@ -783,48 +869,22 @@ public:
 
   //@{
   /**
-   * Tells view that it should draw a particular array component
-   * to the screen such that the pixels can be read back and
-   * decoded to obtain the values.
+   * Experimental API to grab re-colorable images. Between
+   * BeginValuePassForRendering and EndValuePassForRendering calls, all renders
+   * will end up using vtkValuePass for rendering instead of the standard
+   * rendering passes that generate results on screen.
+   *
+   * GrabValuePassResult must be called between BeginValuePassForRendering and
+   * EndValuePassForRendering. Returns the vtkFloatArray grabbed by
+   * vtkValuePass.
+   *
+   * This API is not intended for remote-rendering use-cases. Thus only supported in client-only and
+   * pvbatch (or in situ) cases. That's the reason why we are exposing this directly on
+   * the vtkPVRenderView rather accessing it via a proxy.
    */
-  void SetDrawCells(bool choice);
-  void SetArrayNameToDraw(const char* name);
-  void SetArrayNumberToDraw(int fieldAttributeType);
-  void SetArrayComponentToDraw(int comp);
-  void SetScalarRange(double min, double max);
-  void BeginValueCapture();
-  void EndValueCapture();
-  //@}
-
-  //@{
-  /**
-   * Current rendering mode of vtkValuePass (float or invertible RGB).
-   * @deprecation Invertible is deprecated, so this currently does nothing and will be removed.
-   */
-  void SetValueRenderingModeCommand(int mode);
-  int GetValueRenderingModeCommand();
-  //@}
-
-  //@{
-  /**
-   * Access to vtkValuePass::FLOATING_POINT mode rendered image. vtkValuePass's
-   * internal FBO is accessed directly when rendering locally. When rendering in
-   * parallel, IceT composites the intermediate results from vtkValuePass and the
-   * final result is accessed through vtkIceTCompositePass. Float value rendering
-   * is only supported in BATCH mode and in CLIENT mode (local rendering). These methods
-   * do nothing if INVERTIBLE_LUT mode is active.
-   */
-  void CaptureValuesFloat();
-  vtkFloatArray* GetCapturedValuesFloat();
-  //@}
-
-  //@{
-  /**
-   * Tells views that it should draw the lighting contributions to the
-   * framebuffer.
-   */
-  void StartCaptureLuminance();
-  void StopCaptureLuminance();
+  bool BeginValuePassForRendering(int fieldAssociation, const char* arrayName, int component);
+  void EndValuePassForRendering();
+  vtkSmartPointer<vtkFloatArray> GrabValuePassResult();
   //@}
 
   //@{
@@ -855,6 +915,20 @@ public:
    */
   void SetAmbientOcclusionSamples(int);
   int GetAmbientOcclusionSamples();
+  //@}
+  //@{
+  /**
+   * Sets the depth of monte carlo samples on the path tracer
+   */
+  void SetRouletteDepth(int);
+  int GetRouletteDepth();
+  //@}
+  //@{
+  /**
+   * Set the path tracers volume anisotropy
+   */
+  void SetVolumeAnisotropy(double);
+  double GetVolumeAnisotropy();
   //@}
   //@{
   /**
@@ -959,17 +1033,9 @@ public:
    */
   void SynchronizeMaximumIds(vtkIdType* maxPointId, vtkIdType* maxCellId);
 
-  /**
-   * Set skybox cubemap resolution in pixel.
-   * Each face (which is a square) of the skybox will have this resolution.
-   */
-  void SetSkyboxResolution(int resolution);
-
 protected:
   vtkPVRenderView();
   ~vtkPVRenderView() override;
-
-  static vtkInformationDoubleVectorKey* GEOMETRY_BOUNDS();
 
   /**
    * Actual render method.
@@ -1073,6 +1139,11 @@ protected:
    */
   void UpdateSkybox();
 
+  /**
+   * Configure texture based on scalar type
+   */
+  void ConfigureTexture(vtkTexture* texture);
+
   vtkLightKit* LightKit;
   vtkRenderViewBase* RenderView;
   vtkRenderer* NonCompositedRenderer;
@@ -1088,7 +1159,6 @@ protected:
   vtkSmartPointer<vtkPVGridAxes3DActor> GridAxes3DActor;
   vtkNew<vtkSkybox> Skybox;
   bool NeedSkybox = false;
-  vtkNew<vtkEquirectangularToCubeMapTexture> CubeMap;
 
   int StillRenderImageReductionFactor;
   int InteractiveRenderImageReductionFactor;
@@ -1129,6 +1199,15 @@ protected:
 
   bool UseFXAA;
   vtkNew<vtkFXAAOptions> FXAAOptions;
+
+  bool UseToneMapping;
+
+  bool UseSSAO;
+  bool UseSSAODefaultPresets;
+  double Radius;
+  int KernelSize;
+  double Bias;
+  bool Blur;
 
   double LODResolution;
   bool UseLightKit;
@@ -1182,7 +1261,7 @@ private:
   vtkNew<vtkTextRepresentation> Annotation;
   void UpdateAnnotationText();
 
-  vtkNew<vtkPartitionOrderingInterface> PartitionOrdering;
+  vtkNew<vtkOrderedCompositingHelper> OrderedCompositingHelper;
 
   int StereoType;
   int ServerStereoType;

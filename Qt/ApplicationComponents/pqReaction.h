@@ -57,7 +57,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqReaction : public QObject
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqReaction(QAction* parent, Qt::ConnectionType type = Qt::AutoConnection);
   ~pqReaction() override;
@@ -67,7 +67,7 @@ public:
   */
   QAction* parentAction() const { return qobject_cast<QAction*>(this->parent()); }
 
-protected slots:
+protected Q_SLOTS:
   /**
   * Called when the action is triggered.
   */

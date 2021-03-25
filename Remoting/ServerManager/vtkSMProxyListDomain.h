@@ -93,7 +93,7 @@ public:
 
   /**
    * If the \c proxy is part of the domain, then this returns the name used for
-   * the proxy in the domain. Returns NULL otherwise.
+   * the proxy in the domain. Returns nullptr otherwise.
    */
   const char* GetProxyName(vtkSMProxy* proxy);
 
@@ -145,9 +145,9 @@ public:
   int RemoveProxy(unsigned int index);
 
   /**
-   * Creates and populates the domain with the proxy-types. This will remove any
-   * existing proxies in the domain. Note that the newly created proxies won't
-   * be registered with the proxy manager.
+   * Creates and populates the domain with the proxy-types.
+   * Note that the newly created proxies won't be registered with
+   * the proxy manager.
    */
   void CreateProxies(vtkSMSessionProxyManager* pxm);
 
@@ -161,6 +161,14 @@ public:
    * property.
    */
   int SetDefaultValues(vtkSMProperty* prop, bool use_unchecked_values) override;
+
+  //@{
+  /**
+   * Set and Get the default proxy index.
+   */
+  vtkSetMacro(DefaultIndex, unsigned int);
+  vtkGetMacro(DefaultIndex, unsigned int);
+  //@}
 
   /**
    * Sets log name for each of the proxy in the domain using the prefix
@@ -193,6 +201,8 @@ protected:
 
   friend class vtkSMProxyProperty;
   void SetProxies(vtkSMProxy** proxies, unsigned int count);
+
+  unsigned int DefaultIndex = 0;
 
 private:
   vtkSMProxyListDomain(const vtkSMProxyListDomain&) = delete;

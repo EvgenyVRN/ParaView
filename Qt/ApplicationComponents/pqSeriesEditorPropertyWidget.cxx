@@ -98,7 +98,7 @@ public:
 
   void domainModified()
   {
-    emit this->dataChanged(
+    Q_EMIT this->dataChanged(
       this->index(0, 0), this->index(this->rowCount() - 1, NUMBER_OF_COLUMNS - 1));
   }
 };
@@ -180,7 +180,9 @@ pqSeriesEditorPropertyWidget::pqSeriesEditorPropertyWidget(
     this->addPropertyLink(
       this, "seriesLabel", SIGNAL(seriesLabelChanged()), smgroup->GetProperty("SeriesLabel"));
 
-    emit this->presetLabelChanged();
+    // Trigger an update of the internal lut
+    Q_EMIT this->presetLabelChanged();
+    this->apply();
   }
   else
   {
@@ -198,7 +200,9 @@ pqSeriesEditorPropertyWidget::pqSeriesEditorPropertyWidget(
     this->addPropertyLink(
       this, "seriesColor", SIGNAL(seriesColorChanged()), smgroup->GetProperty("SeriesColor"));
 
-    emit this->presetColorChanged();
+    // Trigger an update of the internal lut
+    Q_EMIT this->presetColorChanged();
+    this->apply();
   }
   else
   {
@@ -546,31 +550,31 @@ void pqSeriesEditorPropertyWidget::savePropertiesWidgets()
     if (ui.Thickness == senderWidget && this->Internals->Thickness[key] != ui.Thickness->value())
     {
       this->Internals->Thickness[key] = ui.Thickness->value();
-      emit this->seriesLineThicknessChanged();
+      Q_EMIT this->seriesLineThicknessChanged();
     }
     else if (ui.StyleList == senderWidget &&
       this->Internals->Style[key] != ui.StyleList->currentIndex())
     {
       this->Internals->Style[key] = ui.StyleList->currentIndex();
-      emit this->seriesLineStyleChanged();
+      Q_EMIT this->seriesLineStyleChanged();
     }
     else if (ui.MarkerStyleList == senderWidget &&
       this->Internals->MarkerStyle[key] != ui.MarkerStyleList->currentIndex())
     {
       this->Internals->MarkerStyle[key] = ui.MarkerStyleList->currentIndex();
-      emit this->seriesMarkerStyleChanged();
+      Q_EMIT this->seriesMarkerStyleChanged();
     }
     else if (ui.MarkerSize == senderWidget &&
       this->Internals->MarkerSize[key] != ui.MarkerSize->value())
     {
       this->Internals->MarkerSize[key] = ui.MarkerSize->value();
-      emit this->seriesMarkerSizeChanged();
+      Q_EMIT this->seriesMarkerSizeChanged();
     }
     else if (ui.AxisList == senderWidget &&
       this->Internals->PlotCorner[key] != ui.AxisList->currentIndex())
     {
       this->Internals->PlotCorner[key] = ui.AxisList->currentIndex();
-      emit this->seriesPlotCornerChanged();
+      Q_EMIT this->seriesPlotCornerChanged();
     }
   }
 }
@@ -603,21 +607,26 @@ void pqSeriesEditorPropertyWidget::onPresetChanged(const QString& name)
   QList<QVariant> newAnnotations = currentAnnotations;
   QList<QVariant> newColors;
 
-  // create a list with preset values filtered through the given regexp.
-  vtkNew<vtkStringList> filteredPresetAnnotations;
+  // create a set of lists with preset values filtered through the given regexp.
+  QMap<QStringList, int> filteredPresetStringLists;
   QRegularExpression regexp = this->Internals->Ui.SeriesTable->presetRegularExpression();
   for (int j = 0; j < presetAnnotations->GetNumberOfStrings(); j += 2)
   {
-    auto presetSubstring = QString(presetAnnotations->GetString(j));
+    auto presetStringList = QStringList(presetAnnotations->GetString(j));
     if (regexp.isValid() && !regexp.pattern().isEmpty())
     {
       auto presetMatching = regexp.match(presetAnnotations->GetString(j));
-      presetSubstring = presetMatching.hasMatch()
-        ? !presetMatching.captured(1).isNull() ? presetMatching.captured(1)
-                                               : presetMatching.captured(0)
-        : presetSubstring;
+      if (presetMatching.hasMatch())
+      {
+        presetStringList = presetMatching.capturedTexts();
+        if (presetStringList.count() > 1)
+        {
+          // Remove the full match when capturing groups
+          presetStringList.removeFirst();
+        }
+      }
     }
-    filteredPresetAnnotations->AddString(presetSubstring.toStdString().c_str());
+    filteredPresetStringLists.insert(presetStringList, j);
   }
 
   // We want to keep current order.
@@ -629,21 +638,29 @@ void pqSeriesEditorPropertyWidget::onPresetChanged(const QString& name)
       QByteArray nameArray = currentAnnotations.at(i).toString().toLocal8Bit();
       const char* seriesName = nameArray.data();
 
-      auto seriesSubstring = QString(seriesName);
+      auto seriesStringlist = QStringList(seriesName);
       if (regexp.isValid() && !regexp.pattern().isEmpty())
       {
         auto matching = regexp.match(seriesName);
-        // extract the substring we want to compare : first look at captured group if any, then at
-        // whole matching and at least use the full series name.
-        seriesSubstring = matching.hasMatch()
-          ? !matching.captured(1).isNull() ? matching.captured(1) : matching.captured(0)
-          : seriesSubstring;
+        if (matching.hasMatch())
+        {
+          seriesStringlist = matching.capturedTexts();
+          if (seriesStringlist.count() > 1)
+          {
+            // Remove the full match when capturing groups
+            seriesStringlist.removeFirst();
+          }
+        }
       }
 
-      idx = filteredPresetAnnotations->GetIndex(seriesSubstring.toLocal8Bit().data());
+      if (filteredPresetStringLists.contains(seriesStringlist))
+      {
+        idx = filteredPresetStringLists[seriesStringlist] / 2;
+      }
 
       // if found, update annotation legend
-      if (idx > -1 && (idx + 1) < presetAnnotations->GetLength())
+      if (this->Internals->Ui.SeriesTable->presetLoadAnnotations() && idx > -1 &&
+        (idx + 1) < presetAnnotations->GetLength())
       {
         newAnnotations[i + 1] = presetAnnotations->GetString(2 * idx + 1);
       }
@@ -654,7 +671,7 @@ void pqSeriesEditorPropertyWidget::onPresetChanged(const QString& name)
       idx = i / 2;
     }
 
-    newColors.push_back(QVariant(currentAnnotations.at(idx)));
+    newColors.push_back(QVariant(currentAnnotations.at(i)));
 
     idx = idx % (colorsProp->GetNumberOfElements() / 3);
     newColors.push_back(vtkSMPropertyHelper(colorsProp).GetAsDouble(3 * idx));
@@ -663,7 +680,10 @@ void pqSeriesEditorPropertyWidget::onPresetChanged(const QString& name)
   }
 
   this->setSeriesColor(newColors);
-  this->setSeriesLabel(newAnnotations);
+  if (this->Internals->Ui.SeriesTable->presetLoadAnnotations())
+  {
+    this->setSeriesLabel(newAnnotations);
+  }
 
   auto presetProp = this->proxy()->GetProperty("LastPresetName");
   vtkSMPropertyHelper(presetProp).Set(name.toStdString().c_str());

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Server Manager Includes.
 
 // Qt Includes.
+#include <QFocusEvent>
 #include <QTimer>
 
 // ParaView Includes.
@@ -59,9 +60,7 @@ pqLineEdit::pqLineEdit(const QString& _contents, QWidget* _parent)
 }
 
 //-----------------------------------------------------------------------------
-pqLineEdit::~pqLineEdit()
-{
-}
+pqLineEdit::~pqLineEdit() = default;
 
 //-----------------------------------------------------------------------------
 void pqLineEdit::onTextEdited()
@@ -74,7 +73,7 @@ void pqLineEdit::onEditingFinished()
 {
   if (this->EditingFinishedPending)
   {
-    emit this->textChangedAndEditingFinished();
+    Q_EMIT this->textChangedAndEditingFinished();
     this->EditingFinishedPending = false;
   }
   if (this->ResetCursorPositionOnEditingFinished)
@@ -105,11 +104,25 @@ void pqLineEdit::triggerTextChangedAndEditingFinished()
 }
 
 //-----------------------------------------------------------------------------
-void pqLineEdit::focusInEvent(QFocusEvent* event)
+void pqLineEdit::focusInEvent(QFocusEvent* evt)
 {
   // First let the base class process the event
-  QLineEdit::focusInEvent(event);
-  // Then select the text by a single shot timer, so that everything will
-  // be processed before (calling selectAll() directly won't work)
-  QTimer::singleShot(0, this, &QLineEdit::selectAll);
+  this->Superclass::focusInEvent(evt);
+
+  if (evt)
+  {
+    switch (evt->reason())
+    {
+      case Qt::MouseFocusReason:
+      case Qt::TabFocusReason:
+      case Qt::BacktabFocusReason:
+      case Qt::ShortcutFocusReason:
+        // Then select the text by a single shot timer, so that everything will
+        // be processed before (calling selectAll() directly won't work)
+        QTimer::singleShot(0, this, &QLineEdit::selectAll);
+        break;
+      default:
+        break;
+    }
+  }
 }

@@ -57,7 +57,8 @@ public:
 
 //-----------------------------------------------------------------------------
 pqOutputPort::pqOutputPort(pqPipelineSource* source, int portno)
-  : Superclass(source)
+  : Superclass(QString(), QString(), source->getSourceProxy()->GetOutputPort(portno),
+      source->getServer(), source)
   , Source(source)
   , PortNumber(portno)
 {
@@ -79,7 +80,7 @@ pqOutputPort::~pqOutputPort()
 //-----------------------------------------------------------------------------
 pqServer* pqOutputPort::getServer() const
 {
-  return this->Source ? this->Source->getServer() : 0;
+  return this->Source ? this->Source->getServer() : nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -89,7 +90,7 @@ vtkSMOutputPort* pqOutputPort::getOutputPortProxy() const
 
   if (!source || !source->GetOutputPortsCreated())
   {
-    return NULL;
+    return nullptr;
   }
 
   return source->GetOutputPort(this->PortNumber);
@@ -102,7 +103,7 @@ vtkPVDataInformation* pqOutputPort::getDataInformation() const
 
   if (!source)
   {
-    return 0;
+    return nullptr;
   }
 
   return source->GetDataInformation(this->PortNumber);
@@ -130,12 +131,12 @@ const char* pqOutputPort::getDataClassName() const
 
   if (!source)
   {
-    return 0;
+    return nullptr;
   }
 
   vtkPVClassNameInformation* ciInfo =
     source->GetOutputPort(this->PortNumber)->GetClassNameInformation();
-  return ciInfo ? ciInfo->GetVTKClassName() : 0;
+  return ciInfo ? ciInfo->GetVTKClassName() : nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -183,7 +184,7 @@ pqPipelineSource* pqOutputPort::getConsumer(int index) const
   if (index < 0 || index >= this->Internal->Consumers.size())
   {
     qCritical() << "Invalid index: " << index;
-    return 0;
+    return nullptr;
   }
 
   return this->Internal->Consumers[index];
@@ -200,9 +201,9 @@ void pqOutputPort::addConsumer(pqPipelineSource* cons)
 {
   if (!this->Internal->Consumers.contains(cons))
   {
-    emit this->preConnectionAdded(this, cons);
+    Q_EMIT this->preConnectionAdded(this, cons);
     this->Internal->Consumers.push_back(cons);
-    emit this->connectionAdded(this, cons);
+    Q_EMIT this->connectionAdded(this, cons);
   }
 }
 
@@ -211,9 +212,9 @@ void pqOutputPort::removeConsumer(pqPipelineSource* cons)
 {
   if (this->Internal->Consumers.contains(cons))
   {
-    emit this->preConnectionRemoved(this, cons);
+    Q_EMIT this->preConnectionRemoved(this, cons);
     this->Internal->Consumers.removeAll(cons);
-    emit this->connectionRemoved(this, cons);
+    Q_EMIT this->connectionRemoved(this, cons);
   }
 }
 
@@ -226,7 +227,7 @@ void pqOutputPort::addRepresentation(pqDataRepresentation* repr)
       repr, SIGNAL(visibilityChanged(bool)), this, SLOT(onRepresentationVisibilityChanged()));
 
     this->Internal->Representations.push_back(repr);
-    emit this->representationAdded(this, repr);
+    Q_EMIT this->representationAdded(this, repr);
   }
 }
 
@@ -234,14 +235,14 @@ void pqOutputPort::addRepresentation(pqDataRepresentation* repr)
 void pqOutputPort::removeRepresentation(pqDataRepresentation* repr)
 {
   this->Internal->Representations.removeAll(repr);
-  QObject::disconnect(repr, 0, this, 0);
-  emit this->representationRemoved(this, repr);
+  QObject::disconnect(repr, nullptr, this, nullptr);
+  Q_EMIT this->representationRemoved(this, repr);
 }
 
 //-----------------------------------------------------------------------------
 void pqOutputPort::onRepresentationVisibilityChanged()
 {
-  emit this->visibilityChanged(this, qobject_cast<pqDataRepresentation*>(this->sender()));
+  Q_EMIT this->visibilityChanged(this, qobject_cast<pqDataRepresentation*>(this->sender()));
 }
 
 //-----------------------------------------------------------------------------
@@ -258,7 +259,7 @@ pqDataRepresentation* pqOutputPort::getRepresentation(pqView* view) const
     }
   }
 
-  return 0;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -315,5 +316,21 @@ void pqOutputPort::renderAllViews(bool force /*=false*/)
 //-----------------------------------------------------------------------------
 vtkSMSourceProxy* pqOutputPort::getSourceProxy() const
 {
-  return this->getSource() ? vtkSMSourceProxy::SafeDownCast(this->getSource()->getProxy()) : NULL;
+  return this->getSource() ? vtkSMSourceProxy::SafeDownCast(this->getSource()->getProxy())
+                           : nullptr;
+}
+
+//-----------------------------------------------------------------------------
+QString pqOutputPort::prettyName() const
+{
+  auto source = this->getSource();
+  Q_ASSERT(source);
+  if (source->getNumberOfOutputPorts() > 1)
+  {
+    return QString("%1: %2").arg(source->getSMName()).arg(this->getPortName());
+  }
+  else
+  {
+    return source->getSMName();
+  }
 }

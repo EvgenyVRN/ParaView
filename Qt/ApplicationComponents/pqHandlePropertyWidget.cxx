@@ -110,9 +110,7 @@ pqHandlePropertyWidget::pqHandlePropertyWidget(
 }
 
 //-----------------------------------------------------------------------------
-pqHandlePropertyWidget::~pqHandlePropertyWidget()
-{
-}
+pqHandlePropertyWidget::~pqHandlePropertyWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqHandlePropertyWidget::selectionChanged()
@@ -137,7 +135,7 @@ void pqHandlePropertyWidget::setWorldPosition(double wx, double wy, double wz)
   double o[3] = { wx, wy, wz };
   vtkSMPropertyHelper(wdgProxy, "WorldPosition").Set(o, 3);
   wdgProxy->UpdateVTKObjects();
-  emit this->changeAvailable();
+  Q_EMIT this->changeAvailable();
   this->render();
 }
 

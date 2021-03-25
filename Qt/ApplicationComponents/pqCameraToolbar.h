@@ -56,13 +56,14 @@ public:
     this->constructor();
   }
 
-private slots:
+private Q_SLOTS:
   void updateEnabledState();
 
 private:
   Q_DISABLE_COPY(pqCameraToolbar)
   void constructor();
   QAction* ZoomToDataAction;
+  QAction* ZoomClosestToDataAction;
 };
 
 #endif

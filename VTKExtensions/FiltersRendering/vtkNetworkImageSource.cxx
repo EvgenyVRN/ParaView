@@ -26,6 +26,7 @@
 
 #if VTK_MODULE_ENABLE_VTK_IOImage
 #include "vtkBMPReader.h"
+#include "vtkHDRReader.h"
 #include "vtkJPEGReader.h"
 #include "vtkPNGReader.h"
 #include "vtkPNMReader.h"
@@ -40,15 +41,15 @@ vtkNetworkImageSource::vtkNetworkImageSource()
 {
   this->SetNumberOfInputPorts(0);
   this->Buffer = vtkImageData::New();
-  this->FileName = 0;
+  this->FileName = nullptr;
 }
 
 //----------------------------------------------------------------------------
 vtkNetworkImageSource::~vtkNetworkImageSource()
 {
-  this->SetFileName(0);
+  this->SetFileName(nullptr);
   this->Buffer->Delete();
-  this->Buffer = NULL;
+  this->Buffer = nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -59,7 +60,7 @@ void vtkNetworkImageSource::UpdateImage()
     return;
   }
 
-  if (this->FileName == NULL || this->FileName[0] == 0)
+  if (this->FileName == nullptr || this->FileName[0] == 0)
   {
     return;
   }
@@ -136,6 +137,10 @@ int vtkNetworkImageSource::ReadImageFromFile(const char* filename)
   else if (ext == ".tif")
   {
     reader.TakeReference(vtkTIFFReader::New());
+  }
+  else if (ext == ".hdr")
+  {
+    reader.TakeReference(vtkHDRReader::New());
   }
   else
   {

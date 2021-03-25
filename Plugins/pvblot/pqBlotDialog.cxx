@@ -100,7 +100,7 @@ void pqBlotDialog::runScript()
 {
   QString filters = tr("BLOT Script (*.blot *.bl);;All files (*)");
   pqFileDialog* const dialog =
-    new pqFileDialog(NULL, this, tr("Run BLOT Script"), QString(), filters);
+    new pqFileDialog(nullptr, this, tr("Run BLOT Script"), QString(), filters);
 
   dialog->setObjectName("BLOTShellRunScriptDialog");
   dialog->setFileMode(pqFileDialog::ExistingFile);
@@ -139,5 +139,5 @@ pqBlotDialogExecuteAction* pqBlotDialogExecuteAction::connect(QAction* action, p
 //-----------------------------------------------------------------------------
 void pqBlotDialogExecuteAction::trigger()
 {
-  emit this->triggered(this->Command);
+  Q_EMIT this->triggered(this->Command);
 }

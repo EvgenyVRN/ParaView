@@ -48,7 +48,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqSaveDataReaction : public pqReaction
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqSaveDataReaction(QAction* parent);
 
@@ -62,7 +62,7 @@ public:
   static bool saveActiveData(const QString& files);
   static bool saveActiveData();
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

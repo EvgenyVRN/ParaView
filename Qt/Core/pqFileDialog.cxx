@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqFileDialogFilter.h"
 #include "pqFileDialogModel.h"
 #include "pqFileDialogRecentDirsModel.h"
+#include "pqQtDeprecated.h"
 #include "pqServer.h"
 #include "pqSettings.h"
 
@@ -75,6 +76,8 @@ public:
 };
 #include "ui_pqFileDialog.h"
 
+#include <QtGlobal>
+
 namespace
 {
 
@@ -82,13 +85,13 @@ QStringList MakeFilterList(const QString& filter)
 {
   if (filter.contains(";;"))
   {
-    return filter.split(";;", QString::SkipEmptyParts);
+    return filter.split(";;", PV_QT_SKIP_EMPTY_PARTS);
   }
 
   // check if '\n' is being used as separator.
   // (not sure why, but the old code was doing it, and if some applications
   // are relying on it, I don't want to break them right now).
-  return filter.split('\n', QString::SkipEmptyParts);
+  return filter.split('\n', PV_QT_SKIP_EMPTY_PARTS);
 }
 
 QStringList GetWildCardsFromFilter(const QString& filter)
@@ -108,7 +111,7 @@ QStringList GetWildCardsFromFilter(const QString& filter)
   }
 
   // separated by spaces or semi-colons
-  QStringList fs = f.split(QRegExp("[\\s+;]"), QString::SkipEmptyParts);
+  QStringList fs = f.split(QRegExp("[\\s+;]"), PV_QT_SKIP_EMPTY_PARTS);
 
   // add a *.ext.* for every *.ext we get to support file groups
   QStringList ret = fs;
@@ -149,11 +152,11 @@ public:
 
   pqImplementation(pqFileDialog* p, pqServer* server)
     : QObject(p)
-    , Model(new pqFileDialogModel(server, NULL))
-    , FavoriteModel(new pqFileDialogFavoriteModel(server, NULL))
-    , RecentModel(new pqFileDialogRecentDirsModel(Model, server, NULL))
+    , Model(new pqFileDialogModel(server, nullptr))
+    , FavoriteModel(new pqFileDialogFavoriteModel(server, nullptr))
+    , RecentModel(new pqFileDialogRecentDirsModel(Model, server, nullptr))
     , FileFilter(this->Model)
-    , Completer(new QCompleter(&this->FileFilter, NULL))
+    , Completer(new QCompleter(&this->FileFilter, nullptr))
     , Mode(ExistingFile)
     , SuppressOverwriteWarning(false)
     , ShowMultipleFileHelp(false)
@@ -396,17 +399,10 @@ pqFileDialog::pqFileDialog(pqServer* server, QWidget* p, const QString& title,
   // This code is similar to QFileDialog code
   // It positions different columns and orders in a standard way
   QFontMetrics fm(this->font());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   header->resizeSection(0, fm.horizontalAdvance(QLatin1String("wwwwwwwwwwwwwwwwwwwwwwwwww")));
   header->resizeSection(1, fm.horizontalAdvance(QLatin1String("mp3Folder")));
   header->resizeSection(2, fm.horizontalAdvance(QLatin1String("128.88 GB")));
   header->resizeSection(3, fm.horizontalAdvance(QLatin1String("10/29/81 02:02PM")));
-#else
-  header->resizeSection(0, fm.width(QLatin1String("wwwwwwwwwwwwwwwwwwwwwwwwww")));
-  header->resizeSection(1, fm.width(QLatin1String("mp3Folder")));
-  header->resizeSection(2, fm.width(QLatin1String("128.88 GB")));
-  header->resizeSection(3, fm.width(QLatin1String("10/29/81 02:02PM")));
-#endif
   impl.Ui.Files->setSortingEnabled(true);
   impl.Ui.Files->header()->setSortIndicator(0, Qt::AscendingOrder);
 
@@ -589,10 +585,10 @@ void pqFileDialog::addToFilesSelected(const QStringList& files)
 void pqFileDialog::emitFilesSelectionDone()
 {
   auto& impl = *this->Implementation;
-  emit filesSelected(impl.SelectedFiles);
+  Q_EMIT filesSelected(impl.SelectedFiles);
   if (impl.Mode != this->ExistingFiles && impl.SelectedFiles.size() > 0)
   {
-    emit filesSelected(impl.SelectedFiles[0]);
+    Q_EMIT filesSelected(impl.SelectedFiles[0]);
   }
   this->done(QDialog::Accepted);
 }
@@ -635,7 +631,7 @@ void pqFileDialog::accept()
   }
   if (loadedFile)
   {
-    emit this->emitFilesSelectionDone();
+    Q_EMIT this->emitFilesSelectionDone();
   }
 }
 
@@ -657,7 +653,7 @@ bool pqFileDialog::acceptExistingFiles()
     filename = filename.trimmed();
 
     QString fullFilePath = impl.Model->absoluteFilePath(filename);
-    emit this->fileAccepted(fullFilePath);
+    Q_EMIT this->fileAccepted(fullFilePath);
     loadedFiles = (this->acceptInternal(this->buildFileGroup(filename)) || loadedFiles);
   }
   return loadedFiles;
@@ -672,7 +668,7 @@ bool pqFileDialog::acceptDefault(const bool& checkForGrouping)
   filename = filename.trimmed();
 
   QString fullFilePath = impl.Model->absoluteFilePath(filename);
-  emit this->fileAccepted(fullFilePath);
+  Q_EMIT this->fileAccepted(fullFilePath);
 
   QStringList files;
   if (checkForGrouping)
@@ -753,7 +749,7 @@ void pqFileDialog::onModelReset()
   // the separator is always the unix separator
   QChar separator = '/';
 
-  QStringList parents = currentPath.split(separator, QString::SkipEmptyParts);
+  QStringList parents = currentPath.split(separator, PV_QT_SKIP_EMPTY_PARTS);
 
   // put our root back in
   if (parents.count())
@@ -783,7 +779,7 @@ void pqFileDialog::onModelReset()
     impl.Ui.Parents->addItem(str);
   }
   impl.Ui.Parents->setCurrentIndex(parents.size() - 1);
-  disconnect(impl.Ui.ShowDetail, SIGNAL(clicked(bool)), NULL, NULL);
+  disconnect(impl.Ui.ShowDetail, SIGNAL(clicked(bool)), nullptr, nullptr);
   connect(impl.Ui.ShowDetail, SIGNAL(clicked(bool)), this, SLOT(onShowDetailToggled(bool)));
   bool showDetail = impl.Model->isShowingDetailedInfo();
   impl.Ui.ShowDetail->setChecked(showDetail);
@@ -956,7 +952,7 @@ void pqFileDialog::onTextEdited(const QString& str)
   if (str.size() > 0)
   {
     // convert the typed information to be impl.FileNames
-    impl.FileNames = str.split(impl.FileNamesSeperator, QString::SkipEmptyParts);
+    impl.FileNames = str.split(impl.FileNamesSeperator, PV_QT_SKIP_EMPTY_PARTS);
   }
   else
   {
@@ -1189,7 +1185,7 @@ bool pqFileDialog::selectFile(const QString& f)
   vtksys::SystemTools::ConvertToUnixSlashes(unix_path);
 
   std::string filename, dirname;
-  std::string::size_type slashPos = unix_path.rfind("/");
+  std::string::size_type slashPos = unix_path.rfind('/');
   if (slashPos != std::string::npos)
   {
     filename = unix_path.substr(slashPos + 1);

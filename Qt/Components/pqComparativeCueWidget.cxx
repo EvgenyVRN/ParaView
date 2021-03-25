@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <QRegExpValidator>
 
+#include "pqQtDeprecated.h"
 #include "pqUndoStack.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkPVComparativeAnimationCue.h"
@@ -63,7 +64,7 @@ public:
 std::vector<double> getValues(const QString& str)
 {
   std::vector<double> values;
-  QStringList parts = str.split(',', QString::SkipEmptyParts);
+  QStringList parts = str.split(',', PV_QT_SKIP_EMPTY_PARTS);
   foreach (QString part, parts)
   {
     values.push_back(QVariant(part).toDouble());
@@ -92,7 +93,7 @@ pqComparativeCueWidget::~pqComparativeCueWidget()
 {
   this->VTKConnect->Disconnect();
   this->VTKConnect->Delete();
-  this->VTKConnect = 0;
+  this->VTKConnect = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -111,7 +112,7 @@ void pqComparativeCueWidget::setCue(vtkSMProxy* _cue)
       this->Cue, vtkCommand::PropertyModifiedEvent, this, SLOT(updateGUIOnIdle()));
   }
   this->updateGUI();
-  this->setEnabled(this->Cue != NULL);
+  this->setEnabled(this->Cue != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -197,7 +198,7 @@ void pqComparativeCueWidget::onCellChanged(int rowno, int colno)
   QString text = this->item(rowno, colno)->text();
   if (this->acceptsMultipleValues())
   {
-    QStringList parts = text.split(',', QString::SkipEmptyParts);
+    QStringList parts = text.split(',', PV_QT_SKIP_EMPTY_PARTS);
     if (parts.size() > 0)
     {
       double* newvalues = new double[parts.size()];
@@ -217,7 +218,7 @@ void pqComparativeCueWidget::onCellChanged(int rowno, int colno)
   }
   END_UNDO_SET();
 
-  emit this->valuesChanged();
+  Q_EMIT this->valuesChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -360,7 +361,7 @@ void pqComparativeCueWidget::editRange()
   }
 
   END_UNDO_SET();
-  emit this->valuesChanged();
+  Q_EMIT this->valuesChanged();
 
   this->updateGUIOnIdle();
 }

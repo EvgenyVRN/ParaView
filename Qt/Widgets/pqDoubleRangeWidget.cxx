@@ -42,13 +42,10 @@ pqDoubleRangeWidget::pqDoubleRangeWidget(QWidget* p)
   this->Minimum = 0;
   this->Maximum = 1;
   this->Resolution = 100;
-  this->StrictRange = false;
 }
 
 //-----------------------------------------------------------------------------
-pqDoubleRangeWidget::~pqDoubleRangeWidget()
-{
-}
+pqDoubleRangeWidget::~pqDoubleRangeWidget() = default;
 
 //-----------------------------------------------------------------------------
 int pqDoubleRangeWidget::resolution() const
@@ -112,26 +109,32 @@ void pqDoubleRangeWidget::setMinimum(double val)
 //-----------------------------------------------------------------------------
 void pqDoubleRangeWidget::updateValidator()
 {
+#if !defined(VTK_LEGACY_REMOVE)
   if (this->StrictRange)
   {
     this->setValidator(new QDoubleValidator(this->minimum(), this->maximum(), 100));
   }
   else
+#endif
   {
     this->setValidator(new QDoubleValidator());
   }
 }
 
+#if !defined(VTK_LEGACY_REMOVE)
 //-----------------------------------------------------------------------------
 bool pqDoubleRangeWidget::strictRange() const
 {
   const QDoubleValidator* dv = this->validator();
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
+#endif
 
+#if !defined(VTK_LEGACY_REMOVE)
 //-----------------------------------------------------------------------------
 void pqDoubleRangeWidget::setStrictRange(bool s)
 {
   this->StrictRange = s;
   this->updateValidator();
 }
+#endif

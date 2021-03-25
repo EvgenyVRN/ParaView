@@ -34,9 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _pqFileChooserWidget_h
 
 #include "pqComponentsModule.h"
+#include "pqQtDeprecated.h"
+
 #include <QString>
 #include <QStringList>
 #include <QWidget>
+
 class QLineEdit;
 class pqServer;
 
@@ -59,7 +62,7 @@ public:
   /**
   * constructor
   */
-  pqFileChooserWidget(QWidget* p = NULL);
+  pqFileChooserWidget(QWidget* p = nullptr);
   /**
   * destructor
   */
@@ -123,9 +126,18 @@ public:
     this->setFilenames(this->filenames());
   }
 
+  //@{
+  /**
+   * Get/set the title to use. If an empty string is specified, a default one is
+   * created.
+   */
+  void setTitle(const QString& ttle) { this->Title = ttle; }
+  const QString& title() const { return this->Title; }
+  //@}
+
   /**
   * set server to work on.
-  * If server is NULL, a local file dialog is used
+  * If server is nullptr, a local file dialog is used
   */
   void setServer(pqServer* server);
   pqServer* server();
@@ -136,11 +148,11 @@ public:
   */
   static QStringList splitFilenames(const QString& filesString)
   {
-    return filesString.split(";", QString::SkipEmptyParts);
+    return filesString.split(";", PV_QT_SKIP_EMPTY_PARTS);
   }
   static QString joinFilenames(const QStringList& filesList) { return filesList.join(";"); }
 
-signals:
+Q_SIGNALS:
   /**
   * Signal emitted when the filename changes.  The single string version is a
   * convenience for when you are only grabbing the first file anyway.
@@ -148,7 +160,7 @@ signals:
   void filenamesChanged(const QStringList&);
   void filenameChanged(const QString&);
 
-protected slots:
+protected Q_SLOTS:
   /**
   * Called when the user hits the choose file button.
   */
@@ -167,6 +179,7 @@ protected:
   bool AcceptAnyFile;
   QStringList FilenameList;
   bool UseFilenameList;
+  QString Title;
 
   /**
   * Takes a string with delimited files and emits the filenamesChanged

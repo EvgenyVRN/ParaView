@@ -39,8 +39,8 @@ namespace
 // being loaded if they should not be loaded.
 void PruneEndTimesIfNeeded(vtkPVXMLElement* element, vtkSMAnimationScene* self)
 {
-  vtkPVXMLElement* startTimeElement = NULL;
-  vtkPVXMLElement* endTimeElement = NULL;
+  vtkPVXMLElement* startTimeElement = nullptr;
+  vtkPVXMLElement* endTimeElement = nullptr;
   int playMode = self ? self->GetPlayMode() : vtkCompositeAnimationPlayer::SEQUENCE;
   int lockEndTime = self ? (self->GetLockEndTime() ? 1 : 0) : 0;
   int lockStartTime = self ? (self->GetLockStartTime() ? 1 : 0) : 0;
@@ -97,14 +97,10 @@ void PruneEndTimesIfNeeded(vtkPVXMLElement* element, vtkSMAnimationScene* self)
 
 vtkStandardNewMacro(vtkSMAnimationSceneProxy);
 //----------------------------------------------------------------------------
-vtkSMAnimationSceneProxy::vtkSMAnimationSceneProxy()
-{
-}
+vtkSMAnimationSceneProxy::vtkSMAnimationSceneProxy() = default;
 
 //----------------------------------------------------------------------------
-vtkSMAnimationSceneProxy::~vtkSMAnimationSceneProxy()
-{
-}
+vtkSMAnimationSceneProxy::~vtkSMAnimationSceneProxy() = default;
 
 //----------------------------------------------------------------------------
 void vtkSMAnimationSceneProxy::CreateVTKObjects()
@@ -132,6 +128,7 @@ void vtkSMAnimationSceneProxy::OnUpdateStartEndTimesEvent(
   vtkSMPropertyHelper startTime(this, "StartTime");
   vtkSMPropertyHelper endTime(this, "EndTime");
   vtkVector2d newRange(startTime.GetAsDouble(0), endTime.GetAsDouble(0));
+  const auto current_delta = (newRange[1] - newRange[0]);
   if (!caller->GetLockStartTime())
   {
     newRange.SetX(range.GetX());
@@ -139,6 +136,14 @@ void vtkSMAnimationSceneProxy::OnUpdateStartEndTimesEvent(
   if (!caller->GetLockEndTime())
   {
     newRange.SetY(range.GetY());
+  }
+
+  // if range[0] == range[1], which can happen when there's only 1 timestep in
+  // the dataset, we push back end time to avoid having an animation with no
+  // range.
+  if (newRange[0] == newRange[1])
+  {
+    newRange[1] += current_delta > 0 ? current_delta : 1.0;
   }
   startTime.Set(newRange.GetX());
   endTime.Set(newRange.GetY());
@@ -212,7 +217,7 @@ vtkSMProxy* vtkSMAnimationSceneProxy::FindAnimationCue(
 {
   if (!animatedProxy || !animatedPropertyName)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkSMPropertyHelper cuesHelper(this, "Cues");
@@ -248,14 +253,15 @@ vtkSMProxy* vtkSMAnimationSceneProxy::FindAnimationCue(
       return cue;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------
 int vtkSMAnimationSceneProxy::LoadXMLState(vtkPVXMLElement* element, vtkSMProxyLocator* locator)
 {
-  PruneEndTimesIfNeeded(element,
-    (this->ObjectsCreated ? vtkSMAnimationScene::SafeDownCast(this->GetClientSideObject()) : NULL));
+  PruneEndTimesIfNeeded(
+    element, (this->ObjectsCreated ? vtkSMAnimationScene::SafeDownCast(this->GetClientSideObject())
+                                   : nullptr));
   return this->Superclass::LoadXMLState(element, locator);
   ;
 }

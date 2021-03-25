@@ -17,6 +17,7 @@
 #include "vtkDataObject.h"
 #include "vtkExecutive.h"
 #include "vtkInformation.h"
+#include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
@@ -33,9 +34,7 @@ vtkPVDReader::vtkPVDReader()
 }
 
 //----------------------------------------------------------------------------
-vtkPVDReader::~vtkPVDReader()
-{
-}
+vtkPVDReader::~vtkPVDReader() = default;
 
 //----------------------------------------------------------------------------
 void vtkPVDReader::PrintSelf(ostream& os, vtkIndent indent)
@@ -69,7 +68,7 @@ void vtkPVDReader::ReadXMLData()
   vtkInformation* outInfo = this->GetCurrentOutputInformation();
 
   int tsLength = 0;
-  double* steps = 0;
+  double* steps = nullptr;
   if (outInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
   {
     tsLength = outInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
@@ -100,7 +99,7 @@ void vtkPVDReader::ReadXMLData()
       bool found = false;
       while (cnt2 < tsLength && !found)
       {
-        double val = strtod(this->GetAttributeValue("timestep", cnt2), NULL);
+        double val = strtod(this->GetAttributeValue("timestep", cnt2), nullptr);
         if (val == steps[cnt])
         {
           found = true;
@@ -155,9 +154,17 @@ int vtkPVDReader::RequestDataObject(
 }
 
 //----------------------------------------------------------------------------
-void vtkPVDReader::SetupOutputInformation(vtkInformation* outInfo)
+int vtkPVDReader::RequestInformation(
+  vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  this->Superclass::SetupOutputInformation(outInfo);
+  if (!this->Superclass::RequestInformation(request, inputVector, outputVector))
+  {
+    return 0;
+  }
+
+  int outputPort = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  outputPort = outputPort >= 0 ? outputPort : 0;
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
   int index = this->GetAttributeIndex("timestep");
   int numTimeSteps = this->GetNumberOfAttributeValues(index);
@@ -171,7 +178,7 @@ void vtkPVDReader::SetupOutputInformation(vtkInformation* outInfo)
   for (int i = 0; i < numTimeSteps; i++)
   {
     const char* attr = this->GetAttributeValue(index, i);
-    char* res = 0;
+    char* res = nullptr;
     double val = strtod(attr, &res);
     if (res == attr)
     {
@@ -192,4 +199,5 @@ void vtkPVDReader::SetupOutputInformation(vtkInformation* outInfo)
     timeRange[1] = timeSteps[numTimeSteps - 1];
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   }
+  return 1;
 }

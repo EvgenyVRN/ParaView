@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqModelTransformSupportBehavior_h
 
 #include "pqApplicationComponentsModule.h"
-#include "vtkStdString.h"
 #include "vtkTuple.h"
 #include <QObject>
 
@@ -55,13 +54,13 @@ public:
   ~pqModelTransformSupportBehavior() override;
 
   static vtkTuple<double, 16> getChangeOfBasisMatrix(
-    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = nullptr);
   static vtkTuple<double, 6> getBoundingBoxInModelCoordinates(
-    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
-  static vtkTuple<vtkStdString, 3> getAxisTitles(
-    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = NULL);
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = nullptr);
+  static vtkTuple<std::string, 3> getAxisTitles(
+    vtkSMSourceProxy*, int outputPort = 0, bool* isvalid = nullptr);
 
-protected slots:
+protected Q_SLOTS:
   virtual void viewAdded(pqView*);
   virtual void viewUpdated();
 

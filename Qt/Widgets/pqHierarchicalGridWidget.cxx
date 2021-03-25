@@ -161,9 +161,7 @@ pqHierarchicalGridWidget::pqHierarchicalGridWidget(QWidget* parentObject)
 }
 
 //-----------------------------------------------------------------------------
-pqHierarchicalGridWidget::~pqHierarchicalGridWidget()
-{
-}
+pqHierarchicalGridWidget::~pqHierarchicalGridWidget() = default;
 
 //-----------------------------------------------------------------------------
 void pqHierarchicalGridWidget::setUserResizability(bool val)
@@ -287,5 +285,5 @@ void pqHierarchicalGridWidget::setSplitFraction(int location, double fraction)
   {
     l->setSplitFraction(location, fraction);
   }
-  emit this->splitterMoved(location, fraction);
+  Q_EMIT this->splitterMoved(location, fraction);
 }

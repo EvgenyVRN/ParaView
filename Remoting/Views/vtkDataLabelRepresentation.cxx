@@ -16,14 +16,15 @@
 
 #include "vtkActor.h"
 #include "vtkActor2D.h"
+#include "vtkAlgorithmOutput.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCellCenters.h"
-#include "vtkCompositeDataToUnstructuredGridFilter.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkLabeledDataMapper.h"
 #include "vtkMPIMoveData.h"
 #include "vtkMaskPoints.h"
+#include "vtkMergeBlocks.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPVRenderView.h"
@@ -40,7 +41,7 @@ vtkDataLabelRepresentation::vtkDataLabelRepresentation()
   this->CellLabelVisibility = 0;
   this->MaximumNumberOfLabels = 100;
 
-  this->MergeBlocks = vtkCompositeDataToUnstructuredGridFilter::New();
+  this->MergeBlocks = vtkMergeBlocks::New();
 
   this->PointMask = vtkSmartPointer<vtkMaskPoints>::New();
   this->PointMask->SetOnRatio(1);
@@ -218,7 +219,7 @@ void vtkDataLabelRepresentation::SetPointLabelFormat(const char* format)
   }
   else
   {
-    this->PointLabelMapper->SetLabelFormat(NULL);
+    this->PointLabelMapper->SetLabelFormat(nullptr);
   }
 }
 
@@ -303,7 +304,7 @@ void vtkDataLabelRepresentation::SetCellLabelFormat(const char* format)
   }
   else
   {
-    this->CellLabelMapper->SetLabelFormat(NULL);
+    this->CellLabelMapper->SetLabelFormat(nullptr);
   }
 }
 
@@ -380,8 +381,19 @@ int vtkDataLabelRepresentation::ProcessViewRequest(
   else if (request_type == vtkPVView::REQUEST_RENDER())
   {
     vtkAlgorithmOutput* producerPort = vtkPVRenderView::GetPieceProducer(inInfo, this);
-    this->PointMask->SetInputConnection(producerPort);
-    this->CellCenters->SetInputConnection(producerPort);
+    auto producerObject = producerPort->GetProducer()->GetOutputDataObject(0);
+    if (producerObject && producerObject->IsA("vtkDataSet"))
+    {
+      this->PointMask->SetInputConnection(producerPort);
+      this->CellCenters->SetInputConnection(producerPort);
+      this->CellLabelActor->SetVisibility(this->CellLabelVisibility);
+    }
+    else
+    {
+      // Turn off visibility if the output from the producer is not acceptable input to
+      // PointMask and vtkCellCenters. Fixes bug #20548.
+      this->CellLabelActor->VisibilityOff();
+    }
   }
 
   return 1;

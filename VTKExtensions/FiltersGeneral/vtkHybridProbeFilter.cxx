@@ -15,10 +15,10 @@
 #include "vtkHybridProbeFilter.h"
 
 #include "vtkCompositeDataSet.h"
-#include "vtkCompositeDataToUnstructuredGridFilter.h"
 #include "vtkExtractSelection.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkMergeBlocks.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPProbeFilter.h"
@@ -36,9 +36,7 @@ vtkHybridProbeFilter::vtkHybridProbeFilter()
 }
 
 //----------------------------------------------------------------------------
-vtkHybridProbeFilter::~vtkHybridProbeFilter()
-{
-}
+vtkHybridProbeFilter::~vtkHybridProbeFilter() = default;
 
 //----------------------------------------------------------------------------
 int vtkHybridProbeFilter::FillInputPortInformation(int, vtkInformation* info)
@@ -109,7 +107,7 @@ bool vtkHybridProbeFilter::ExtractCellContainingLocation(
 
   if (vtkCompositeDataSet::SafeDownCast(input))
   {
-    vtkNew<vtkCompositeDataToUnstructuredGridFilter> merger;
+    vtkNew<vtkMergeBlocks> merger;
     merger->SetInputDataObject(extractor->GetOutputDataObject(0));
     merger->Update();
     output->ShallowCopy(merger->GetOutputDataObject(0));

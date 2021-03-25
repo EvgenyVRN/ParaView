@@ -15,12 +15,12 @@
 #include "vtkSMDomain.h"
 
 #include "vtkCommand.h"
+#include "vtkObjectFactory.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSMProperty.h"
 #include "vtkSMSession.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMUncheckedPropertyHelper.h"
-#include "vtkStdString.h"
 #include "vtkWeakPointer.h"
 
 #include <assert.h>
@@ -32,7 +32,7 @@ struct vtkSMDomainInternals
   // There's no reason why a domain should have a hard reference to the required
   // property since both the domain and the required property belong to the same
   // proxy, so they will be deleted only when the proxy disappears.
-  typedef std::map<vtkStdString, vtkWeakPointer<vtkSMProperty> > PropertyMap;
+  typedef std::map<std::string, vtkWeakPointer<vtkSMProperty> > PropertyMap;
   PropertyMap RequiredProperties;
 
   // This is the property that has this domain.
@@ -61,10 +61,11 @@ vtkSMDomain::DeferDomainModifiedEvents::~DeferDomainModifiedEvents()
   }
 }
 
+vtkStandardNewMacro(vtkSMDomain);
 //---------------------------------------------------------------------------
 vtkSMDomain::vtkSMDomain()
 {
-  this->XMLName = 0;
+  this->XMLName = nullptr;
   this->Internals = new vtkSMDomainInternals;
   this->IsOptional = false;
 
@@ -75,8 +76,14 @@ vtkSMDomain::vtkSMDomain()
 //---------------------------------------------------------------------------
 vtkSMDomain::~vtkSMDomain()
 {
-  this->SetXMLName(0);
+  this->SetXMLName(nullptr);
   delete this->Internals;
+}
+
+//---------------------------------------------------------------------------
+void vtkSMDomain::Update(vtkSMProperty* vtkNotUsed(requestingProperty))
+{
+  this->DomainModified();
 }
 
 //---------------------------------------------------------------------------
@@ -88,7 +95,7 @@ vtkSMProperty* vtkSMDomain::GetRequiredProperty(const char* function)
   {
     return iter->second.GetPointer();
   }
-  return 0;
+  return nullptr;
 }
 
 //---------------------------------------------------------------------------
@@ -181,7 +188,7 @@ vtkPVDataInformation* vtkSMDomain::GetInputDataInformation(const char* function,
   vtkSMProperty* inputProperty = this->GetRequiredProperty(function);
   if (!inputProperty)
   {
-    return NULL;
+    return nullptr;
   }
 
   vtkSMUncheckedPropertyHelper helper(inputProperty);
@@ -194,7 +201,30 @@ vtkPVDataInformation* vtkSMDomain::GetInputDataInformation(const char* function,
     }
   }
 
-  return NULL;
+  return nullptr;
+}
+
+//---------------------------------------------------------------------------
+vtkPVDataInformation* vtkSMDomain::GetInputSubsetDataInformation(
+  unsigned int compositeIndex, const char* function, unsigned int index)
+{
+  vtkSMProperty* inputProperty = this->GetRequiredProperty(function);
+  if (!inputProperty)
+  {
+    return nullptr;
+  }
+
+  vtkSMUncheckedPropertyHelper helper(inputProperty);
+  if (helper.GetNumberOfElements() > index)
+  {
+    vtkSMSourceProxy* sp = vtkSMSourceProxy::SafeDownCast(helper.GetAsProxy(index));
+    if (sp)
+    {
+      return sp->GetSubsetDataInformation(helper.GetOutputPort(), compositeIndex);
+    }
+  }
+
+  return nullptr;
 }
 
 //---------------------------------------------------------------------------
@@ -270,7 +300,7 @@ void vtkSMDomain::SetProperty(vtkSMProperty* prop)
 void vtkSMDomain::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "XMLName: " << (this->XMLName ? this->XMLName : "(null)") << endl;
+  os << indent << "XMLName: " << (this->XMLName ? this->XMLName : "(nullptr)") << endl;
   os << indent << "IsOptional: " << this->IsOptional << endl;
   os << indent << "Property: " << this->Internals->DomainProperty.GetPointer() << endl;
 }

@@ -45,7 +45,7 @@ class PQAPPLICATIONCOMPONENTS_EXPORT pqCreateCustomFilterReaction : public pqRea
 
 public:
   /**
-  * Constructor. Parent cannot be NULL.
+  * Constructor. Parent cannot be nullptr.
   */
   pqCreateCustomFilterReaction(QAction* parent);
 
@@ -54,7 +54,7 @@ public:
   */
   static void createCustomFilter();
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the enabled state. Applications need not explicitly call
   * this.

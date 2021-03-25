@@ -104,7 +104,7 @@ public:
   template <class ConnectionType>
   bool addPropertyLink(QObject* qobject, const char* qproperty, const char* qsignal,
     vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex = -1,
-    ConnectionType* notused = NULL);
+    ConnectionType* notused = nullptr);
 
   /**
    * Like addPropertyLink, but used to create a custom subclass of pqPropertyLinksConnection
@@ -114,7 +114,7 @@ public:
   template <class ConnectionType>
   bool addTraceablePropertyLink(QObject* qobject, const char* qproperty, const char* qsignal,
     vtkSMProxy* smproxy, vtkSMProperty* smproperty, int smindex = -1,
-    ConnectionType* notused = NULL);
+    ConnectionType* notused = nullptr);
 
   /**
   * Remove a particular link.
@@ -125,7 +125,7 @@ public:
   bool autoUpdateVTKObjects() const { return this->AutoUpdateVTKObjects; }
   bool useUncheckedProperties() const { return this->UseUncheckedProperties; }
 
-public slots:
+public Q_SLOTS:
   /**
   * Remove all links.
   */
@@ -157,11 +157,11 @@ public slots:
   */
   void setAutoUpdateVTKObjects(bool val) { this->AutoUpdateVTKObjects = val; }
 
-signals:
+Q_SIGNALS:
   void qtWidgetChanged();
   void smPropertyChanged();
 
-private slots:
+private Q_SLOTS:
   /**
   * slots called when pqPropertyLinksConnection indicates that a Qt or SM
   * property was changed.

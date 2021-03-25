@@ -48,11 +48,15 @@ OPTIONAL_DEPENDS
   VTK::ImagingSources
   VTK::InteractionWidgets
   VTK::IOADIOS2
+  VTK::IOCGNSReader
+  VTK::IOFides
+  VTK::IOChemistry
   VTK::IOCityGML
   VTK::IOGDAL
   VTK::IOGeometry
   VTK::IOH5part
   VTK::IOInfovis
+  VTK::IOIoss
   VTK::IOLAS
   VTK::IOLegacy
   VTK::IOMotionFX
@@ -77,5 +81,7 @@ OPTIONAL_DEPENDS
   VTK::ParallelMomentInvariants
   VTK::PythonInterpreter
   VTK::RenderingFreeType
+TEST_OPTIONAL_DEPENDS
+  ParaView::RemotingMisc
 TEST_LABELS
   ParaView

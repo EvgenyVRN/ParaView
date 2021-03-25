@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
 #include "pqServerConnectDialog.h"
+#include "pqQtDeprecated.h"
 #include "ui_pqServerConnectDialog.h"
 
 #include "pqApplicationCore.h"
@@ -83,7 +84,7 @@ class SourcesSyntaxHighlighter : public QSyntaxHighlighter
   QTextCharFormat ErrorFormat;
 
 public:
-  SourcesSyntaxHighlighter(QTextDocument* parentObject = 0)
+  SourcesSyntaxHighlighter(QTextDocument* parentObject = nullptr)
     : QSyntaxHighlighter(parentObject)
   {
     this->KeywordFormat.setForeground(Qt::darkBlue);
@@ -145,7 +146,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqServerConnectDialog::pqServerConnectDialog(
-  QWidget* parentObject /*=0*/, const pqServerResource& selector /*=pqServerResource()*/)
+  QWidget* parentObject /*=nullptr*/, const pqServerResource& selector /*=pqServerResource()*/)
   : Superclass(parentObject)
 {
   this->Internals = new pqInternals();
@@ -237,7 +238,7 @@ pqServerConnectDialog::pqServerConnectDialog(
 pqServerConnectDialog::~pqServerConnectDialog()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -318,7 +319,7 @@ void pqServerConnectDialog::onServerSelected()
 void pqServerConnectDialog::addServer()
 {
   this->editConfiguration(pqServerConfiguration());
-  emit serverAdded();
+  Q_EMIT serverAdded();
 }
 
 //-----------------------------------------------------------------------------
@@ -387,7 +388,7 @@ void pqServerConnectDialog::editConfiguration(const pqServerConfiguration& confi
   this->Internals->dataServerHost->setText("localhost");
   this->Internals->dataServerPort->setValue(11111);
   this->Internals->renderServerHost->setText("localhost");
-  this->Internals->renderServerPort->setValue(22222);
+  this->Internals->renderServerPort->setValue(22221);
 
   // Update the interface based on the values in \c configuration.
   int type = CLIENT_SERVER;
@@ -414,13 +415,13 @@ void pqServerConnectDialog::editConfiguration(const pqServerConfiguration& confi
     this->Internals->dataServerHost->setText(configuration.resource().dataServerHost());
     this->Internals->dataServerPort->setValue(configuration.resource().dataServerPort(11111));
     this->Internals->renderServerHost->setText(configuration.resource().renderServerHost());
-    this->Internals->renderServerPort->setValue(configuration.resource().renderServerPort(22222));
+    this->Internals->renderServerPort->setValue(configuration.resource().renderServerPort(22221));
   }
   else if (scheme == "cdsrsrc")
   {
     type = CLIENT_DATA_SERVER_RENDER_SERVER_REVERSE_CONNECT;
     this->Internals->dataServerPort->setValue(configuration.resource().dataServerPort(11111));
-    this->Internals->renderServerPort->setValue(configuration.resource().renderServerPort(22222));
+    this->Internals->renderServerPort->setValue(configuration.resource().renderServerPort(22221));
 
     // set the host the the remote server name is correct, even if it not used for connecting.
     this->Internals->dataServerHost->setText(configuration.resource().dataServerHost());
@@ -641,7 +642,7 @@ void pqServerConnectDialog::deleteServer()
     pqApplicationCore::instance()->serverConfigurations().saveNow();
   }
 
-  emit serverDeleted();
+  Q_EMIT serverDeleted();
 }
 
 //-----------------------------------------------------------------------------
@@ -650,7 +651,7 @@ void pqServerConnectDialog::saveServers()
   QString filters;
   filters += "ParaView server configuration file (*.pvsc)";
 
-  pqFileDialog dialog(NULL, this, tr("Save Server Configuration File"), QString(), filters);
+  pqFileDialog dialog(nullptr, this, tr("Save Server Configuration File"), QString(), filters);
   dialog.setObjectName("SaveServerConfigurationDialog");
   dialog.setFileMode(pqFileDialog::AnyFile);
   if (dialog.exec() == QDialog::Accepted)
@@ -667,7 +668,7 @@ void pqServerConnectDialog::loadServers()
   filters += "ParaView server configuration file (*.pvsc)";
   filters += ";;All files (*)";
 
-  pqFileDialog dialog(NULL, this, tr("Load Server Configuration File"), QString(), filters);
+  pqFileDialog dialog(nullptr, this, tr("Load Server Configuration File"), QString(), filters);
   dialog.setObjectName("LoadServerConfigurationDialog");
   dialog.setFileMode(pqFileDialog::ExistingFile);
   if (dialog.exec() == QDialog::Accepted)
@@ -702,7 +703,7 @@ const pqServerConfiguration& pqServerConnectDialog::configurationToConnect() con
 
 //-----------------------------------------------------------------------------
 bool pqServerConnectDialog::selectServer(pqServerConfiguration& selected_configuration,
-  QWidget* dialogParent /*=NULL*/, const pqServerResource& selector /*=pqServerResource()*/)
+  QWidget* dialogParent /*=nullptr*/, const pqServerResource& selector /*=pqServerResource()*/)
 {
   // see if only 1 server matched the selector (if valid). In that case, no
   // need to popup the dialog.
@@ -765,7 +766,7 @@ void pqServerConnectDialog::fetchServers()
 
   QRegExp regExp("pvsc\\s+([^\\s]+)\\s+(.+)");
   QTextStream stream(&pvsc_sources, QIODevice::ReadOnly);
-  foreach (const QString& line, stream.readAll().split("\n", QString::SkipEmptyParts))
+  foreach (const QString& line, stream.readAll().split("\n", PV_QT_SKIP_EMPTY_PARTS))
   {
     QString cleaned_line = line.trimmed();
     if (regExp.exactMatch(cleaned_line))

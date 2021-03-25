@@ -689,12 +689,12 @@ void pqVRUIConnection::getNextPacket()
 // ----------------------------------------------------------------------------
 void pqVRUIConnection::newAnalogValue(std::vector<float>* data)
 {
-  vtkVREventData temp;
+  vtkVREvent temp;
   temp.connId = this->Address;
   temp.name = name(ANALOG_EVENT);
   temp.eventType = ANALOG_EVENT;
   temp.timeStamp = QDateTime::currentDateTime().toTime_t();
-  temp.data.analog.num_channel = (int)(*data).size();
+  temp.data.analog.num_channels = (int)(*data).size();
   for (unsigned int i = 0; i < (*data).size(); ++i)
   {
     temp.data.analog.channel[i] = (*data)[i];
@@ -705,7 +705,7 @@ void pqVRUIConnection::newAnalogValue(std::vector<float>* data)
 // ----------------------------------------------------------------------------
 void pqVRUIConnection::newButtonValue(int state, int button)
 {
-  vtkVREventData temp;
+  vtkVREvent temp;
   temp.connId = this->Address;
   temp.name = this->name(BUTTON_EVENT, button);
   temp.eventType = BUTTON_EVENT;
@@ -718,7 +718,7 @@ void pqVRUIConnection::newButtonValue(int state, int button)
 // ----------------------------------------------------------------------------
 void pqVRUIConnection::newTrackerValue(vtkSmartPointer<vtkVRUITrackerState> data, int sensor)
 {
-  vtkVREventData temp;
+  vtkVREvent temp;
   temp.connId = this->Address;
   temp.name = name(TRACKER_EVENT, sensor);
   temp.eventType = TRACKER_EVENT;

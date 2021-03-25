@@ -86,7 +86,7 @@ public:
 
 //-----------------------------------------------------------------------------
 pqProxy::pqProxy(const QString& group, const QString& name, vtkSMProxy* proxy, pqServer* server,
-  QObject* _parent /*=NULL*/)
+  QObject* _parent /*=nullptr*/)
   : pqServerManagerModelItem(_parent)
   , Server(server)
   , SMName(name)
@@ -228,7 +228,7 @@ pqProxy* pqProxy::findProxyWithHelper(vtkSMProxy* aproxy, QString& key)
 {
   if (!aproxy)
   {
-    return NULL;
+    return nullptr;
   }
   pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
   pqServer* server = smmodel->findServer(aproxy->GetSession());
@@ -240,7 +240,7 @@ pqProxy* pqProxy::findProxyWithHelper(vtkSMProxy* aproxy, QString& key)
       return pqproxy;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -265,7 +265,7 @@ void pqProxy::setSMName(const QString& name)
   if (!name.isEmpty() && this->SMName != name)
   {
     this->SMName = name;
-    emit this->nameChanged(this);
+    Q_EMIT this->nameChanged(this);
   }
 }
 
@@ -299,14 +299,14 @@ void pqProxy::setModifiedState(ModifiedState modified)
   if (modified != this->Modified)
   {
     this->Modified = modified;
-    emit this->modifiedStateChanged(this);
+    Q_EMIT this->modifiedStateChanged(this);
   }
 }
 
 //-----------------------------------------------------------------------------
 vtkSMSessionProxyManager* pqProxy::proxyManager() const
 {
-  return this->Internal->Proxy ? this->Internal->Proxy->GetSessionProxyManager() : NULL;
+  return this->Internal->Proxy ? this->Internal->Proxy->GetSessionProxyManager() : nullptr;
 }
 //-----------------------------------------------------------------------------
 void pqProxy::initialize()

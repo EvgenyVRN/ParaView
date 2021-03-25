@@ -26,8 +26,8 @@ vtkStandardNewMacro(vtkPVDiscretizableColorTransferFunction);
 //-------------------------------------------------------------------------
 vtkPVDiscretizableColorTransferFunction::vtkPVDiscretizableColorTransferFunction()
 {
-  this->AnnotatedValuesInFullSet = NULL;
-  this->AnnotationsInFullSet = NULL;
+  this->AnnotatedValuesInFullSet = nullptr;
+  this->AnnotationsInFullSet = nullptr;
   this->IndexedColorsInFullSet = vtkDoubleArray::New();
   this->IndexedColorsInFullSet->SetNumberOfComponents(3);
   this->IndexedOpacitiesInFullSet = vtkDoubleArray::New();
@@ -85,7 +85,7 @@ void vtkPVDiscretizableColorTransferFunction::SetAnnotationsInFullSet(
   if (this->AnnotatedValuesInFullSet && !values)
   {
     this->AnnotatedValuesInFullSet->Delete();
-    this->AnnotatedValuesInFullSet = 0;
+    this->AnnotatedValuesInFullSet = nullptr;
   }
   else if (values)
   { // Ensure arrays are of the same type before copying.
@@ -94,7 +94,7 @@ void vtkPVDiscretizableColorTransferFunction::SetAnnotationsInFullSet(
       if (this->AnnotatedValuesInFullSet->GetDataType() != values->GetDataType())
       {
         this->AnnotatedValuesInFullSet->Delete();
-        this->AnnotatedValuesInFullSet = 0;
+        this->AnnotatedValuesInFullSet = nullptr;
       }
     }
     if (!this->AnnotatedValuesInFullSet)
@@ -111,7 +111,7 @@ void vtkPVDiscretizableColorTransferFunction::SetAnnotationsInFullSet(
   if (this->AnnotationsInFullSet && !annotations)
   {
     this->AnnotationsInFullSet->Delete();
-    this->AnnotationsInFullSet = 0;
+    this->AnnotationsInFullSet = nullptr;
   }
   else if (!this->AnnotationsInFullSet && annotations)
   {
@@ -128,7 +128,7 @@ void vtkPVDiscretizableColorTransferFunction::SetAnnotationsInFullSet(
 
 //----------------------------------------------------------------------------
 vtkIdType vtkPVDiscretizableColorTransferFunction::SetAnnotationInFullSet(
-  vtkVariant value, vtkStdString annotation)
+  vtkVariant value, std::string annotation)
 {
   vtkIdType idx = -1;
   bool modified = false;
@@ -165,7 +165,7 @@ vtkIdType vtkPVDiscretizableColorTransferFunction::SetAnnotationInFullSet(
 
 //-------------------------------------------------------------------------
 vtkIdType vtkPVDiscretizableColorTransferFunction::SetAnnotationInFullSet(
-  vtkStdString value, vtkStdString annotation)
+  std::string value, std::string annotation)
 {
   bool valid;
   vtkVariant val(value);
@@ -211,9 +211,9 @@ void vtkPVDiscretizableColorTransferFunction::ResetActiveAnnotatedValues()
 }
 
 //-----------------------------------------------------------------------------
-void vtkPVDiscretizableColorTransferFunction::SetActiveAnnotatedValue(vtkStdString value)
+void vtkPVDiscretizableColorTransferFunction::SetActiveAnnotatedValue(std::string value)
 {
-  this->ActiveAnnotatedValues->InsertNextValue(value);
+  this->ActiveAnnotatedValues->InsertNextValue(value.c_str());
   this->Modified();
 }
 
@@ -348,7 +348,7 @@ void vtkPVDiscretizableColorTransferFunction::Build()
 
     for (vtkIdType i = 0; i < this->AnnotatedValuesInFullSet->GetNumberOfTuples(); ++i)
     {
-      vtkStdString annotation = this->AnnotationsInFullSet->GetValue(i);
+      std::string annotation = this->AnnotationsInFullSet->GetValue(i);
       vtkVariant value = this->AnnotatedValuesInFullSet->GetVariantValue(i);
 
       bool useAnnotation = true;

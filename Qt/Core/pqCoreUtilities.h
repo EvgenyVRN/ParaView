@@ -60,7 +60,7 @@ public:
   pqCoreUtilitiesEventHelper(QObject* parent);
   ~pqCoreUtilitiesEventHelper() override;
 
-signals:
+Q_SIGNALS:
   void eventInvoked(vtkObject*, unsigned long, void*);
 
 private:
@@ -153,7 +153,7 @@ public:
   * DASHBOARD_TEST_FROM_CTEST environment variable is set. This may change in future.
   */
   static bool promptUser(const QString& settingsKey, QMessageBox::Icon icon, const QString& title,
-    const QString& message, QMessageBox::StandardButtons buttons, QWidget* parentWdg = NULL);
+    const QString& message, QMessageBox::StandardButtons buttons, QWidget* parentWdg = nullptr);
 
   /**
    * Converts a double value to a full precision QString.
@@ -161,6 +161,13 @@ public:
    * string.
    */
   static QString number(double value);
+
+  /**
+   * Setups up appearance for buttons such as Apply button
+   * that we want to draw user's attention to when enabled. Currently, this
+   * changes the palette to use a green background when enabled.
+   */
+  static void initializeClickMeButton(QAbstractButton* button);
 
 private:
   static QWidget* findMainWindow();

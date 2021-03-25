@@ -4,12 +4,6 @@ function (paraview_add_test_python)
   vtk_add_test_python(${ARGN})
 endfunction ()
 
-function (paraview_add_test_python_mpi)
-  set(_vtk_testing_python_exe "$<TARGET_FILE:ParaView::pvpython>")
-  set(_vtk_test_python_args -dr ${paraview_python_args})
-  vtk_add_test_python_mpi(${ARGN})
-endfunction ()
-
 function (paraview_add_test_pvbatch)
   set(_vtk_testing_python_exe "$<TARGET_FILE:ParaView::pvbatch>")
   set(_vtk_test_python_args -dr ${paraview_pvbatch_args})
@@ -38,8 +32,8 @@ endfunction ()
 function (_paraview_add_tests function)
   cmake_parse_arguments(_paraview_add_tests
     "FORCE_SERIAL;FORCE_LOCK"
-    "LOAD_PLUGIN;PLUGIN_PATH;CLIENT;TEST_DIRECTORY;TEST_DATA_TARGET;PREFIX;SUFFIX;_ENABLE_SUFFIX;_DISABLE_SUFFIX;BASELINE_DIR;DATA_DIRECTORY"
-    "_COMMAND_PATTERN;LOAD_PLUGINS;PLUGIN_PATHS;TEST_SCRIPTS;ENVIRONMENT;ARGS;CLIENT_ARGS"
+    "LOAD_PLUGIN;PLUGIN_PATH;CLIENT;TEST_DIRECTORY;TEST_DATA_TARGET;PREFIX;SUFFIX;_ENABLE_SUFFIX;_DISABLE_SUFFIX;BASELINE_DIR;DATA_DIRECTORY;NUMPROCS"
+    "_COMMAND_PATTERN;LOAD_PLUGINS;PLUGIN_PATHS;TEST_SCRIPTS;TEST_NAME;ENVIRONMENT;ARGS;CLIENT_ARGS"
     ${ARGN})
 
   if (_paraview_add_tests_UNPARSED_ARGUMENTS)
@@ -54,6 +48,12 @@ function (_paraview_add_tests function)
   endif ()
 
   if (NOT DEFINED _paraview_add_tests_CLIENT)
+    if ("__paraview_client__" IN_LIST _paraview_add_tests__COMMAND_PATTERN # do we care?
+        AND NOT TARGET ParaView::paraview # For external testing.
+        AND NOT paraview_will_be_built) # For use within ParaView itself.
+      return ()
+    endif ()
+
     set(_paraview_add_tests_CLIENT
       "$<TARGET_FILE:ParaView::paraview>")
   endif ()
@@ -71,6 +71,14 @@ function (_paraview_add_tests function)
     set(_paraview_add_tests_DATA_DIRECTORY
       "${_paraview_add_tests_default_data_directory}")
   endif ()
+
+  if (DEFINED _paraview_add_tests_TEST_SCRIPTS AND DEFINED _paraview_add_tests_TEST_NAME)
+    message(FATAL_ERROR
+      "Only one of `TEST_NAME` or `TEST_SCRIPTS` must be specified.")
+  elseif (NOT DEFINED _paraview_add_tests_TEST_SCRIPTS AND NOT DEFINED _paraview_add_tests_TEST_NAME)
+    message(FATAL_ERROR
+      "Either `TEST_SCRIPTS` or `TEST_NAME` must be specified.")
+  endif()
 
   set(_paraview_add_tests_args
     ${_paraview_add_tests_ARGS})
@@ -114,13 +122,20 @@ function (_paraview_add_tests function)
     _paraview_add_tests__COMMAND_PATTERN
     "${_paraview_add_tests__COMMAND_PATTERN}")
 
-  foreach (_paraview_add_tests_script IN LISTS _paraview_add_tests_TEST_SCRIPTS)
-    if (NOT IS_ABSOLUTE "${_paraview_add_tests_script}")
-      set(_paraview_add_tests_script
-        "${CMAKE_CURRENT_SOURCE_DIR}/${_paraview_add_tests_script}")
-    endif ()
-    get_filename_component(_paraview_add_tests_name "${_paraview_add_tests_script}" NAME_WE)
-    set(_paraview_add_tests_name_base "${_paraview_add_tests_name}")
+  foreach (_paraview_add_tests_script IN LISTS _paraview_add_tests_TEST_SCRIPTS _paraview_add_tests_TEST_NAME)
+    if (DEFINED _paraview_add_tests_TEST_NAME)
+      set(_paraview_add_tests_name "${_paraview_add_tests_script}")
+      set(_paraview_add_tests_name_base "${_paraview_add_tests_name}")
+      set(_paraview_add_tests_script)
+    else()
+      if (NOT IS_ABSOLUTE "${_paraview_add_tests_script}")
+        set(_paraview_add_tests_script
+          "${CMAKE_CURRENT_SOURCE_DIR}/${_paraview_add_tests_script}")
+      endif ()
+      get_filename_component(_paraview_add_tests_name "${_paraview_add_tests_script}" NAME_WE)
+      set(_paraview_add_tests_name_base "${_paraview_add_tests_name}")
+    endif()
+
     string(APPEND _paraview_add_tests_name "${_paraview_add_tests_SUFFIX}")
 
     if (DEFINED _paraview_add_tests__DISABLE_SUFFIX AND ${_paraview_add_tests_name}${_paraview_add_tests__DISABLE_SUFFIX})
@@ -178,9 +193,22 @@ function (_paraview_add_tests function)
         "--data-directory=${_paraview_add_tests_DATA_DIRECTORY}")
     endif ()
 
-    string(REPLACE "__paraview_script__" "--test-script=${_paraview_add_tests_script}"
-      _paraview_add_tests_script_args
-      "${_paraview_add_tests__COMMAND_PATTERN}")
+    if (DEFINED _paraview_add_tests_TEST_NAME)
+      string(REPLACE "__paraview_script__" ""
+        _paraview_add_tests_script_args
+        "${_paraview_add_tests__COMMAND_PATTERN}")
+      string(REPLACE "__paraview_scriptpath__" ""
+        _paraview_add_tests_script_args
+        "${_paraview_add_tests_script_args}")
+    else()
+      string(REPLACE "__paraview_script__" "--test-script=${_paraview_add_tests_script}"
+        _paraview_add_tests_script_args
+        "${_paraview_add_tests__COMMAND_PATTERN}")
+      string(REPLACE "__paraview_scriptpath__" "${_paraview_add_tests_script}"
+        _paraview_add_tests_script_args
+        "${_paraview_add_tests_script_args}")
+    endif()
+
     string(REPLACE "__paraview_client_args__" "${_paraview_add_tests_client_args}"
       _paraview_add_tests_script_args
       "${_paraview_add_tests_script_args}")
@@ -205,16 +233,21 @@ function (_paraview_add_tests function)
     set_property(TEST "${_paraview_add_tests_PREFIX}.${_paraview_add_tests_name}"
       PROPERTY
         ENVIRONMENT "${_paraview_add_tests_ENVIRONMENT}")
+    if (DEFINED _paraview_add_tests_NUMPROCS)
+      set_property(TEST "${_paraview_add_tests_PREFIX}.${_paraview_add_tests_name}"
+        PROPERTY
+          PROCESSORS "${_paraview_add_tests_NUMPROCS}")
+    endif ()
     if (${_paraview_add_tests_name}_FORCE_SERIAL OR _paraview_add_tests_FORCE_SERIAL)
       set_property(TEST "${_paraview_add_tests_PREFIX}.${_paraview_add_tests_name}"
         PROPERTY
           RUN_SERIAL ON)
-    else ()
+    elseif (NOT DEFINED _paraview_add_tests_TEST_NAME AND EXISTS "${_paraview_add_tests_script}")
       # if the XML test contains PARAVIEW_TEST_ROOT we assume that we may be writing
       # to that file and reading it back in so we add a resource lock on the XML
       # file so that the pv.X, pvcx.X and pvcrs.X tests don't run simultaneously.
       # we only need to do this if the test isn't forced to be serial already.
-      if (NOT ${_paraview_add_tests_name}_FORCE_LOCK)
+      if (NOT IS_DIRECTORY "${_paraview_add_tests_script}" AND NOT ${_paraview_add_tests_name}_FORCE_LOCK)
         file(STRINGS "${_paraview_add_tests_script}" _paraview_add_tests_paraview_test_root REGEX PARAVIEW_TEST_ROOT)
       endif ()
       if (${_paraview_add_tests_name}_FORCE_LOCK OR _paraview_add_tests_paraview_test_root)
@@ -226,9 +259,23 @@ function (_paraview_add_tests function)
   endforeach ()
 endfunction ()
 
+function(_get_prefix varname default)
+  cmake_parse_arguments(_get_prefix
+    ""
+    "PREFIX"
+    ""
+    ${ARGN})
+  if (_get_prefix_PREFIX)
+    set(${varname} "${_get_prefix_PREFIX}" PARENT_SCOPE)
+  else()
+    set(${varname} "${default}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 function (paraview_add_client_tests)
+  _get_prefix(chosen_prefix "pv" ${ARGN})
   _paraview_add_tests("paraview_add_client_tests"
-    PREFIX "pv"
+    PREFIX "${chosen_prefix}"
     _DISABLE_SUFFIX "_DISABLE_C"
     _COMMAND_PATTERN
       --client __paraview_client__
@@ -242,8 +289,9 @@ function (paraview_add_client_tests)
 endfunction ()
 
 function (paraview_add_client_server_tests)
+  _get_prefix(chosen_prefix "pvcs" ${ARGN})
   _paraview_add_tests("paraview_add_client_server_tests"
-    PREFIX "pvcs"
+    PREFIX "${chosen_prefix}"
     _DISABLE_SUFFIX "_DISABLE_CS"
     _COMMAND_PATTERN
       --server "$<TARGET_FILE:ParaView::pvserver>"
@@ -260,8 +308,9 @@ function (paraview_add_client_server_tests)
 endfunction ()
 
 function (paraview_add_client_server_render_tests)
+  _get_prefix(chosen_prefix "pvcrs" ${ARGN})
   _paraview_add_tests("paraview_add_client_server_render_tests"
-    PREFIX "pvcrs"
+    PREFIX "${chosen_prefix}"
     _DISABLE_SUFFIX "_DISABLE_CRS"
     _COMMAND_PATTERN
       --data-server "$<TARGET_FILE:ParaView::pvdataserver>"
@@ -281,8 +330,9 @@ function (paraview_add_client_server_render_tests)
 endfunction ()
 
 function (paraview_add_multi_client_tests)
+  _get_prefix(chosen_prefix "pvcs-multi-clients" ${ARGN})
   _paraview_add_tests("paraview_add_multi_client_tests"
-    PREFIX "pvcs-multi-clients"
+    PREFIX "${chosen_prefix}"
     _ENABLE_SUFFIX "_ENABLE_MULTI_CLIENT"
     FORCE_SERIAL
     _COMMAND_PATTERN
@@ -309,8 +359,9 @@ function (paraview_add_multi_client_tests)
 endfunction ()
 
 function (paraview_add_multi_server_tests count)
+  _get_prefix(chosen_prefix "pvcs-multi-servers" ${ARGN})
   _paraview_add_tests("paraview_add_multi_server_tests"
-    PREFIX "pvcs-multi-servers"
+    PREFIX "${chosen_prefix}"
     SUFFIX "-${count}"
     _COMMAND_PATTERN
       --test-multi-servers "${count}"
@@ -334,12 +385,14 @@ function (paraview_add_tile_display_tests width height)
     return ()
   endif ()
 
+  _get_prefix(chosen_prefix "pvcs-tile-display" ${ARGN})
   _paraview_add_tests("paraview_add_tile_display_tests"
-    PREFIX "pvcs-tile-display"
+    PREFIX "${chosen_prefix}"
     SUFFIX "-${width}x${height}"
     ENVIRONMENT
       PV_SHARED_WINDOW_SIZE=800x600
       SMTESTDRIVER_MPI_NUMPROCS=${_paraview_add_tile_display_cpu_count}
+    NUMPROCS "${_paraview_add_tile_display_cpu_count}"
     _COMMAND_PATTERN
       --server "$<TARGET_FILE:ParaView::pvserver>"
         --enable-bt
@@ -365,12 +418,14 @@ function (paraview_add_cave_tests num_ranks config)
 
   get_filename_component(_config_name "${config}" NAME_WE)
 
+  _get_prefix(chosen_prefix "pvcs-cave-${_config_name}" ${ARGN})
   _paraview_add_tests("paraview_add_cave_tests"
-    PREFIX "pvcs-cave-${_config_name}"
+    PREFIX "${chosen_prefix}"
     SUFFIX "-${num_ranks}"
     ENVIRONMENT
       PV_SHARED_WINDOW_SIZE=400x300
       SMTESTDRIVER_MPI_NUMPROCS=${num_ranks}
+    NUMPROCS "${num_ranks}"
     _COMMAND_PATTERN
       --server "$<TARGET_FILE:ParaView::pvserver>"
         --enable-bt
@@ -387,3 +442,46 @@ function (paraview_add_cave_tests num_ranks config)
         --exit
     ${ARGN})
 endfunction ()
+
+# This is a catch-all function to run any custom command as the "client"
+# using th smTestDriver. Note, the command must print "Process started" for
+# smTestDriver to treat it as started otherwise the test will fail.
+# The command to execute is passed as {ARGN} and is suffixed by each of the
+# TEST_SCRIPTS provided, one at at time.
+function (paraview_add_test)
+  _get_prefix(chosen_prefix "paraview" ${ARGN})
+  _paraview_add_tests("paraview_add_test"
+    PREFIX "${chosen_prefix}"
+    _COMMAND_PATTERN
+      --client
+      __paraview_args__
+      __paraview_scriptpath__
+    ${ARGN})
+endfunction ()
+
+# Same as `paraview_add_test` except makes smTestDriver run the command using
+# mpi. If `PARAVIEW_USE_MPI` if not defined, this does not add any test.
+function (paraview_add_test_mpi)
+  if (PARAVIEW_USE_MPI)
+    _get_prefix(chosen_prefix "paraview-mpi" ${ARGN})
+    _paraview_add_tests("paraview_add_test_mpi"
+      PREFIX "${chosen_prefix}"
+      NUMPROCS 2 # See Utilities/TestDriver/CMakeLists.txt (PARAVIEW_MPI_MAX_NUMPROCS)
+      _COMMAND_PATTERN
+        --client-mpi
+        __paraview_args__
+        __paraview_scriptpath__
+      ${ARGN})
+  endif ()
+endfunction ()
+
+
+# if PARAVIEW_USE_MPI, calls paraview_add_test_mpi(), else calls
+# paraview_add_test()
+function (paraview_add_test_mpi_optional)
+  if (PARAVIEW_USE_MPI)
+    paraview_add_test_mpi(${ARGN})
+  else()
+    paraview_add_test(${ARGN})
+  endif()
+endfunction()

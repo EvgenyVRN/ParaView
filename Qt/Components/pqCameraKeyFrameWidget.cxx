@@ -61,7 +61,7 @@ public:
   vtkSmartPointer<vtkSMProxy> FSplineProxy;
   QPointer<pqProxyWidget> FSplineWidget;
   double Data[3];
-  pqInternal() {}
+  pqInternal() = default;
 
   void setupValidators(QObject* parent)
   {
@@ -162,7 +162,7 @@ pqCameraKeyFrameWidget::pqCameraKeyFrameWidget(QWidget* parentObject)
 
   // hide the header for the tree widget.
   this->Internal->leftPane->header()->hide();
-  this->Internal->leftPane->setCurrentItem(0);
+  this->Internal->leftPane->setCurrentItem(nullptr);
 
   this->connect(this->Internal->leftPane,
     SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)), this,
@@ -170,6 +170,8 @@ pqCameraKeyFrameWidget::pqCameraKeyFrameWidget(QWidget* parentObject)
 
   // * when user clicks useCurrent, we fire the useCurrentCamera signal.
   this->connect(this->Internal->useCurrent, SIGNAL(clicked(bool)), SIGNAL(useCurrentCamera()));
+  this->connect(
+    this->Internal->updateCurrent, SIGNAL(clicked(bool)), SIGNAL(updateCurrentCamera()));
 
   // * Create the spline widget used for defining the paths.
   pqServer* server = pqApplicationCore::instance()->getActiveServer();
@@ -265,6 +267,16 @@ void pqCameraKeyFrameWidget::initializeUsingCamera(vtkCamera* camera)
 }
 
 //-----------------------------------------------------------------------------
+void pqCameraKeyFrameWidget::applyToCamera(vtkCamera* camera)
+{
+  camera->SetPosition(this->Internal->position());
+  camera->SetFocalPoint(this->Internal->focalPoint());
+  camera->SetViewUp(this->Internal->viewUp_Path());
+  camera->SetViewAngle(this->Internal->getViewAngle());
+  camera->SetParallelScale(this->Internal->getParallelScale());
+}
+
+//-----------------------------------------------------------------------------
 /// Write the user chosen values for this key frame to the proxy.
 void pqCameraKeyFrameWidget::saveToKeyFrame(vtkSMProxy* keyFrame)
 {
@@ -330,5 +342,5 @@ void pqCameraKeyFrameWidget::showEvent(QShowEvent* anEvent)
 void pqCameraKeyFrameWidget::hideEvent(QHideEvent* anEvent)
 {
   this->Superclass::hideEvent(anEvent);
-  this->Internal->leftPane->setCurrentItem(0);
+  this->Internal->leftPane->setCurrentItem(nullptr);
 }

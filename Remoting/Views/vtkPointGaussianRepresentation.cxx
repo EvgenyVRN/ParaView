@@ -22,19 +22,21 @@
 #include "vtkProperty.h"
 #include "vtkRenderer.h"
 
-vtkStandardNewMacro(vtkPointGaussianRepresentation)
+// FIXME: remove once paraview/paraview#20385 is fixed.
+#define USE_VERTEX_CELLS 1
 
-  //----------------------------------------------------------------------------
-  vtkPointGaussianRepresentation::vtkPointGaussianRepresentation()
+vtkStandardNewMacro(vtkPointGaussianRepresentation);
+//----------------------------------------------------------------------------
+vtkPointGaussianRepresentation::vtkPointGaussianRepresentation()
 {
   this->Mapper = vtkSmartPointer<vtkPointGaussianMapper>::New();
   this->Actor = vtkSmartPointer<vtkActor>::New();
   this->Actor->SetMapper(this->Mapper);
   this->ScaleByArray = false;
-  this->LastScaleArray = NULL;
+  this->LastScaleArray = nullptr;
   this->LastScaleArrayComponent = 0;
   this->OpacityByArray = false;
-  this->LastOpacityArray = NULL;
+  this->LastOpacityArray = nullptr;
   this->UseScaleFunction = true;
   this->SelectedPreset = vtkPointGaussianRepresentation::GAUSSIAN_BLUR;
   InitializeShaderPresets();
@@ -43,8 +45,8 @@ vtkStandardNewMacro(vtkPointGaussianRepresentation)
 //----------------------------------------------------------------------------
 vtkPointGaussianRepresentation::~vtkPointGaussianRepresentation()
 {
-  this->SetLastScaleArray(NULL);
-  this->SetLastOpacityArray(NULL);
+  this->SetLastScaleArray(nullptr);
+  this->SetLastOpacityArray(nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -191,62 +193,30 @@ int vtkPointGaussianRepresentation::FillInputPortInformation(
 int vtkPointGaussianRepresentation::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
-  vtkSmartPointer<vtkDataSet> input = vtkDataSet::GetData(inputVector[0]);
-  vtkCompositeDataSet* compositeInput = vtkCompositeDataSet::GetData(inputVector[0], 0);
-  this->ProcessedData = NULL;
-  if (input)
+  if (auto input = vtkDataObject::GetData(inputVector[0], 0))
   {
-    // The mapper underneath expects only vtkPolyData or vtkCompositeDataSet,
-    // so convert to a vtkCompositeDataSet consisting of one vtkPolyData child.
-    // Turn off GenerateVertices to ensure all points are drawn.
     vtkNew<vtkMaskPoints> unstructuredToPolyData;
     unstructuredToPolyData->SetInputData(input);
-    unstructuredToPolyData->SetMaximumNumberOfPoints(input->GetNumberOfPoints());
+    unstructuredToPolyData->SetMaximumNumberOfPoints(VTK_ID_MAX);
+#if USE_VERTEX_CELLS
+    unstructuredToPolyData->GenerateVerticesOn();
+    unstructuredToPolyData->SingleVertexPerCellOn();
+#else
     unstructuredToPolyData->GenerateVerticesOff();
+#endif
     unstructuredToPolyData->SetOnRatio(1);
     unstructuredToPolyData->Update();
-
-    vtkNew<vtkPolyData> clone;
-    clone->ShallowCopy(unstructuredToPolyData->GetOutput());
-
-    auto outputMB = vtkSmartPointer<vtkMultiBlockDataSet>::New();
-    outputMB->SetBlock(0, clone);
-    this->ProcessedData = outputMB;
-  }
-  else if (compositeInput)
-  {
-    // make sure all block of the composite dataset are polydata
-    vtkCompositeDataSet* compositeData = compositeInput->NewInstance();
-    this->ProcessedData.TakeReference(compositeData);
-    compositeData->CopyStructure(compositeInput);
-    vtkSmartPointer<vtkCompositeDataIterator> iter;
-    iter.TakeReference(compositeInput->NewIterator());
-    for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem())
+    this->ProcessedData = unstructuredToPolyData->GetOutputDataObject(0);
+    if (vtkCompositeDataSet::SafeDownCast(this->ProcessedData) == nullptr)
     {
-      vtkDataSet* ds = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
-      vtkPolyData* pd = vtkPolyData::SafeDownCast(ds);
-      if (pd)
-      {
-        compositeData->SetDataSet(iter, pd);
-      }
-      else if (ds && ds->GetNumberOfPoints() > 0)
-      {
-        // The mapper underneath expects only vtkPolyData or vtkCompositeDataSet,
-        // so convert to a vtkCompositeDataSet consisting of one vtkPolyData child.
-        // Turn off GenerateVertices to ensure all points are drawn.
-        vtkNew<vtkMaskPoints> unstructuredToPolyData;
-        unstructuredToPolyData->SetInputData(ds);
-        unstructuredToPolyData->SetMaximumNumberOfPoints(ds->GetNumberOfPoints());
-        unstructuredToPolyData->GenerateVerticesOff();
-        unstructuredToPolyData->SetOnRatio(1);
-        unstructuredToPolyData->Update();
-        compositeData->SetDataSet(iter, unstructuredToPolyData->GetOutput());
-      }
+      vtkNew<vtkMultiBlockDataSet> ds;
+      ds->SetBlock(0, this->ProcessedData);
+      this->ProcessedData = ds;
     }
   }
 
   // Create a vtkMultiBlockDataSet on the client to match what is delivered by the server
-  if (this->ProcessedData == NULL)
+  if (this->ProcessedData == nullptr)
   {
     this->ProcessedData = vtkSmartPointer<vtkMultiBlockDataSet>::New();
   }
@@ -292,12 +262,13 @@ int vtkPointGaussianRepresentation::ProcessViewRequest(
     this->Actor->GetMatrix(matrix.GetPointer());
     vtkPVRenderView::SetGeometryBounds(inInfo, this, bounds, matrix.GetPointer());
     outInfo->Set(vtkPVRenderView::NEED_ORDERED_COMPOSITING(), 1);
+    vtkPVRenderView::SetOrderedCompositingConfiguration(inInfo, this,
+      vtkPVRenderView::DATA_IS_REDISTRIBUTABLE | vtkPVRenderView::USE_DATA_FOR_LOAD_BALANCING);
   }
   else if (request_type == vtkPVView::REQUEST_RENDER())
   {
-    vtkAlgorithmOutput* producerPort = vtkPVRenderView::GetPieceProducer(inInfo, this);
-
-    this->Mapper->SetInputConnection(producerPort);
+    auto data = vtkPVView::GetDeliveredPiece(inInfo, this);
+    this->Mapper->SetInputDataObject(data);
     this->UpdateColoringParameters();
   }
   return 1;
@@ -321,14 +292,14 @@ void vtkPointGaussianRepresentation::UpdateColoringParameters()
     else
     {
       this->Mapper->SetScalarVisibility(0);
-      this->Mapper->SelectColorArray(static_cast<const char*>(NULL));
+      this->Mapper->SelectColorArray(static_cast<const char*>(nullptr));
     }
 
     switch (fieldAssociation)
     {
       case vtkDataObject::FIELD_ASSOCIATION_CELLS:
         this->Mapper->SetScalarVisibility(0);
-        this->Mapper->SelectColorArray(static_cast<const char*>(NULL));
+        this->Mapper->SelectColorArray(static_cast<const char*>(nullptr));
         break;
 
       case vtkDataObject::FIELD_ASSOCIATION_POINTS:
@@ -389,7 +360,7 @@ void vtkPointGaussianRepresentation::SetScaleByArray(bool newVal)
   {
     this->ScaleByArray = newVal;
     this->Modified();
-    this->Mapper->SetScaleArray(this->ScaleByArray ? this->LastScaleArray : NULL);
+    this->Mapper->SetScaleArray(this->ScaleByArray ? this->LastScaleArray : nullptr);
     this->Mapper->SetScaleArrayComponent(this->ScaleByArray ? this->LastScaleArrayComponent : 0);
   }
 }
@@ -426,7 +397,7 @@ void vtkPointGaussianRepresentation::UpdateMapperScaleFunction()
 void vtkPointGaussianRepresentation::SelectScaleArray(int, int, int, int, const char* name)
 {
   this->SetLastScaleArray(name);
-  this->Mapper->SetScaleArray(this->ScaleByArray ? name : NULL);
+  this->Mapper->SetScaleArray(this->ScaleByArray ? name : nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -443,7 +414,7 @@ void vtkPointGaussianRepresentation::SetOpacityByArray(bool newVal)
   {
     this->OpacityByArray = newVal;
     this->Modified();
-    this->Mapper->SetOpacityArray(this->OpacityByArray ? this->LastOpacityArray : NULL);
+    this->Mapper->SetOpacityArray(this->OpacityByArray ? this->LastOpacityArray : nullptr);
     this->Mapper->SetOpacityArrayComponent(
       this->OpacityByArray ? this->LastOpacityArrayComponent : 0);
   }
@@ -459,7 +430,7 @@ void vtkPointGaussianRepresentation::SetOpacityTransferFunction(vtkPiecewiseFunc
 void vtkPointGaussianRepresentation::SelectOpacityArray(int, int, int, int, const char* name)
 {
   this->SetLastOpacityArray(name);
-  this->Mapper->SetOpacityArray(this->OpacityByArray ? name : NULL);
+  this->Mapper->SetOpacityArray(this->OpacityByArray ? name : nullptr);
 }
 
 //----------------------------------------------------------------------------

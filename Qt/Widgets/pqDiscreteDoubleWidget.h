@@ -20,8 +20,6 @@
 #include <QVector>
 #include <QWidget>
 
-#include "vtkConfigure.h" // for override
-
 /**
  * Customize pqDoubleSliderWidget to use a custom set of allowed values
  */
@@ -32,7 +30,7 @@ class PQWIDGETS_EXPORT pqDiscreteDoubleWidget : public pqDoubleSliderWidget
   Q_PROPERTY(double value READ value WRITE setValue USER true)
 
 public:
-  pqDiscreteDoubleWidget(QWidget* parent = NULL);
+  pqDiscreteDoubleWidget(QWidget* parent = nullptr);
   ~pqDiscreteDoubleWidget();
 
   /**

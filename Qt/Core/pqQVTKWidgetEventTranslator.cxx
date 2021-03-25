@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqCoreUtilities.h"
 #include "pqEventTypes.h"
 #include "pqFileDialog.h"
+#include "pqQVTKWidget.h"
 
 #include "vtkRenderWindow.h"
 
@@ -44,17 +45,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QMouseEvent>
 
 #include "QVTKOpenGLNativeWidget.h"
-#include "QVTKOpenGLWidget.h"
-#include "QVTKOpenGLWindow.h"
+#include "QVTKOpenGLStereoWidget.h"
 
 pqQVTKWidgetEventTranslator::pqQVTKWidgetEventTranslator(QObject* p)
   : pqWidgetEventTranslator(p)
 {
 }
 
-pqQVTKWidgetEventTranslator::~pqQVTKWidgetEventTranslator()
-{
-}
+pqQVTKWidgetEventTranslator::~pqQVTKWidgetEventTranslator() = default;
 
 bool pqQVTKWidgetEventTranslator::translateEvent(
   QObject* Object, QEvent* Event, int eventType, bool& error)
@@ -70,7 +68,7 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
   // Look for a render window in the possible widget types.
   vtkRenderWindow* rw = nullptr;
 
-  if (QVTKOpenGLWidget* const qvtkWidget = qobject_cast<QVTKOpenGLWidget*>(Object))
+  if (QVTKOpenGLStereoWidget* const qvtkWidget = qobject_cast<QVTKOpenGLStereoWidget*>(Object))
   {
     rw = qvtkWidget->embeddedOpenGLWindow() ? qvtkWidget->renderWindow() : nullptr;
   }
@@ -79,6 +77,11 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
         qobject_cast<QVTKOpenGLNativeWidget*>(Object))
   {
     rw = qvtkNativeWidget->renderWindow();
+  }
+
+  if (pqQVTKWidget* const qvtkWidget = qobject_cast<pqQVTKWidget*>(Object))
+  {
+    rw = qvtkWidget->renderWindow();
   }
 
   // Could not find a render window, don't translate the event
@@ -105,12 +108,12 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
           QSize size = widget->size();
           double normalized_x = mouseEvent->x() / static_cast<double>(size.width());
           double normalized_y = mouseEvent->y() / static_cast<double>(size.height());
-          emit recordEvent(widget, "mousePress", QString("(%1,%2,%3,%4,%5)")
-                                                   .arg(normalized_x)
-                                                   .arg(normalized_y)
-                                                   .arg(mouseEvent->button())
-                                                   .arg(mouseEvent->buttons())
-                                                   .arg(mouseEvent->modifiers()));
+          Q_EMIT recordEvent(widget, "mousePress", QString("(%1,%2,%3,%4,%5)")
+                                                     .arg(normalized_x)
+                                                     .arg(normalized_y)
+                                                     .arg(mouseEvent->button())
+                                                     .arg(mouseEvent->buttons())
+                                                     .arg(mouseEvent->modifiers()));
         }
         return true;
         break;
@@ -127,18 +130,18 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
           // Move to the place where the mouse was released and then release it.
           // This mimics drag without actually having to save all the intermediate
           // mouse move positions.
-          emit recordEvent(widget, "mouseMove", QString("(%1,%2,%3,%4,%5)")
-                                                  .arg(normalized_x)
-                                                  .arg(normalized_y)
-                                                  .arg(mouseEvent->button())
-                                                  .arg(mouseEvent->buttons())
-                                                  .arg(mouseEvent->modifiers()));
-          emit recordEvent(widget, "mouseRelease", QString("(%1,%2,%3,%4,%5)")
-                                                     .arg(normalized_x)
-                                                     .arg(normalized_y)
-                                                     .arg(mouseEvent->button())
-                                                     .arg(mouseEvent->buttons())
-                                                     .arg(mouseEvent->modifiers()));
+          Q_EMIT recordEvent(widget, "mouseMove", QString("(%1,%2,%3,%4,%5)")
+                                                    .arg(normalized_x)
+                                                    .arg(normalized_y)
+                                                    .arg(mouseEvent->button())
+                                                    .arg(mouseEvent->buttons())
+                                                    .arg(mouseEvent->modifiers()));
+          Q_EMIT recordEvent(widget, "mouseRelease", QString("(%1,%2,%3,%4,%5)")
+                                                       .arg(normalized_x)
+                                                       .arg(normalized_y)
+                                                       .arg(mouseEvent->button())
+                                                       .arg(mouseEvent->buttons())
+                                                       .arg(mouseEvent->modifiers()));
         }
         return true;
         break;
@@ -155,7 +158,7 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
                          .arg(ke->text())
                          .arg(ke->isAutoRepeat())
                          .arg(ke->count());
-        emit recordEvent(widget, "keyEvent", data);
+        Q_EMIT recordEvent(widget, "keyEvent", data);
         return true;
         break;
       }
@@ -187,8 +190,8 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
       filters += ";;TIFF image (*.tif)";
       filters += ";;PPM image (*.ppm)";
       filters += ";;JPG image (*.jpg)";
-      pqFileDialog file_dialog(
-        NULL, pqCoreUtilities::mainWidget(), tr("Save Screenshot:"), baselineDir.path(), filters);
+      pqFileDialog file_dialog(nullptr, pqCoreUtilities::mainWidget(), tr("Save Screenshot:"),
+        baselineDir.path(), filters);
       file_dialog.setObjectName("FileSaveScreenshotDialog");
       file_dialog.setFileMode(pqFileDialog::AnyFile);
 
@@ -224,7 +227,7 @@ bool pqQVTKWidgetEventTranslator::translateEvent(
       widget->resize(oldSize);
 
       // Emit record signal
-      emit recordEvent(Object, pqCoreTestUtility::PQ_COMPAREVIEW_PROPERTY_NAME,
+      Q_EMIT recordEvent(Object, pqCoreTestUtility::PQ_COMPAREVIEW_PROPERTY_NAME,
         "$PARAVIEW_TEST_BASELINE_DIR/" + relPathFile, pqEventTypes::CHECK_EVENT);
       return true;
     }

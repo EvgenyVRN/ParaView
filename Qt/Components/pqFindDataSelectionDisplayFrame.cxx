@@ -83,10 +83,8 @@ public:
     this->PointLabelsMenu.setObjectName("PointLabelsMenu");
 
     this->Ui.setupUi(self);
-    this->Ui.interactiveSelectionColor->setVisible(false);
-    this->Ui.labelPropertiesInteractiveSelection->setVisible(false);
-    this->Ui.horizontalLayout->setMargin(pqPropertiesPanel::suggestedMargin());
-    this->Ui.horizontalLayout->setSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
+    this->Ui.mainLayout->setMargin(pqPropertiesPanel::suggestedMargin());
+    this->Ui.mainLayout->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
 
     this->Ui.cellLabelsButton->setMenu(&this->CellLabelsMenu);
     this->Ui.pointLabelsButton->setMenu(&this->PointLabelsMenu);
@@ -152,7 +150,7 @@ public:
   vtkPVDataSetAttributesInformation* attributeInformation(int fieldAssociation)
   {
     return this->Port ? this->Port->getDataInformation()->GetAttributeInformation(fieldAssociation)
-                      : NULL;
+                      : nullptr;
   }
 
   //---------------------------------------------------------------------------
@@ -173,7 +171,7 @@ public:
     }
 
     pqDataRepresentation* repr = this->Port->getRepresentation(this->View);
-    assert(repr != NULL);
+    assert(repr != nullptr);
 
     menu.addAction("ID")->setData(fieldAssociation == vtkDataObject::FIELD_ASSOCIATION_CELLS
         ? "vtkOriginalCellIds"
@@ -298,8 +296,8 @@ public:
         this->FrustumView->render();
       }
     }
-    this->FrustumWidget = NULL;
-    this->FrustumView = NULL;
+    this->FrustumWidget = nullptr;
+    this->FrustumView = nullptr;
   }
 
   //---------------------------------------------------------------------------
@@ -327,7 +325,7 @@ public:
     // doesn't result in calling this method again.
     this->Ui.showFrustumButton->setChecked(val);
 
-    if (this->FrustumWidget == NULL && val == true)
+    if (this->FrustumWidget == nullptr && val == true)
     {
       vtkSMSessionProxyManager* pxm = this->View->proxyManager();
       this->FrustumWidget.TakeReference(pxm->NewProxy("representations", "FrustumWidget"));
@@ -338,13 +336,13 @@ public:
       }
     }
 
-    if (this->FrustumWidget == NULL)
+    if (this->FrustumWidget == nullptr)
     {
       // nothing to do.
       return;
     }
 
-    pqView* targetView = val ? this->View : NULL;
+    pqView* targetView = val ? this->View : nullptr;
     if (targetView != this->FrustumView)
     {
       if (this->FrustumView)
@@ -353,7 +351,7 @@ public:
           .Remove(this->FrustumWidget);
         this->FrustumView->getProxy()->UpdateVTKObjects();
         this->FrustumView->render();
-        this->FrustumView = NULL;
+        this->FrustumView = nullptr;
       }
 
       if (targetView)
@@ -408,7 +406,7 @@ pqFindDataSelectionDisplayFrame::pqFindDataSelectionDisplayFrame(
 pqFindDataSelectionDisplayFrame::~pqFindDataSelectionDisplayFrame()
 {
   delete this->Internals;
-  this->Internals = NULL;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -500,63 +498,6 @@ void pqFindDataSelectionDisplayFrame::showFrustum(bool val)
 }
 
 //-----------------------------------------------------------------------------
-void pqFindDataSelectionDisplayFrame::setUseVerticalLayout(bool vertical)
-{
-  // we support this so that we can add this widget in a dock panel to allow
-  // each access to these properties.
-  if (this->useVerticalLayout() == vertical)
-  {
-    return;
-  }
-
-  Ui::FindDataSelectionDisplayFrame& ui = this->Internals->Ui;
-  delete this->layout();
-  ui.horizontalLayout = NULL;
-
-  if (vertical)
-  {
-    this->Internals->Ui.interactiveSelectionColor->setVisible(true);
-    this->Internals->Ui.labelPropertiesInteractiveSelection->setVisible(true);
-
-    QVBoxLayout* vbox = new QVBoxLayout(this);
-    vbox->setMargin(pqPropertiesPanel::suggestedMargin());
-    vbox->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
-    vbox->addWidget(ui.cellLabelsButton);
-    vbox->addWidget(ui.pointLabelsButton);
-
-    QHBoxLayout* hbox = new QHBoxLayout();
-    hbox->addWidget(ui.selectionColor);
-    hbox->addStretch();
-    hbox->addWidget(ui.showFrustumButton);
-    hbox->addWidget(ui.labelPropertiesSelection);
-    vbox->addLayout(hbox);
-
-    hbox = new QHBoxLayout();
-    hbox->addWidget(ui.interactiveSelectionColor);
-    hbox->addStretch();
-    hbox->addWidget(ui.labelPropertiesInteractiveSelection);
-    vbox->addLayout(hbox);
-    vbox->addStretch();
-  }
-  else
-  {
-    QHBoxLayout* hbox = new QHBoxLayout(this);
-    hbox->setMargin(pqPropertiesPanel::suggestedMargin());
-    hbox->setSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
-    hbox->addWidget(ui.selectionColor);
-    hbox->addWidget(ui.cellLabelsButton);
-    hbox->addWidget(ui.pointLabelsButton);
-    hbox->addWidget(ui.showFrustumButton);
-    hbox->addWidget(ui.labelPropertiesSelection);
-  }
-}
-
-//-----------------------------------------------------------------------------
-bool pqFindDataSelectionDisplayFrame::useVerticalLayout() const
-{
-  return qobject_cast<QVBoxLayout*>(this->layout()) != NULL;
-}
-
 void pqFindDataSelectionDisplayFrame::updateInteractiveSelectionLabelProperties()
 {
   vtkSMProxy* selectionProxy =

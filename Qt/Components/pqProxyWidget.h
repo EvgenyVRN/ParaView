@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define pqProxyWidget_h
 
 #include "pqComponentsModule.h"
+#include <QSet>
 #include <QWidget>
 
 class pqPropertyWidget;
@@ -60,9 +61,22 @@ class PQCOMPONENTS_EXPORT pqProxyWidget : public QWidget
   typedef QWidget Superclass;
 
 public:
-  pqProxyWidget(vtkSMProxy* proxy, QWidget* parent = 0, Qt::WindowFlags flags = 0);
-  pqProxyWidget(vtkSMProxy* proxy, const QStringList& properties, QWidget* parent = 0,
-    Qt::WindowFlags flags = 0);
+  pqProxyWidget(vtkSMProxy* proxy, const QStringList& properties,
+    std::initializer_list<QString> defaultLabels, std::initializer_list<QString> advancedLabels,
+    bool showHeadersFooters = true, QWidget* parent = nullptr,
+    Qt::WindowFlags flags = Qt::WindowFlags{});
+
+  pqProxyWidget(vtkSMProxy* proxy, std::initializer_list<QString> defaultLabels,
+    std::initializer_list<QString> advancedLabels, QWidget* parent = nullptr,
+    Qt::WindowFlags flags = Qt::WindowFlags{});
+
+  pqProxyWidget(vtkSMProxy* proxy, const QStringList& properties, bool showHeadersFooters = true,
+    QWidget* parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags{});
+
+  pqProxyWidget(vtkSMProxy* proxy, QWidget* parent, Qt::WindowFlags flags = Qt::WindowFlags{});
+
+  pqProxyWidget(vtkSMProxy* proxy);
+
   ~pqProxyWidget() override;
 
   /**
@@ -129,7 +143,24 @@ public:
   */
   static DocumentationType showProxyDocumentationInPanel(vtkSMProxy* proxy);
 
-signals:
+  //@{
+  /**
+   * pqProxyWidget shows widgets for properties in two configurations: basic and
+   * advanced. Properties on Proxies can have `PanelVisibility` set to an
+   * arbitrary string. This API allows the application to classify the
+   * panel-visibility strings into the two configuration categories.
+   *
+   * By default, defaultVisibilityLabels is set to `{ "default" }` and
+   * advancedVisibilityLabels is set to `{ "advanced" }`.
+   *
+   * Note that "never" is reserved and always interpreted and never show the
+   * property (unless explicitly requested in constructor arguments).
+   */
+  const QSet<QString>& defaultVisibilityLabels() const { return this->DefaultVisibilityLabels; }
+  const QSet<QString>& advancedVisibilityLabels() const { return this->AdvancedVisibilityLabels; }
+  //@}
+
+Q_SIGNALS:
   /**
   * This signal is fired as soon as the user starts editing in the widget. The
   * editing may not be complete.
@@ -148,7 +179,7 @@ signals:
   */
   void restartRequired();
 
-public slots:
+public Q_SLOTS:
   /**
   * Updates the property widgets shown based on the filterText or
   * show_advanced flag. Calling filterWidgets() without any arguments will
@@ -189,11 +220,17 @@ public slots:
   */
   void saveAsDefaults();
 
+  /**
+  * create a widget for a property.
+  */
+  static pqPropertyWidget* createWidgetForProperty(
+    vtkSMProperty* property, vtkSMProxy* proxy, QWidget* parentObj);
+
 protected:
   void showEvent(QShowEvent* event) override;
   void hideEvent(QHideEvent* event) override;
 
-private slots:
+private Q_SLOTS:
   /**
   * Called when a pqPropertyWidget fires changeFinished() signal.
   * This callback fires changeFinished() signal and handles AutoUpdateVTKObjects.
@@ -201,12 +238,6 @@ private slots:
   void onChangeFinished();
 
 private:
-  /**
-  * the actual constructor implementation.
-  */
-  void constructor(
-    vtkSMProxy* proxy, const QStringList& properties, QWidget* parent, Qt::WindowFlags flags);
-
   /**
   * create all widgets
   */
@@ -222,17 +253,14 @@ private:
   */
   void create3DWidgets();
 
-  /**
-  * create a widget for a property.
-  */
-  pqPropertyWidget* createWidgetForProperty(
-    vtkSMProperty* property, vtkSMProxy* proxy, QWidget* parentObj);
-
 private:
-  Q_DISABLE_COPY(pqProxyWidget)
+  Q_DISABLE_COPY(pqProxyWidget);
 
+  QSet<QString> DefaultVisibilityLabels;
+  QSet<QString> AdvancedVisibilityLabels;
   bool ApplyChangesImmediately;
   bool UseDocumentationForLabels;
+  bool ShowHeadersFooters = false;
   class pqInternals;
   pqInternals* Internals;
 };

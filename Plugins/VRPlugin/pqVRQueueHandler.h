@@ -1,7 +1,7 @@
 /*=========================================================================
 
    Program: ParaView
-   Module:    $RCSfile$
+   Module:  pqVRQueueHandler.h
 
    Copyright (c) 2005,2006 Sandia Corporation, Kitware Inc.
    All rights reserved.
@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#ifndef vtkVRQueueHandler_h
-#define vtkVRQueueHandler_h
+#ifndef pqVRQueueHandler_h
+#define pqVRQueueHandler_h
 
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
@@ -61,7 +61,7 @@ public:
 
   static pqVRQueueHandler* instance();
 
-public slots:
+public Q_SLOTS:
   /// start/stop queue processing.
   void start();
   void stop();
@@ -73,10 +73,10 @@ public slots:
   /// saves the styles configuration.
   void saveStylesConfiguration(vtkPVXMLElement* root);
 
-signals:
+Q_SIGNALS:
   void stylesChanged();
 
-protected slots:
+protected Q_SLOTS:
   /// called to processes events from the queue.
   void processEvents();
 
@@ -91,4 +91,4 @@ private:
   static QPointer<pqVRQueueHandler> Instance;
 };
 
-#endif
+#endif // pqVRQueueHandler_h

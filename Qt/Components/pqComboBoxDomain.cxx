@@ -133,6 +133,11 @@ pqComboBoxDomain::~pqComboBoxDomain()
   delete this->Internal;
 }
 
+QIcon pqComboBoxDomain::getIcon(int fieldAssociation)
+{
+  return ::get_icon(fieldAssociation);
+}
+
 void pqComboBoxDomain::addString(const QString& str)
 {
   this->Internal->UserStrings.push_back(str);
@@ -190,7 +195,7 @@ void pqComboBoxDomain::domainChanged()
 void pqComboBoxDomain::internalDomainChanged()
 {
   QComboBox* combo = qobject_cast<QComboBox*>(this->parent());
-  assert(combo != NULL);
+  assert(combo != nullptr);
   if (!combo)
   {
     return;
