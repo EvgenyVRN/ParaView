@@ -1144,6 +1144,8 @@ protected:
    */
   void ConfigureTexture(vtkTexture* texture);
 
+  void AddCustomAxesActor();
+
   vtkLightKit* LightKit;
   vtkRenderViewBase* RenderView;
   vtkRenderer* NonCompositedRenderer;

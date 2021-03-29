@@ -811,6 +811,11 @@ double* vtkPVAxesWidget::GetViewport()
   return this->Renderer->GetViewport();
 }
 
+void vtkPVAxesWidget::AddCustomActor(vtkActor *actor)
+{
+  this->AxesActor->AddCustomActor(actor);
+}
+
 //----------------------------------------------------------------------------
 void vtkPVAxesWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
