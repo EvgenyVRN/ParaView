@@ -507,8 +507,20 @@ pqSettings* pqApplicationCore::settings()
     // for the app name, we use a "-dr" suffix is disable_settings is true.
     const QString suffix(disable_settings ? "-dr" : "");
 
-    auto settings = new pqSettings(
+    // TODO: add cmake option PORTABLE
+    pqSettings* settings = nullptr;
+    constexpr auto PORTABLE = true;
+    if(PORTABLE)
+    {
+      QString config_name = QApplication::applicationName() + ".ini";
+      config_name = QDir::currentPath()+ QDir::separator()+config_name;
+      settings = new pqSettings(config_name , QSettings::IniFormat, this);
+    }
+    else {
+      settings = new pqSettings(
       QSettings::IniFormat, QSettings::UserScope, settingsOrg, settingsApp + suffix, this);
+    }
+
     if (disable_settings || settings->value("pqApplicationCore.DisableSettings", false).toBool())
     {
       vtkVLogF(PARAVIEW_LOG_APPLICATION_VERBOSITY(), "loading of Qt settings skipped (disabled).");

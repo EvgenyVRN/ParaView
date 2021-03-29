@@ -164,5 +164,13 @@ void pqResetDefaultSettingsReaction::clearSettings()
   if (vtkInitializationHelper::GetLoadSettingsFilesDuringInitialization())
   {
     QFile::remove(vtkInitializationHelper::GetUserSettingsFilePath().c_str());
+    // TODO: add cmake option PORTABLE
+    constexpr auto PORTABLE = true;
+    if (PORTABLE)
+    {
+      QFile empty_file(vtkInitializationHelper::GetUserSettingsFilePath().c_str());
+      empty_file.open(QIODevice::WriteOnly);
+      empty_file.close();
+    }
   }
 }

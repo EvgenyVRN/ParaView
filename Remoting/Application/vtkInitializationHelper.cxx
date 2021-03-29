@@ -328,7 +328,14 @@ void vtkInitializationHelper::LoadSettings()
   }
 
   // Load user-level settings
-  std::string userSettingsFilePath = vtkInitializationHelper::GetUserSettingsFilePath();
+  // TODO: add cmake option PORTABLE
+  constexpr auto PORTABLE = true;
+  std::string userSettingsFilePath = vtkInitializationHelper::GetUserSettingsFilePath(PORTABLE);
+  if (!vtksys::SystemTools::FileExists(userSettingsFilePath))
+  {
+    userSettingsFilePath = vtkInitializationHelper::GetUserSettingsFilePath(false);
+  }
+
   if (!settings->AddCollectionFromFile(userSettingsFilePath, VTK_DOUBLE_MAX))
   {
     // Loading user settings failed, so we need to create an empty
@@ -388,57 +395,69 @@ void vtkInitializationHelper::LoadSettings()
 }
 
 //----------------------------------------------------------------------------
-std::string vtkInitializationHelper::GetUserSettingsDirectory()
+std::string vtkInitializationHelper::GetUserSettingsDirectory(bool portable)
 {
-  std::string organizationName(vtkInitializationHelper::GetOrganizationName());
-#if defined(_WIN32)
-  const char* appData = vtksys::SystemTools::GetEnv("APPDATA");
-  if (!appData)
+  if (portable)
   {
-    return std::string();
-  }
-  std::string separator("\\");
-  std::string directoryPath(appData);
-  if (directoryPath[directoryPath.size() - 1] != separator[0])
-  {
-    directoryPath.append(separator);
-  }
-  directoryPath += organizationName + separator;
-#else
-  std::string directoryPath;
-  std::string separator("/");
-
-  // Emulating QSettings behavior.
-  const char* xdgConfigHome = getenv("XDG_CONFIG_HOME");
-  if (xdgConfigHome && strlen(xdgConfigHome) > 0)
-  {
-    directoryPath = xdgConfigHome;
-    if (directoryPath[directoryPath.size() - 1] != separator[0])
-    {
-      directoryPath += separator;
-    }
+    vtkPVOptions* options = vtkProcessModule::GetProcessModule()->GetOptions();
+    const char* app_dir_p = options->GetApplicationPath();
+    std::string app_dir = app_dir_p ? app_dir_p : "";
+    app_dir = vtksys::SystemTools::GetProgramPath(app_dir.c_str()) + "/";
+    return app_dir;
   }
   else
   {
-    const char* home = getenv("HOME");
-    if (!home)
+
+    std::string organizationName(vtkInitializationHelper::GetOrganizationName());
+#if defined(_WIN32)
+    const char* appData = vtksys::SystemTools::GetEnv("APPDATA");
+    if (!appData)
     {
       return std::string();
     }
-    directoryPath = home;
+    std::string separator("\\");
+    std::string directoryPath(appData);
     if (directoryPath[directoryPath.size() - 1] != separator[0])
     {
-      directoryPath += separator;
+      directoryPath.append(separator);
     }
-    directoryPath += ".config/";
-  }
   directoryPath += organizationName + separator;
+#else
+    std::string directoryPath;
+    std::string separator("/");
+
+    // Emulating QSettings behavior.
+    const char* xdgConfigHome = getenv("XDG_CONFIG_HOME");
+    if (xdgConfigHome && strlen(xdgConfigHome) > 0)
+    {
+      directoryPath = xdgConfigHome;
+      if (directoryPath[directoryPath.size() - 1] != separator[0])
+      {
+        directoryPath += separator;
+      }
+    }
+    else
+    {
+      const char* home = getenv("HOME");
+      if (!home)
+      {
+        return std::string();
+      }
+      directoryPath = home;
+      if (directoryPath[directoryPath.size() - 1] != separator[0])
+      {
+        directoryPath += separator;
+      }
+      directoryPath += ".config/";
+    }
+    directoryPath += organizationName + separator;
 #endif
-  return directoryPath;
+    return directoryPath;
+  }
 }
 
 //----------------------------------------------------------------------------
-std::string vtkInitializationHelper::GetUserSettingsFilePath()
+std::string vtkInitializationHelper::GetUserSettingsFilePath(bool portable)
 {
   std::string path = vtkInitializationHelper::GetUserSettingsDirectory();
   path.append(vtkInitializationHelper::GetApplicationName());
